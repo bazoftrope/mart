@@ -1,6 +1,6 @@
 # Архитектура и стек технологий
 
-Актуально по состоянию на **31.08.2026**.
+Актуально по состоянию на **11.09.2026**.
 
 ## Общие принципы
 
@@ -37,9 +37,9 @@ marathon-platform/
 ├── DB/
 │   ├── db.ts                    # Подключение Sequelize (из DATABASE_URL или DB_* env)
 │   ├── config/config.js         # Конфиг Sequelize CLI (dev/test/prod)
-│   ├── models/                  # 14 моделей (index.ts экспортирует все + `models` map + `AppModels`)
-│   ├── migrations/              # Sequelize CLI миграции (14 файлов)
-│   └── seeders/                 # Seed-данные (продукты)
+│   ├── models/                  # 19 моделей (index.ts экспортирует все + `models` map + `AppModels`)
+│   ├── migrations/              # Sequelize CLI миграции (20 файлов)
+│   └── seeders/                 # Seed-данные (продукты, демо-рецепты, демо-тренировки, статьи помощи)
 ├── src/
 │   ├── pages/                   # Pages Router
 │   │   ├── _app.tsx             # Layout + globals.css
@@ -49,6 +49,9 @@ marathon-platform/
 │   │   ├── dashboard/           # ЛК участника
 │   │   ├── mentor/              # ЛК ментора
 │   │   ├── admin/               # Админ-панель
+│   │   ├── recipes/             # Публичная книга рецептов
+│   │   ├── workouts/            # Публичная книга тренировок
+│   │   ├── help/                # Публичный раздел «Правила и помощь»
 │   │   └── streams/[id]/        # Публичная страница потока
 │   ├── components/              # UI-компоненты
 │   ├── lib/                     # Утилиты и серверная логика
@@ -106,6 +109,31 @@ marathon-platform/
 **products/**
 - `GET /api/products?search=` — поиск продуктов (autocomplete, max 20)
 
+**recipes/** — общая книга рецептов (публичное чтение)
+- `GET /api/recipes?search=&favorites=&page=&limit=` — список рецептов (поиск по названию/описанию/ингредиентам/шагам, пагинация; для авторизованных — `isFavorite`, `canEdit`; `favorites=1` требует входа)
+- `POST /api/recipes` — добавить рецепт (любая авторизованная роль)
+- `GET /api/recipes/[id]` — карточка рецепта (публично)
+- `PUT /api/recipes/[id]` — изменить (автор или админ)
+- `DELETE /api/recipes/[id]` — удалить (автор или админ)
+- `POST /api/recipes/[id]/favorite` — добавить в избранное (авторизованный)
+- `DELETE /api/recipes/[id]/favorite` — убрать из избранного (авторизованный)
+
+**workouts/** — общая книга тренировок (публичное чтение, зеркало книги рецептов)
+- `GET /api/workouts?search=&favorites=&page=&limit=` — список тренировок (поиск по названию/описанию/упражнениям/выполнению, пагинация; для авторизованных — `isFavorite`, `canEdit`; `favorites=1` требует входа)
+- `POST /api/workouts` — добавить тренировку (любая авторизованная роль)
+- `GET /api/workouts/[id]` — карточка тренировки (публично)
+- `PUT /api/workouts/[id]` — изменить (автор или админ)
+- `DELETE /api/workouts/[id]` — удалить (автор или админ)
+- `POST /api/workouts/[id]/favorite` — добавить в избранное (авторизованный)
+- `DELETE /api/workouts/[id]/favorite` — убрать из избранного (авторизованный)
+
+**help/** — раздел «Правила и помощь» (публичное чтение, запись — админ)
+- `GET /api/help?search=&section=&audience=` — список статей. Гость видит только `isPublished` + `audience=all`; участник/ментор — плюс статьи своей роли; админ — все. Для админа `?all=1` — черновики и все аудитории (используется в `/admin/help`)
+- `POST /api/help` — создать статью (админ)
+- `GET /api/help/[slug]` — статья по slug (публично; черновик видит только админ)
+- `PUT /api/help/[slug]` — изменить, включая смену slug (админ)
+- `DELETE /api/help/[slug]` — удалить (админ)
+
 **messages/**
 - `GET/POST /api/messages` — список бесед / создать беседу
 - `GET/POST /api/messages/[id]` — сообщения беседы / отправить сообщение
@@ -136,6 +164,7 @@ marathon-platform/
 
 ### Middleware (`src/lib/middleware.ts`)
 - `withAuth(handler)` — проверка access-токена из куки, кладёт `req.user` (TokenPayload)
+- `withOptionalAuth(handler)` — для публичных роутов: если токен валиден, кладёт `req.user`, иначе пускает как гостя (используется в книгах рецептов и тренировок)
 - `withRole(role)(handler)` — проверка роли после `withAuth`
 - готова: `withAdmin`, `withMentor`, `withParticipant`
 
@@ -199,18 +228,33 @@ export default apiHandler({ GET: withMentor(getHandler) });
 | `20240815000002-create-conversations.js` | conversations + members + messages |
 | `20240816000001-add-weight-fields-to-stream-ratings.js` | вес в рейтинге |
 | `20260831000001-add-video-id-to-template-days.js` | `video_id` Kinescope |
-| `20260905000001-create-template-attachments.js` | вложения `template_attachments` (`pair_id`) + `intro_text` |
+| `20260905000001-create-template-attachments.js` | вложения `template_attachments` (`pair_id`) + `intro_text` + книга рецептов (`recipes`, `recipe_favorites`) |
 | `20260905000002-add-session1-missing-columns.js` | поля сессии 1 |
 | `20260905000003-remove-text-editor.js` | удаление настройки редактора |
 | `20260905000004-fix-attachment-filenames-encoding.js` | починка имён файлов (mojibake) |
+| `20260910000002-create-workouts.js` | книга тренировок (`workouts`, `workout_favorites`) |
+| `20260911000001-create-help-articles.js` | раздел «Правила и помощь» (`help_articles`) |
 
 Команды: `npx sequelize-cli db:migrate` / `db:migrate:undo` / `db:seed:all` / `db:seed:undo:all`.
 
-> **Соглашение по миграциям (важно для агента).** Сейчас рабочей/прод-базы с данными нет.
-> Поэтому новые файлы миграций **не создаём**: изменения схемы вносим правкой уже
-> существующих файлов миграций (например, `20260905000001-create-template-attachments.js`).
-> Если миграции уже были применены локально — откатить до нужной (`db:migrate:undo`) или
-> пересоздать базу, а затем выполнить `db:migrate` заново.
+> **Соглашение по миграциям (важно для агента).** Пока в базе нет прод-данных
+> (и пользователей, которых нельзя потерять), новые файлы миграций **не создаём** —
+> изменения схемы вносим правкой уже существующих файлов, чтобы не плодить файлы.
+> Например, таблицы книги рецептов (`recipes`, `recipe_favorites`) добавлены прямо
+> в `20260905000001-create-template-attachments.js`, а не отдельным файлом.
+>
+> Такой подход уместен **только пока данными можно пренебречь**: когда в базе появятся
+> реальные данные/пользователи, изменения снова оформляем отдельными файлами миграций,
+> чтобы их можно было безопасно накатывать на живую базу, не пересоздавая её.
+>
+> Если миграции уже были применены локально — откатить до нужной (`db:migrate:undo`)
+> или пересоздать базу (`npm run db:reset`), а затем выполнить `db:migrate` заново.
+>
+> **Исключение — книга тренировок.** Её таблицы (`workouts`, `workout_favorites`)
+> оформлены отдельным файлом `20260910000002-create-workouts.js`: к моменту
+> добавления миграция `20260905000001` уже была применена локально и дописать
+> в неё таблицы было нельзя без пересоздания базы. С этого момента новые
+> изменения схемы — только отдельными файлами миграций.
 
 ## Расчёт калорий (`src/lib/calorieCalculator.ts`)
 
@@ -250,6 +294,9 @@ male:   База = (6.25×Рост + 10×Вес − 5×Возраст + 5) × 1.
 
 - `auth.ts` — `UserRole`, `TokenPayload`, `AuthenticatedRequest`, `PublicUser`.
 - `participantDay.ts` — данные дня участника (`ParticipantDayData`, `DayReportData`, `MetricsState`, `PulseReadingItem`).
+- `recipe.ts` — DTO книги рецептов (`Recipe`, `RecipeListResponse`).
+- `workout.ts` — DTO книги тренировок (`Workout`, `WorkoutListResponse`).
+- `help.ts` — DTO раздела «Правила и помощь» (`HelpArticle`, `HelpArticleListItem`, `HelpListResponse`, `HelpSection`, `HelpAudience`) + мапы подписей.
 - `pg.d.ts` — декларация типов для `pg`.
 
 ## Cron в проде
@@ -260,4 +307,7 @@ male:   База = (6.25×Рост + 10×Вес − 5×Возраст + 5) × 1.
 
 - Структура дня участника вынесена в компоненты `src/components/day/*` (`DayHeader`, `DayMaterials`, `DayReport`, `DayTabs`, `KinescopePlayer`) и `src/components/marathon/*` (`MarathonWindow`, `DayView`, `DayNavbar`, `MarathonHeader`).
 - Чат: `src/components/Chat/Chat.tsx` — переиспользуется в `dashboard/messages` и `mentor/messages`.
+- Книга рецептов: общая, без привязки к марафонам. Модели `Recipe` (служебный `createdBy` в UI не показывается) и `RecipeFavorite`; публичный `GET /api/recipes` через `withOptionalAuth` дополняется `isFavorite`/`canEdit`. UI: `src/pages/recipes/*`, компоненты `src/components/recipes/*`.
+- Книга тренировок: полное зеркало книги рецептов (та же механика — публичное чтение, поиск, пагинация, избранное, права автор/админ). Модели `Workout` (`title`, `description`, `exercises`, `execution`, служебный `createdBy`) и `WorkoutFavorite`; UI: `src/pages/workouts/*`, компоненты `src/components/workouts/*`. Кнопка избранного переиспользуется из книги рецептов (`src/components/recipes/FavoriteButton`).
+- Раздел «Правила и помощь»: модель `HelpArticle` (разделы `rules`/`faq`/`guide`, аудитории `all`/`participant`/`mentor`/`admin`, `slug`, черновики); публичное чтение через `withOptionalAuth`, запись — только `withAdmin`. UI: `src/pages/help/*` (список с поиском и табами, страница статьи), админка `src/pages/admin/help/*` (CRUD с Quill), компоненты `src/components/help/*`. Тексты санируются `sanitizeRichText` при сохранении; слаги формирует `src/lib/helpSlug.ts`, где лежат константы `HELP_SLUG_RULES`/`HELP_SLUG_REPORT_GUIDE` для контекстных ссылок (на странице дня, потоке и регистрации). Стартовый набор статей — сидер `20260911000001-demo-help-articles.js`. Подробнее: `DOC/help-center-plan.md`.
 - Планы рефакторингов: `DOC/css-refactor-plan.md`, `DOC/participant-day-refactor-plan.md`, `DOC/report-extension-plan.md`.

@@ -128,9 +128,101 @@ module.exports = {
 
     await queryInterface.removeColumn('template_days', 'audio_url');
     await queryInterface.removeColumn('template_days', 'video_id');
+
+    // --- Книга рецептов ---
+    // Добавлено позже правкой этой же миграции: пока в БД нет прод-данных
+    // и пользователей, новые файлы миграций не создаём, чтобы не плодить файлы.
+    await queryInterface.createTable('recipes', {
+      id: {
+        type: Sequelize.UUID,
+        defaultValue: Sequelize.UUIDV4,
+        primaryKey: true,
+      },
+      title: {
+        type: Sequelize.STRING,
+        allowNull: false,
+      },
+      description: {
+        type: Sequelize.TEXT,
+        allowNull: true,
+      },
+      ingredients: {
+        type: Sequelize.TEXT,
+        allowNull: false,
+      },
+      steps: {
+        type: Sequelize.TEXT,
+        allowNull: false,
+      },
+      created_by: {
+        type: Sequelize.UUID,
+        allowNull: true,
+        references: {
+          model: 'users',
+          key: 'id',
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'SET NULL',
+      },
+      created_at: {
+        type: Sequelize.DATE,
+        allowNull: false,
+        defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
+      },
+      updated_at: {
+        type: Sequelize.DATE,
+        allowNull: false,
+        defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
+      },
+    });
+
+    await queryInterface.addIndex('recipes', ['created_at']);
+    await queryInterface.addIndex('recipes', ['title']);
+
+    await queryInterface.createTable('recipe_favorites', {
+      id: {
+        type: Sequelize.UUID,
+        defaultValue: Sequelize.UUIDV4,
+        primaryKey: true,
+      },
+      recipe_id: {
+        type: Sequelize.UUID,
+        allowNull: false,
+        references: {
+          model: 'recipes',
+          key: 'id',
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'CASCADE',
+      },
+      user_id: {
+        type: Sequelize.UUID,
+        allowNull: false,
+        references: {
+          model: 'users',
+          key: 'id',
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'CASCADE',
+      },
+      created_at: {
+        type: Sequelize.DATE,
+        allowNull: false,
+        defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
+      },
+    });
+
+    await queryInterface.addIndex('recipe_favorites', ['recipe_id', 'user_id'], {
+      unique: true,
+    });
+    await queryInterface.addIndex('recipe_favorites', ['user_id']);
   },
 
   async down(queryInterface, Sequelize) {
+    // Книга рецептов (обратный порядок к up).
+    await queryInterface.dropTable('recipe_favorites');
+    await queryInterface.dropTable('recipes');
+
     await queryInterface.addColumn('template_days', 'audio_url', {
       type: Sequelize.STRING(2048),
       allowNull: true,

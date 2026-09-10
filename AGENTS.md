@@ -4,7 +4,7 @@
 
 ## О проекте
 
-Платформа управления марафонами похудения: участники, наставники (mentors), админы, потоки марафонов, ежедневные отчёты, рейтинг, калорийность, чат.
+Платформа управления марафонами похудения: участники, наставники (mentors), админы, потоки марафонов, ежедневные отчёты, рейтинг, калорийность, чат, общая книга рецептов и книга тренировок.
 
 - **Стек:** Next.js 14 (**Pages Router**, не App Router), React 18, TypeScript (strict)
 - **База данных:** PostgreSQL + Sequelize (Sequelize-TS, декораторы)
@@ -26,16 +26,16 @@
 
 ### `src/`
 - `src/pages/` — Pages Router.
-  - `src/pages/api/` — **API-роуты** по доменам: `auth/`, `admin/`, `users/`, `marathons/`, `streams/`, `reports/`, `rating/`, `products/`, `messages/`, `health/`.
-  - `src/pages/dashboard/`, `mentor/`, `admin/`, `streams/`, `onboarding.tsx`, `register.tsx`, `login.tsx` — страницы клиента.
-- `src/components/` — UI по модулям: `day/`, `marathon/`, `mentor/`, `Chat/` + общие `Layout`, `ProductSearch`, `ReportTable`, `PulseReadingsForm`.
-- `src/lib/` — ключевые утилиты: `apiHandler.ts`, `middleware.ts`, `auth.ts`, `db.ts`, `api.ts`, `apiClient.ts`, `cookies.ts`, `ratingCalculator.ts`, `calorieCalculator.ts`, `calendar.ts`, `validate.ts` (+ `validation.ts` — реэкспорт), `errors.ts`, `cron.ts`, `kinescope.ts`.
+  - `src/pages/api/` — **API-роуты** по доменам: `auth/`, `admin/`, `users/`, `marathons/`, `streams/`, `reports/`, `rating/`, `products/`, `recipes/`, `workouts/`, `help/`, `messages/`, `health/`.
+  - `src/pages/dashboard/`, `mentor/`, `admin/`, `streams/`, `recipes/`, `workouts/`, `help/`, `onboarding.tsx`, `register.tsx`, `login.tsx` — страницы клиента.
+- `src/components/` — UI по модулям: `day/`, `marathon/`, `mentor/`, `recipes/`, `workouts/`, `help/`, `Chat/` + общие `Layout`, `ProductSearch`, `ReportTable`, `PulseReadingsForm`.
+- `src/lib/` — ключевые утилиты: `apiHandler.ts`, `middleware.ts`, `auth.ts`, `db.ts`, `api.ts`, `apiClient.ts`, `cookies.ts`, `ratingCalculator.ts`, `calorieCalculator.ts`, `calendar.ts`, `validate.ts` (+ `validation.ts` — реэкспорт), `recipeUtils.ts`, `workoutUtils.ts`, `helpUtils.ts`, `helpSlug.ts`, `sanitize.ts`, `errors.ts`, `cron.ts`, `kinescope.ts`.
 - `src/services/` — `authService.ts`, `messageService.ts`.
 - `src/stores/` — zustand-сторы: `authStore.ts`, `participantDayStore.ts`.
 - `src/middleware/`, `src/hooks/`, `src/styles/`, `src/types/`.
 
 ### `DB/`
-- `DB/models/` — Sequelize-модели (`User`, `MarathonTemplate`, `TemplateDay`, `Stream`, `StreamEnrollment`, `DailyReport`, `ReportLine`, `PulseReading`, `Product`, `Conversation`, `ConversationMember`, `Message`, `StreamRating`, `index.ts`).
+- `DB/models/` — Sequelize-модели (`User`, `MarathonTemplate`, `TemplateDay`, `Stream`, `StreamEnrollment`, `DailyReport`, `ReportLine`, `PulseReading`, `Product`, `Conversation`, `ConversationMember`, `Message`, `Recipe`, `RecipeFavorite`, `Workout`, `WorkoutFavorite`, `HelpArticle`, `StreamRating`, `index.ts`).
 - `DB/migrations/`, `DB/seeders/`, `DB/config/config.js` — конфиг Sequelize (см. `.sequelizerc`).
 
 ### `DOC/` — документация проекта
@@ -53,7 +53,7 @@
 
 ## Паттерны кодирования (следовать им обязательно)
 
-- **API-роут:** `import { apiHandler, success } from '@/lib/apiHandler'` + стек middleware: `withAuth` → `withRole('role')` → обработчик.
+- **API-роут:** `import { apiHandler, success } from '@/lib/apiHandler'` + стек middleware: `withAuth` → `withRole('role')` → обработчик. Для публичных роутов, где авторизация опциональна, — `withOptionalAuth`.
 - **Ответ API:** `{ success: true, data: ... }` / `{ success: false, error: "..." }`.
 - **Ошибки:** бросать `NotFound`, `Forbidden`, `BadRequest` и т.п. (см. `src/lib/errors.ts`).
 - **Модели БД:** в `DB/models/`, импорт через `@db/models`.

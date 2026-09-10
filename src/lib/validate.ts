@@ -119,6 +119,101 @@ export const createStreamSchema = z.object({
   startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Дата начала должна быть в формате ГГГГ-ММ-ДД'),
 });
 
+export const recipeSchema = z.object({
+  title: z
+    .string()
+    .trim()
+    .min(1, 'Название обязательно')
+    .max(200, 'Название слишком длинное'),
+  description: z
+    .string()
+    .trim()
+    .max(2000, 'Описание слишком длинное')
+    .optional(),
+  ingredients: z
+    .string()
+    .trim()
+    .min(1, 'Добавьте ингредиенты')
+    .max(10000, 'Список ингредиентов слишком длинный'),
+  steps: z
+    .string()
+    .trim()
+    .min(1, 'Добавьте шаги приготовления')
+    .max(20000, 'Описание шагов слишком длинное'),
+});
+
+export const workoutSchema = z.object({
+  title: z
+    .string()
+    .trim()
+    .min(1, 'Название обязательно')
+    .max(200, 'Название слишком длинное'),
+  description: z
+    .string()
+    .trim()
+    .max(2000, 'Описание слишком длинное')
+    .optional(),
+  exercises: z
+    .string()
+    .trim()
+    .min(1, 'Добавьте упражнения')
+    .max(10000, 'Список упражнений слишком длинный'),
+  execution: z
+    .string()
+    .trim()
+    .min(1, 'Добавьте порядок выполнения')
+    .max(20000, 'Описание выполнения слишком длинное'),
+});
+
+export const helpArticleSchema = z.object({
+  title: z
+    .string()
+    .trim()
+    .min(1, 'Заголовок обязателен')
+    .max(200, 'Заголовок слишком длинный'),
+  slug: z
+    .string()
+    .trim()
+    .min(1, 'Адрес статьи обязателен')
+    .max(200, 'Адрес статьи слишком длинный')
+    .regex(
+      /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
+      'Адрес может содержать только строчные латинские буквы, цифры и дефис'
+    ),
+  summary: z
+    .string()
+    .trim()
+    .max(500, 'Краткое описание слишком длинное')
+    .optional(),
+  content: z
+    .string()
+    .trim()
+    .min(1, 'Добавьте текст статьи')
+    .max(50000, 'Текст статьи слишком длинный'),
+  section: z.enum(['rules', 'faq', 'guide']),
+  audience: z.enum(['all', 'participant', 'mentor', 'admin']),
+  position: z
+    .number()
+    .int('Позиция должна быть целым числом')
+    .min(0, 'Позиция не может быть отрицательной')
+    .max(100000, 'Позиция слишком большая')
+    .optional()
+    .default(0),
+  isPublished: z.boolean().optional().default(true),
+});
+
+export const createProductSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(1, 'Название продукта обязательно')
+    .max(200, 'Название слишком длинное'),
+  calories: z
+    .number()
+    .positive('Калорийность должна быть положительной')
+    .max(2000, 'Калорийность слишком большая'),
+});
+
 export const reportLineSchema = z.object({
   productId: z.string().uuid('Неверный id продукта'),
   weightGrams: z
@@ -222,6 +317,10 @@ export type CreateConversationInput = z.infer<typeof createConversationSchema>;
 export type SendMessageInput = z.infer<typeof sendMessageSchema>;
 
 export type CreateStreamInput = z.infer<typeof createStreamSchema>;
+export type CreateProductInput = z.infer<typeof createProductSchema>;
+export type RecipeInput = z.infer<typeof recipeSchema>;
+export type WorkoutInput = z.infer<typeof workoutSchema>;
+export type HelpArticleInput = z.infer<typeof helpArticleSchema>;
 export type UpdateTemplateDaysInput = z.infer<typeof updateTemplateDaysSchema>;
 export type ReportLineInput = z.infer<typeof reportLineSchema>;
 export type PulseReadingInput = z.infer<typeof pulseReadingSchema>;

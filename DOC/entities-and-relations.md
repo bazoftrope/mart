@@ -1,6 +1,6 @@
 # Сущности и связи
 
-Справочник актуален по состоянию на **31.08.2026** и описывает 14 моделей из `DB/models/` (Sequelize-TS, декораторы, поэтому поля ниже приведены в camelCase — в БД через `underscored: true` они хранятся в snake_case).
+Справочник актуален по состоянию на **11.09.2026** и описывает 19 моделей из `DB/models/` (Sequelize-TS, декораторы, поэтому поля ниже приведены в camelCase — в БД через `underscored: true` они хранятся в snake_case).
 
 Общие соглашения:
 - Первичный ключ всех таблиц — `id` UUID (default `DataTypes.UUIDV4`).
@@ -270,6 +270,109 @@ DailyReport.totalCalories = SUM(ReportLine.lineCalories)
 
 ---
 
+## 14. Recipe (Рецепт) — `recipes`
+
+| Поле | Тип | Ограничение | Описание |
+|------|-----|-------------|----------|
+| id | UUID | PK | |
+| title | string | not null | Название |
+| description | text | nullable | Короткое описание |
+| ingredients | text | not null | Ингредиенты, по одному на строку |
+| steps | text | not null | Шаги приготовления, по одному на строку |
+| createdBy | UUID | nullable | `created_by` → User.id; служебный автор |
+| createdAt | datetime | | |
+| updatedAt | datetime | | |
+
+**Ограничения и особенности:**
+- Общая книга рецептов: **нет привязки** к марафонам, потокам, дням или событиям.
+- Смотреть, искать и открывать карточку может любой посетитель, в том числе гость.
+- Добавлять рецепт может любой авторизованный пользователь (любая роль).
+- `createdBy` нигде в интерфейсе не отображается и нужен только для прав: редактировать/удалять может автор или админ (`ON DELETE SET NULL`).
+- Индексы: `created_at` (сортировка списка), `title`.
+
+---
+
+## 15. RecipeFavorite (Избранный рецепт) — `recipe_favorites`
+
+| Поле | Тип | Ограничение | Описание |
+|------|-----|-------------|----------|
+| id | UUID | PK | |
+| recipeId | UUID | not null | `recipe_id` → Recipe.id |
+| userId | UUID | not null | `user_id` → User.id |
+| createdAt | datetime | | |
+
+**Ограничения:**
+- Уникальность `recipe_id + user_id` — один рецепт в избранном один раз.
+- `ON DELETE CASCADE` при удалении рецепта или пользователя.
+- Избранное доступно только авторизованным пользователям (у гостей — приглашение войти).
+
+---
+
+## 16. Workout (Тренировка) — `workouts`
+
+| Поле | Тип | Ограничение | Описание |
+|------|-----|-------------|----------|
+| id | UUID | PK | |
+| title | string | not null | Название |
+| description | text | nullable | Короткое описание |
+| exercises | text | not null | Упражнения, по одному на строку |
+| execution | text | not null | Порядок выполнения, по одному шагу на строку |
+| createdBy | UUID | nullable | `created_by` → User.id; служебный автор |
+| createdAt | datetime | | |
+| updatedAt | datetime | | |
+
+**Ограничения и особенности:**
+- Общая книга тренировок: **нет привязки** к марафонам, потокам, дням или событиям.
+- Смотреть, искать и открывать карточку может любой посетитель, в том числе гость.
+- Добавлять тренировку может любой авторизованный пользователь (любая роль).
+- `createdBy` нигде в интерфейсе не отображается и нужен только для прав: редактировать/удалять может автор или админ (`ON DELETE SET NULL`).
+- Индексы: `created_at` (сортировка списка), `title`.
+- Полное зеркало сущности Recipe (см. §14), отличается названиями содержательных блоков.
+
+---
+
+## 17. WorkoutFavorite (Избранная тренировка) — `workout_favorites`
+
+| Поле | Тип | Ограничение | Описание |
+|------|-----|-------------|----------|
+| id | UUID | PK | |
+| workoutId | UUID | not null | `workout_id` → Workout.id |
+| userId | UUID | not null | `user_id` → User.id |
+| createdAt | datetime | | |
+
+**Ограничения:**
+- Уникальность `workout_id + user_id` — одна тренировка в избранном один раз.
+- `ON DELETE CASCADE` при удалении тренировки или пользователя.
+- Избранное доступно только авторизованным пользователям (у гостей — приглашение войти).
+
+---
+
+## 18. HelpArticle (Статья помощи) — `help_articles`
+
+| Поле | Тип | Ограничение | Описание |
+|------|-----|-------------|----------|
+| id | UUID | PK | |
+| slug | string | not null, unique | Адрес статьи в разделе: `/help/<slug>` |
+| title | string | not null | Заголовок |
+| summary | text | null | Краткое описание для карточки и поиска |
+| content | text | not null | HTML из Quill, санируется на сервере |
+| section | enum | not null | `rules` / `faq` / `guide` |
+| audience | enum | not null | `all` / `participant` / `mentor` / `admin` |
+| position | integer | not null | Порядок вывода внутри раздела |
+| isPublished | boolean | not null | Черновик / опубликовано |
+| createdBy | UUID | null | `created_by` → User.id, `SET NULL`; в UI не показывается |
+| createdAt | datetime | | |
+| updatedAt | datetime | | |
+
+**Ограничения:**
+- `slug` уникален; правила формирования — `src/lib/helpSlug.ts`.
+- Чтение публичное: гости видят только `isPublished = true` и `audience = all`; участники и менторы — плюс статьи своей роли, админ — все.
+- Создание/изменение/удаление — только админ (в интерфейсе — `/admin/help`).
+- `ON DELETE SET NULL` при удалении пользователя-автора.
+- Контент хранится как санированный HTML (см. `src/lib/sanitize.ts`).
+
+---
+
 ## Диаграмма связей (текстовая)
 
 ```
@@ -287,6 +390,11 @@ MarathonTemplate (1) ───< (N) Stream
 Stream (1) ───< (N) StreamRating
 Stream (1) ───< (N) Conversation  ──< (N) ConversationMember (N) User
                                         └──< (N) Message
+
+User (1) ───< (N) RecipeFavorite (N) ─── (1) Recipe
+User (1) ───< (N) WorkoutFavorite (N) ─── (1) Workout
+
+User (0..1) ───< (N) HelpArticle
 ```
 
 ## Индексы и уникальность
@@ -301,5 +409,10 @@ Stream (1) ───< (N) Conversation  ──< (N) ConversationMember (N) User
 | StreamEnrollment | stream_id, participant_id | Одна запись на поток |
 | DailyReport | enrollment_id, day_number | Один отчёт на день |
 | ConversationMember | conversation_id, user_id | Принадлежность к беседе |
+| Recipe | created_at, title | Сортировка и поиск по книге рецептов |
+| RecipeFavorite | recipe_id, user_id unique | Один рецепт в избранном один раз |
+| Workout | created_at, title | Сортировка и поиск по книге тренировок |
+| WorkoutFavorite | workout_id, user_id unique | Одна тренировка в избранном один раз |
+| HelpArticle | slug unique; section+audience; is_published+position | Адрес статьи и выборка раздела |
 
 > Примечание: фактический список индексов лучше сверять с миграциями в `DB/migrations/` — в коде моделей (Sequelize-TS) индексы описываются не всегда, часть задана прямо в миграциях.

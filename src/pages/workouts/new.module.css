@@ -1,0 +1,5 @@
+.lead {
+  margin: 0 0 1.5rem;
+  color: var(--text-secondary);
+  line-height: var(--line-height-normal);
+}

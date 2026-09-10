@@ -2,6 +2,29 @@
   margin-top: 1rem;
 }
 
+.titleRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  margin-bottom: 1rem;
+}
+
+.titleRow .title {
+  margin-bottom: 0;
+}
+
+.helpLink {
+  font-size: 0.9rem;
+  color: var(--accent-primary);
+  text-decoration: none;
+}
+
+.helpLink:hover {
+  text-decoration: underline;
+}
+
 .title {
   font-size: 1.5rem;
   margin-bottom: 1rem;

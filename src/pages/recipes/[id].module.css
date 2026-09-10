@@ -1,0 +1,106 @@
+.article {
+  margin-top: 1rem;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.title {
+  margin: 0;
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.actionLink,
+.deleteButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.5rem 0.9rem;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font-size: var(--font-size-body);
+  font-family: inherit;
+  line-height: 1.2;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.actionLink:hover {
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+}
+
+.deleteButton {
+  color: var(--text-danger);
+  border-color: var(--text-danger);
+}
+
+.deleteButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.description {
+  margin: 0 0 1.5rem;
+  color: var(--text-secondary);
+  line-height: var(--line-height-relaxed);
+  font-size: var(--font-size-regular);
+}
+
+.section {
+  margin-bottom: 1.75rem;
+}
+
+.sectionTitle {
+  margin: 0 0 0.75rem;
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+}
+
+.ingredients {
+  margin: 0;
+  padding-left: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  line-height: var(--line-height-normal);
+}
+
+.steps {
+  margin: 0;
+  padding-left: 1.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  line-height: var(--line-height-relaxed);
+}
+
+.steps li::marker,
+.ingredients li::marker {
+  color: var(--accent-primary);
+  font-weight: var(--font-weight-semibold);
+}
+
+.updated {
+  margin: 0;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-lightest);
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+}

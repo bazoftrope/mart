@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import ProductSearch from '@/components/ProductSearch';
 import ReportTable from '@/components/ReportTable';
 import PulseReadingsForm from '@/components/PulseReadingsForm';
@@ -6,6 +7,7 @@ import MetricBlock, { type MetricField } from './MetricBlock';
 import { useParticipantDayStore } from '@/stores/participantDayStore';
 import { hasAnyData } from '@/stores/participantDayStore';
 import { isCalorieTargetMissed } from '@/lib/calorieCalculator';
+import { HELP_SLUG_REPORT_GUIDE } from '@/lib/helpSlug';
 import styles from './DayReport.module.css';
 
 type DayReportProps = {
@@ -141,7 +143,15 @@ export default function DayReport({ streamId, dayNumber, isEditable }: DayReport
 
   return (
     <section className={styles.section}>
-      <h2 className={styles.title}>Отчёт</h2>
+      <div className={styles.titleRow}>
+        <h2 className={styles.title}>Отчёт</h2>
+        <Link
+          href={`/help/${HELP_SLUG_REPORT_GUIDE}`}
+          className={styles.helpLink}
+        >
+          Как заполнить отчёт?
+        </Link>
+      </div>
 
       {isEditable && (
         <div className={styles.searchDiv}>

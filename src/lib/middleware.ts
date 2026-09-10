@@ -38,6 +38,29 @@ export function withAuth(handler: NextApiHandler): NextApiHandler {
   };
 }
 
+/**
+ * Публичный обработчик: если токен есть и валиден — кладёт `req.user`,
+ * если токена нет или он недействителен — пропускает как гостя.
+ * Нужен там, где контент открыт всем, но для авторизованных
+ * ответ дополняется персональными данными (например, «в избранном»).
+ */
+export function withOptionalAuth(handler: NextApiHandler): NextApiHandler {
+  return async (req: NextApiRequest, res: NextApiResponse) => {
+    const cookies = parseCookies(req);
+    const accessToken = cookies.mp_access_token;
+
+    if (accessToken) {
+      try {
+        (req as AuthenticatedRequest).user = verifyAccessToken(accessToken);
+      } catch {
+        // Невалидный/просроченный токен не мешает смотреть публичные данные.
+      }
+    }
+
+    return handler(req, res);
+  };
+}
+
 export function withRole(role: UserRole): (handler: NextApiHandler) => NextApiHandler {
   return (handler: NextApiHandler) =>
     withAuth(async (req: NextApiRequest, res: NextApiResponse) => {

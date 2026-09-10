@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useAuthStore } from '@/stores/authStore';
 import styles from './index.module.css';
 import { apiFetch } from '@/lib/apiClient';
+import { HELP_SLUG_RULES } from '@/lib/helpSlug';
 import AttachmentPlayers from '@/components/attachments/AttachmentPlayers';
 import type { AttachmentData } from '@/types/attachments';
 
@@ -114,6 +115,12 @@ export default function StreamPage() {
       <h1 className="mt-1">{stream.template?.title || 'Поток'}</h1>
       <p className={styles.description}>
         {stream.template?.description || 'Нет описания'}
+      </p>
+
+      <p className={styles.rulesLinkRow}>
+        <Link href={`/help/${HELP_SLUG_RULES}`} className={styles.rulesLink}>
+          Правила марафона →
+        </Link>
       </p>
 
       <div className={styles.details}>

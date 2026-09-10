@@ -25,9 +25,24 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   function renderNav() {
     if (loading) return null;
 
+    const bookLinks = (
+      <>
+        <Link href="/recipes" className={styles.link}>
+          Книга рецептов
+        </Link>
+        <Link href="/workouts" className={styles.link}>
+          Книга тренировок
+        </Link>
+        <Link href="/help" className={styles.link}>
+          Правила и помощь
+        </Link>
+      </>
+    );
+
     if (!role) {
       return (
         <>
+          {bookLinks}
           <Link href="/login" className={styles.link}>
             Войти
           </Link>
@@ -41,11 +56,15 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     if (role === 'admin') {
       return (
         <>
+          {bookLinks}
           <Link href="/admin" className={styles.link}>
             На проверку
           </Link>
           <Link href="/admin/users" className={styles.link}>
             Пользователи
+          </Link>
+          <Link href="/admin/help" className={styles.link}>
+            Статьи помощи
           </Link>
           <button onClick={handleLogout} className={styles.button}>
             Выйти
@@ -57,6 +76,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     if (role === 'mentor') {
       return (
         <>
+          {bookLinks}
           <Link href="/mentor" className={styles.link}>
             Панель
           </Link>
@@ -82,6 +102,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     // role === 'participant'
     return (
       <>
+        {bookLinks}
         <Link href="/dashboard" className={styles.link}>
           Мои марафоны
         </Link>

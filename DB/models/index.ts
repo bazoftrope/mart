@@ -12,6 +12,11 @@ import { PulseReading } from './PulseReading';
 import { Conversation } from './Conversation';
 import { ConversationMember } from './ConversationMember';
 import { Message } from './Message';
+import { Recipe } from './Recipe';
+import { RecipeFavorite } from './RecipeFavorite';
+import { Workout } from './Workout';
+import { WorkoutFavorite } from './WorkoutFavorite';
+import { HelpArticle } from './HelpArticle';
 
 export * from './User';
 export * from './Product';
@@ -27,6 +32,11 @@ export * from './PulseReading';
 export * from './Conversation';
 export * from './ConversationMember';
 export * from './Message';
+export * from './Recipe';
+export * from './RecipeFavorite';
+export * from './Workout';
+export * from './WorkoutFavorite';
+export * from './HelpArticle';
 
 export const models = {
   User,
@@ -43,6 +53,11 @@ export const models = {
   Conversation,
   ConversationMember,
   Message,
+  Recipe,
+  RecipeFavorite,
+  Workout,
+  WorkoutFavorite,
+  HelpArticle,
 };
 
 export type AppModels = typeof models;

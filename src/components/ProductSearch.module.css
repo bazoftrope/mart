@@ -54,3 +54,43 @@
 .calories {
   color: #666;
 }
+
+.customForm {
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  border-top: 1px solid #f0f0f0;
+}
+
+.customRow {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.addCustomButton {
+  flex-shrink: 0;
+  padding: 0.5rem 0.75rem;
+  border: none;
+  border-radius: 4px;
+  background-color: var(--accent-primary, #1667b8);
+  color: #fff;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+.addCustomButton:hover {
+  opacity: 0.9;
+}
+
+.addCustomButton:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.errorText {
+  padding: 0.5rem 0.75rem;
+  color: #c0392b;
+  font-size: 0.9rem;
+  border-top: 1px solid #f0f0f0;
+}

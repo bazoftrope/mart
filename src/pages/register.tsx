@@ -2,6 +2,7 @@ import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { useAuthStore } from '@/stores/authStore';
+import { HELP_SLUG_RULES } from '@/lib/helpSlug';
 import type { UserRole } from '@/types/auth';
 
 function getDashboardPath(role: UserRole): string {
@@ -85,6 +86,10 @@ export default function RegisterPage() {
           {isLoading ? 'Регистрация...' : 'Зарегистрироваться'}
         </button>
       </form>
+      <p className="textMuted">
+        Регистрируясь, вы соглашаетесь с{' '}
+        <Link href={`/help/${HELP_SLUG_RULES}`}>правилами марафона</Link>.
+      </p>
       <p>
         Уже есть аккаунт? <Link href="/login">Войти</Link>
       </p>
