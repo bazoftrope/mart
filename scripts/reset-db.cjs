@@ -47,13 +47,25 @@ async function main() {
   await maintenanceClient.end();
   console.log('База пересоздана. Запускаю миграции...');
 
-  const result = spawnSync('npx', ['sequelize-cli', 'db:migrate'], {
+  const migrateResult = spawnSync('npx', ['sequelize-cli', 'db:migrate'], {
     cwd: root,
     stdio: 'inherit',
     shell: process.platform === 'win32',
   });
 
-  process.exit(result.status ?? 1);
+  if (migrateResult.status !== 0) {
+    process.exit(migrateResult.status ?? 1);
+  }
+
+  console.log('Миграции выполнены. Запускаю сиды...');
+
+  const seedResult = spawnSync('npx', ['sequelize-cli', 'db:seed:all'], {
+    cwd: root,
+    stdio: 'inherit',
+    shell: process.platform === 'win32',
+  });
+
+  process.exit(seedResult.status ?? 0);
 }
 
 main().catch((error) => {
