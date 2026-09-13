@@ -12,9 +12,10 @@ type DayReportProps = {
   streamId: string;
   dayNumber: number;
   isEditable: boolean;
+  onSaved?: () => void;
 };
 
-export default function DayReport({ streamId, dayNumber, isEditable }: DayReportProps) {
+export default function DayReport({ streamId, dayNumber, isEditable, onSaved }: DayReportProps) {
   const {
     lines,
     metrics,
@@ -40,6 +41,12 @@ export default function DayReport({ streamId, dayNumber, isEditable }: DayReport
 
   const metricDisabled = !isEditable || saving;
   const isMeasurementDay = Boolean(data?.isMeasurementDay);
+
+  const handleSave = async () => {
+    await saveReport(streamId, dayNumber);
+    const { saveError: err } = useParticipantDayStore.getState();
+    if (!err) onSaved?.();
+  };
 
   const bodyMetricFields: MetricField[] = [
     {
@@ -138,7 +145,6 @@ export default function DayReport({ streamId, dayNumber, isEditable }: DayReport
   return (
     <section className={styles.section}>
       <div className={styles.titleRow}>
-        <h2 className={styles.title}>Отчёт</h2>
         <Link
           href={`/help/${HELP_SLUG_REPORT_GUIDE}`}
           className={styles.helpLink}
@@ -188,38 +194,14 @@ export default function DayReport({ streamId, dayNumber, isEditable }: DayReport
           <MetricBlock title="Вода, шаги, сон, тренировка" fields={dailyMetricFields}>
             <label className={styles.trainingField}>
               <span>Тренировка</span>
-              <div className={styles.trainingOptions}>
-                <button
-                  type="button"
-                  className={`${styles.trainingOption} ${
-                    metrics.trainingDone === null ? styles.trainingActive : ''
-                  }`}
-                  disabled={metricDisabled}
-                  onClick={() => setTrainingDone(null)}
-                >
-                  Не отмечено
-                </button>
-                <button
-                  type="button"
-                  className={`${styles.trainingOption} ${
-                    metrics.trainingDone === true ? styles.trainingActive : ''
-                  }`}
-                  disabled={metricDisabled}
-                  onClick={() => setTrainingDone(true)}
-                >
-                  ✓ Была
-                </button>
-                <button
-                  type="button"
-                  className={`${styles.trainingOption} ${
-                    metrics.trainingDone === false ? styles.trainingActive : ''
-                  }`}
-                  disabled={metricDisabled}
-                  onClick={() => setTrainingDone(false)}
-                >
-                  ✗ Не была
-                </button>
-              </div>
+              <input
+                type="checkbox"
+                checked={metrics.trainingDone === true}
+                onChange={(e) => setTrainingDone(e.target.checked)}
+                disabled={metricDisabled}
+                className={styles.trainingCheckbox}
+                aria-label="Тренировка была"
+              />
             </label>
           </MetricBlock>
         </div>
@@ -228,7 +210,7 @@ export default function DayReport({ streamId, dayNumber, isEditable }: DayReport
       {isEditable && (
         <div className={styles.saveBtnDiv}>
           <button
-            onClick={() => saveReport(streamId, dayNumber)}
+            onClick={handleSave}
             disabled={saving || !canSave}
             className={styles.saveBtn}
           >

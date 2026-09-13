@@ -77,9 +77,6 @@ export default function Header() {
       return (
         <>
           {bookLinks}
-          <Link href="/mentor" className={styles.link}>
-            Панель
-          </Link>
           <Link href="/mentor/templates" className={styles.link}>
             Мои шаблоны
           </Link>

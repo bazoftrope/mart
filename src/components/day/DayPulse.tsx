@@ -17,6 +17,7 @@ type DayPulseProps = {
   streamId: string;
   dayNumber: number;
   isEditable: boolean;
+  onSaved?: () => void;
 };
 
 function formatTime(measuredAt: string | Date): string {
@@ -25,7 +26,7 @@ function formatTime(measuredAt: string | Date): string {
   return d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
 }
 
-export default function DayPulse({ streamId, dayNumber, isEditable }: DayPulseProps) {
+export default function DayPulse({ streamId, dayNumber, isEditable, onSaved }: DayPulseProps) {
   const {
     data,
     daysCache,
@@ -39,6 +40,12 @@ export default function DayPulse({ streamId, dayNumber, isEditable }: DayPulsePr
   } = useParticipantDayStore();
 
   const canSave = hasPulseData(pulseReadings);
+
+  const handleSave = async () => {
+    await savePulse(streamId, dayNumber);
+    const { pulseSaveError: err } = useParticipantDayStore.getState();
+    if (!err) onSaved?.();
+  };
 
   const history = useMemo(() => {
     const byDay = daysCache[streamId];
@@ -159,7 +166,7 @@ export default function DayPulse({ streamId, dayNumber, isEditable }: DayPulsePr
           <div className={styles.saveRow}>
             <button
               type="button"
-              onClick={() => savePulse(streamId, dayNumber)}
+              onClick={handleSave}
               disabled={savingPulse || !canSave}
               className={styles.saveBtn}
             >

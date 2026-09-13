@@ -1,25 +1,33 @@
 .block {
-  flex: 1 1 240px;
+  flex: 1 1 260px;
   min-height: 280px;
   min-width: 0;
-  padding: 1rem;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  background: #fafafa;
+  max-width: 400px;
+  padding: 1.15rem 1.2rem 1rem;
+  border: none;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow:
+    0 8px 24px rgba(16, 24, 40, 0.06),
+    0 2px 8px rgba(16, 24, 40, 0.05),
+    0 0 0 1px rgba(16, 24, 40, 0.04);
   box-sizing: border-box;
+  position: relative;
 }
 
 .fields {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.7rem;
 }
 
 .title {
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: #333;
-  margin: 0 0 0.75rem;
+  font-size: 0.92rem;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  color: #0f172a;
+  margin: 0 0 0.95rem;
+  line-height: 1.3;
 }
 
 .field {
@@ -27,41 +35,70 @@
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
-  gap: 0.5rem;
-  font-size: 0.9rem;
+  gap: 0.75rem;
+  font-size: 0.90rem;
+  line-height: 1.3;
 }
 
 .field > span {
   flex: 1 1 auto;
   min-width: 0;
-  color: #333;
+  color: #334155;
+  font-weight: 500;
+  letter-spacing: -0.01em;
 }
 
 .input {
   flex: 0 0 auto;
-  padding: 0.4rem 0.5rem;
-  font-size: 0.95rem;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  padding: 0.42rem 0.6rem;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #0f172a;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: #f8fafc;
+  box-shadow:
+    0 0 0 1px rgba(15, 23, 42, 0.08) inset,
+    0 1px 2px rgba(15, 23, 42, 0.04);
   width: 7rem;
   box-sizing: border-box;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+  text-align: center;
 }
+
+.input::placeholder {
+  color: #94a3b8;
+  font-weight: 500;
+}
+
 .input:focus {
-     border-color: var(--accent-primary);
-     outline: none;
-   }
+  outline: none;
+  background: #ffffff;
+  box-shadow:
+    0 0 0 1px var(--accent-primary) inset,
+    0 0 0 1px rgba(234, 88, 12, 0.20),
+    0 4px 12px rgba(234, 88, 12, 0.10);
+}
 
 .input:disabled {
-  background-color: #e9ecef;
+  background: #f1f5f9;
+  color: #64748b;
+  box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.06) inset;
+  cursor: not-allowed;
 }
 
 .inputCompact {
-  width: 3.5rem;
+  width: 3.6rem;
   text-align: center;
 }
 
 .activityInputs {
   display: flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.4rem;
+}
+
+.activityInputs > span {
+  color: #64748b;
+  font-weight: 700;
 }

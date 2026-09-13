@@ -87,7 +87,7 @@ export default function Home() {
 
   function getCabinetHref(): string {
     if (role === 'admin') return '/admin';
-    if (role === 'mentor') return '/mentor';
+    if (role === 'mentor') return '/mentor/templates';
     if (role === 'participant') return '/dashboard';
     return '/register';
   }

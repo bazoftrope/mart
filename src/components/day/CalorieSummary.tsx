@@ -53,27 +53,53 @@ export default function CalorieSummary({
     statusText = `${isGain ? 'Профицит' : 'Остаток'}: ${Math.abs(calorieDifference)} ккал`;
   }
 
+  const eyebrow = isGain
+    ? 'Набор'
+    : goal === 'maintain'
+      ? 'Поддержание'
+      : 'Дефицит';
+
   return (
     <div
       className={`${styles.calorieSummary} ${
         isTargetMissed ? styles.statusOver : styles.statusOk
       }`}
     >
-      <div className={styles.calorieSummaryHeader}>
-        <span className={styles.calorieStatusIcon}>
+      <div className={styles.topRow}>
+        <span className={styles.iconCircle} aria-hidden>
           {isTargetMissed ? '✕' : '✓'}
         </span>
-        <span>{statusTitle}</span>
+        <div className={styles.headerText}>
+          <span className={styles.eyebrow}>Дневной баланс · {eyebrow}</span>
+          <span className={styles.statusTitle}>{statusTitle}</span>
+        </div>
       </div>
+
+      <div className={styles.divider} aria-hidden />
+
       <div className={styles.calorieSummaryValues}>
-        <span>
-          Цель: <strong>{targetCalories} ккал</strong>
-        </span>
-        <span>
-          Факт: <strong>{Math.round(actualCalories)} ккал</strong>
-        </span>
-        <span>{statusText}</span>
+        <div className={styles.valueBlock}>
+          <span className={styles.valueLabel}>Цель</span>
+          <span className={styles.valueAmount}>
+            {targetCalories}
+            <span className={styles.valueUnit}>ккал</span>
+          </span>
+        </div>
+        <span className={styles.valueSep} aria-hidden />
+        <div className={styles.valueBlock}>
+          <span className={styles.valueLabel}>Факт</span>
+          <span className={styles.valueAmount}>
+            {Math.round(actualCalories)}
+            <span className={styles.valueUnit}>ккал</span>
+          </span>
+        </div>
       </div>
+
+      <div className={styles.statusChip}>
+        <span className={styles.chipDot} aria-hidden />
+        {statusText}
+      </div>
+
       {goal && (
         <div className={styles.calorieGoal}>Цель потока: {GOAL_LABELS[goal]}</div>
       )}

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { useAuthStore } from '@/stores/authStore';
@@ -51,31 +51,30 @@ export default function MarathonCalendarPage() {
     }
   }, [router]);
 
-  useEffect(() => {
+  const fetchCalendar = useCallback(async () => {
     if (!streamId) return;
-
     const sid = Array.isArray(streamId) ? streamId[0] : streamId;
     if (!sid) return;
-
-    async function load() {
-      try {
-        const res = await apiFetch(`/api/streams/${sid}/calendar`, {
-          credentials: 'include',
-        });
-        const json = await res.json().catch(() => ({}));
-        if (!res.ok) {
-          throw new Error(json.message || json.error || 'Не удалось загрузить календарь');
-        }
-        setData(json.data);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Что-то пошло не так');
-      } finally {
-        setLoading(false);
+    try {
+      const res = await apiFetch(`/api/streams/${sid}/calendar`, {
+        credentials: 'include',
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(json.message || json.error || 'Не удалось загрузить календарь');
       }
+      setData(json.data);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Что-то пошло не так');
+    } finally {
+      setLoading(false);
     }
-
-    load();
   }, [streamId]);
+
+  useEffect(() => {
+    fetchCalendar();
+  }, [fetchCalendar]);
 
   if (loading) {
     return (
@@ -151,6 +150,7 @@ export default function MarathonCalendarPage() {
         healthyEatingDays={healthyEatingDays ?? []}
         activeDay={activeDay}
         onDayChange={handleDayChange}
+        onReportSaved={fetchCalendar}
       />
     </main>
   );

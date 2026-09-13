@@ -23,6 +23,7 @@ type DayViewProps = {
   targetCalories: number | null;
   goal: Goal | null;
   currentDayNumber: number;
+  onReportSaved?: () => void;
 };
 
 export default function DayView({
@@ -32,6 +33,7 @@ export default function DayView({
   targetCalories,
   goal,
   currentDayNumber,
+  onReportSaved,
 }: DayViewProps) {
   const router = useRouter();
   const { data, loading, error, daysCache, loadAllDays, selectDay, resetState } =
@@ -88,6 +90,7 @@ export default function DayView({
           streamId={streamId}
           dayNumber={data.dayNumber}
           isEditable={data.isEditable}
+          onSaved={onReportSaved}
         />
       )}
       {activeTab === 'pulse' && (
@@ -95,6 +98,7 @@ export default function DayView({
           streamId={streamId}
           dayNumber={data.dayNumber}
           isEditable={data.isEditable}
+          onSaved={onReportSaved}
         />
       )}
       {activeTab === 'progress' && (

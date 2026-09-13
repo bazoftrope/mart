@@ -7,7 +7,7 @@ import type { UserRole } from '@/types/auth';
 
 function getDashboardPath(role: UserRole): string {
   if (role === 'admin') return '/admin';
-  if (role === 'mentor') return '/mentor';
+  if (role === 'mentor') return '/mentor/templates';
   return '/dashboard';
 }
 

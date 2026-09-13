@@ -53,15 +53,21 @@
 }
 
 .metricsTitle {
-  font-size: 1.1rem;
-  margin-bottom: 0.75rem;
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  color: #0f172a;
+  margin-bottom: 0.85rem;
 }
 
 .metricsRow {
   display: flex;
-  align-items: flex-start;
+  align-items: stretch;
   gap: 1rem;
   flex-wrap: wrap;
+  padding: 6px;
+  margin: -6px;
+  overflow: visible;
 }
 
 .pulseBlockContent {
@@ -70,37 +76,50 @@
 
 .trainingField {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
   gap: 0.5rem;
   font-size: 0.9rem;
   color: #333;
 }
 
-.trainingOptions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
+.trainingField > span {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
-.trainingOption {
-  padding: 0.4rem 0.6rem;
-  font-size: 0.85rem;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  background: #fff;
-  color: #333;
+.trainingCheckbox {
+  flex: 0 0 auto;
+  width: 1.28rem;
+  height: 1.28rem;
+  accent-color: var(--accent-primary);
   cursor: pointer;
+  border: none;
+  border-radius: 6px;
+  background: #ffffff;
+  box-shadow:
+    0 0 0 1px rgba(15, 23, 42, 0.12) inset,
+    0 1px 2px rgba(15, 23, 42, 0.06);
+  box-sizing: border-box;
+  appearance: auto;
 }
 
-.trainingOption:disabled {
-  opacity: 0.7;
+.trainingCheckbox:disabled {
+  opacity: 0.6;
   cursor: not-allowed;
 }
 
-.trainingActive {
-  border-color: var(--accent-primary);
-  background: var(--accent-primary);
-  color: var(--text-on-dark);
+.trainingCheckbox:focus {
+  outline: none;
+  box-shadow:
+    0 0 0 1px rgba(234, 88, 12, 0.22),
+    0 0 0 3px rgba(234, 88, 12, 0.16),
+    0 1px 4px rgba(15, 23, 42, 0.06);
+}
+
+.trainingCheckbox:focus-visible {
+  outline: none;
 }
 
 .saveBtnDiv {

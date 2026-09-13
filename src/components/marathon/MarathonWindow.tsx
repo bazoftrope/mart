@@ -43,6 +43,7 @@ type MarathonWindowProps = {
   healthyEatingDays?: number[];
   activeDay: number | null;
   onDayChange: (dayNumber: number) => void;
+  onReportSaved?: () => void;
 };
 
 export default function MarathonWindow({
@@ -58,6 +59,7 @@ export default function MarathonWindow({
   healthyEatingDays = [],
   activeDay,
   onDayChange,
+  onReportSaved,
 }: MarathonWindowProps) {
   return (
     <div className={styles.window}>
@@ -91,6 +93,7 @@ export default function MarathonWindow({
           targetCalories={targetCalories}
           goal={goal}
           currentDayNumber={currentDayNumber}
+          onReportSaved={onReportSaved}
         />
       )}
     </div>

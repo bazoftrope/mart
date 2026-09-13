@@ -1,72 +1,221 @@
 .table {
-  width: auto;
+  width: 100%;
   min-width: 100%;
   max-width: 100%;
   border-collapse: separate;
   border-spacing: 0;
+  overflow: visible;
 }
 
+/* wrapper lets shadow breathe */
+.table thead {
+  position: relative;
+}
+
+/* base header variables */
 .headerRow {
-  --header-bg: #f5f5f5;
-  --header-border: #ddd;
-  --header-text: #333;
+  --hdr-start: #ffffff;
+  --hdr-end: #f8fafc;
+  --header-text: #334155;
+  --hdr-ring: rgba(15, 23, 42, 0.06);
+  --hdr-shadow: 0 4px 16px rgba(15, 23, 42, 0.06), 0 1px 3px rgba(15, 23, 42, 0.05);
+  background: linear-gradient(135deg, var(--hdr-start) 0%, var(--hdr-end) 100%);
+  /* tr shadow fallback via filter – works in modern browsers */
+  filter: drop-shadow(0 3px 12px rgba(15, 23, 42, 0.06));
 }
 
 .headerOk {
-  --header-bg: #e9f9ef;
-  --header-border: #2e9e5b;
-  --header-text: #1c6b3c;
+  --hdr-start: #ffffff;
+  --hdr-end: #dff0e6;
+  --header-text: #14532d;
+  --hdr-ring: rgba(22, 101, 52, 0.10);
+  --hdr-shadow: 0 8px 20px rgba(22, 101, 52, 0.12), 0 2px 6px rgba(22, 101, 52, 0.07);
+  background: linear-gradient(135deg, #ffffff 0%, #f0f9f3 38%, #e2f3e8 100%);
+  filter: drop-shadow(0 6px 18px rgba(22, 101, 52, 0.13)) drop-shadow(0 1px 4px rgba(22, 101, 52, 0.08));
 }
 
 .headerOver {
-  --header-bg: #fdecec;
-  --header-border: #d64545;
-  --header-text: #a12b2b;
+  --hdr-start: #ffffff;
+  --hdr-end: #fde8e8;
+  --header-text: #7f1d1d;
+  --hdr-ring: rgba(153, 27, 27, 0.10);
+  --hdr-shadow: 0 8px 20px rgba(153, 27, 27, 0.11), 0 2px 6px rgba(153, 27, 27, 0.06);
+  background: linear-gradient(135deg, #ffffff 0%, #fef3f3 38%, #fde8e8 100%);
+  filter: drop-shadow(0 6px 18px rgba(153, 27, 27, 0.12)) drop-shadow(0 1px 4px rgba(153, 27, 27, 0.07));
 }
 
 .th {
-  padding: 0.6rem 0.5rem;
+  padding: 0.72rem 0.75rem;
   text-align: left;
-  font-size: 0.9rem;
-  background-color: var(--header-bg, #f5f5f5);
-  color: var(--header-text, #333);
-  border: 1px solid var(--header-border, #ddd);
-  border-right: none;
+  font-size: 0.70rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 1.2;
+  color: var(--header-text);
+  background: transparent;
+  border: none;
+  white-space: nowrap;
+  position: relative;
+  box-shadow: none;
 }
 
+/* round outer corners – keeps gradient continuous via transparent th + row gradient */
 .th:first-child {
-  border-left: 1px solid var(--header-border, #ddd);
-  border-top-left-radius: 6px;
-  border-bottom-left-radius: 6px;
+  border-top-left-radius: 12px;
+  border-bottom-left-radius: 12px;
+  box-shadow: none;
 }
 
 .th:last-child {
-  border-right: 1px solid var(--header-border, #ddd);
-  border-top-right-radius: 6px;
-  border-bottom-right-radius: 6px;
+  border-top-right-radius: 12px;
+  border-bottom-right-radius: 12px;
+  box-shadow: none;
 }
 
+/* header row also gets outer shadow via pseudo layer fallback for browsers ignoring filter on tr */
+.headerRow .th::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow: var(--hdr-shadow);
+  opacity: 0.95;
+}
+
+/* keep text above shadow layer */
+.th {
+  /* ensure content sits above pseudo */
+  isolation: isolate;
+}
+
+/* body cells */
 .td {
-  padding: 0.6rem 0.5rem;
-  border-bottom: 1px solid #eee;
-  font-size: 0.95rem;
+  padding: 0.72rem 0.75rem;
+  border: none;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 0.94rem;
+  line-height: 1.35;
+  color: #1e293b;
+  background: #ffffff;
+}
+
+.td:first-child {
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.tr:last-child .td {
+  border-bottom: none;
+}
+
+.table tbody tr {
+  transition: background 0.15s ease;
+}
+
+.table tbody tr:hover .td {
+  background: #f8fafc;
+}
+
+.headerOk ~ tbody tr:hover .td,
+.headerOk + tbody tr:hover .td {
+  background: #f0fdf4;
+}
+
+.headerOver ~ tbody tr:hover .td,
+.headerOver + tbody tr:hover .td {
+  background: #fef2f2;
 }
 
 .input {
-  width: 80px;
-  padding: 0.35rem 0.5rem;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  width: 84px;
+  padding: 0.38rem 0.5rem;
+  border: none;
+  border-radius: 8px;
+  background: #f8fafc;
+  box-shadow:
+    0 0 0 1px rgba(15, 23, 42, 0.08) inset,
+    0 1px 2px rgba(15, 23, 42, 0.04);
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #0f172a;
+  text-align: center;
+  transition: box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.input:focus {
+  outline: none;
+  background: #ffffff;
+  box-shadow:
+    0 0 0 2px rgba(22, 163, 74, 0.18) inset,
+    0 0 0 1px rgba(22, 163, 74, 0.22),
+    0 2px 8px rgba(22, 163, 74, 0.12);
+}
+
+.headerOver ~ tbody .input:focus,
+.headerOver + tbody .input:focus {
+  box-shadow:
+    0 0 0 2px rgba(220, 38, 38, 0.16) inset,
+    0 0 0 1px rgba(220, 38, 38, 0.20),
+    0 2px 8px rgba(220, 38, 38, 0.10);
 }
 
 .removeButton {
-  background: none;
+  background: #ffffff;
   border: none;
-  color: #c0392b;
+  border-radius: 999px;
+  padding: 0.32rem 0.62rem;
+  color: #be123c;
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  box-shadow:
+    0 0 0 1px rgba(190, 18, 60, 0.12) inset,
+    0 1px 4px rgba(15, 23, 42, 0.06);
+  transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.12s ease;
+}
+
+.removeButton:hover {
+  background: #fff1f2;
+  box-shadow:
+    0 0 0 1px rgba(190, 18, 60, 0.18) inset,
+    0 2px 8px rgba(190, 18, 60, 0.12);
+  transform: translateY(-1px);
+}
+
+.removeButton:active {
+  transform: translateY(0);
 }
 
 .emptyText {
-  color: #666;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.9rem 1rem;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  box-shadow:
+    0 6px 20px rgba(15, 23, 42, 0.06),
+    0 2px 8px rgba(15, 23, 42, 0.05);
+  color: #64748b;
+  font-size: 0.92rem;
+  font-weight: 500;
+  border: none;
+}
+
+@media (max-width: 640px) {
+  .th {
+    padding: 0.62rem 0.5rem;
+    font-size: 0.64rem;
+    letter-spacing: 0.06em;
+  }
+  .td {
+    padding: 0.62rem 0.5rem;
+    font-size: 0.90rem;
+  }
+  .input {
+    width: 68px;
+  }
 }
