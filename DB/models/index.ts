@@ -17,6 +17,7 @@ import { RecipeFavorite } from './RecipeFavorite';
 import { Workout } from './Workout';
 import { WorkoutFavorite } from './WorkoutFavorite';
 import { HelpArticle } from './HelpArticle';
+import { ContentAttachment } from './ContentAttachment';
 
 export * from './User';
 export * from './Product';
@@ -37,6 +38,7 @@ export * from './RecipeFavorite';
 export * from './Workout';
 export * from './WorkoutFavorite';
 export * from './HelpArticle';
+export * from './ContentAttachment';
 
 export const models = {
   User,
@@ -58,6 +60,7 @@ export const models = {
   Workout,
   WorkoutFavorite,
   HelpArticle,
+  ContentAttachment,
 };
 
 export type AppModels = typeof models;

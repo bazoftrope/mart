@@ -32,9 +32,10 @@ export class PulseReading extends Model {
 
   @Column({
     type: DataType.INTEGER,
-    allowNull: false,
+    allowNull: true,
+    defaultValue: null,
   })
-  pulse!: number;
+  pulse!: number | null;
 
   @Column({
     type: DataType.SMALLINT,

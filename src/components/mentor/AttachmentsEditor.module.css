@@ -121,3 +121,84 @@
   font-size: var(--font-size-sm);
   margin-top: 0.35rem;
 }
+
+.mediaCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  padding: 0.6rem;
+  margin-bottom: 0.75rem;
+  background: var(--bg-surface);
+}
+
+.mediaMain {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.mediaExtras {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background: var(--bg-surface-muted);
+  border-radius: var(--radius-sm);
+  border: 1px dashed var(--border-light);
+}
+
+.descriptionLabel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.descriptionCaption {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.descriptionInput {
+  width: 100%;
+  min-height: 56px;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-base);
+  font-family: inherit;
+  resize: vertical;
+}
+
+.pdfRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.pdfLabel {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.removePdfButton {
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  padding: 0.3rem 0.5rem;
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+}
+
+.imagePreview {
+  width: 100%;
+  max-width: 320px;
+  max-height: 240px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-light);
+  background: var(--bg-surface-muted);
+}

@@ -73,6 +73,9 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
       dayNumber: day.dayNumber,
       textContent: day.textContent,
       isMeasurementDay: day.isMeasurementDay,
+      isTrainingDay: day.isTrainingDay,
+      isRestDay: day.isRestDay,
+      isHealthyEatingDay: day.isHealthyEatingDay,
       attachments: serializeAttachments(attachmentsByDay.get(day.id) ?? []),
     })),
   };

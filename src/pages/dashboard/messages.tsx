@@ -1,12 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/router';
+import Link from 'next/link';
 import { useAuthStore } from '@/stores/authStore';
-import Chat from '@/components/Chat/Chat';
 
 export default function ParticipantMessagesPage() {
   const router = useRouter();
-  const [ready, setReady] = useState(false);
-  const userId = useAuthStore((s) => s.userId);
 
   useEffect(() => {
     useAuthStore.getState().initAuth();
@@ -15,27 +13,22 @@ export default function ParticipantMessagesPage() {
       router.push('/login');
       return;
     }
-    setReady(true);
-  }, [router]);
-
-  if (!ready || !userId) return null;
-
-  const { conversationId, streamId, participantId, group } = router.query;
+    if (!router.isReady) return;
+    const { streamId } = router.query;
+    if (typeof streamId === 'string' && streamId) {
+      router.replace(`/dashboard/marathon/${streamId}`);
+    } else {
+      router.replace('/dashboard');
+    }
+  }, [router, router.isReady]);
 
   return (
     <main className="container">
-      <h1 className="pageTitle">Сообщения</h1>
-      <Chat
-        myUserId={userId}
-        autoOpen={{
-          conversationId:
-            typeof conversationId === 'string' ? conversationId : undefined,
-          streamId: typeof streamId === 'string' ? streamId : undefined,
-          participantId:
-            typeof participantId === 'string' ? participantId : undefined,
-          group: group === '1',
-        }}
-      />
+      <h1 className="pageTitle">Чат переехал</h1>
+      <p>Сообщения теперь внутри марафона — откройте нужный марафон, чат доступен через иконку в шапке марафона.</p>
+      <p>
+        <Link href="/dashboard">Перейти к моим марафонам</Link>
+      </p>
     </main>
   );
 }

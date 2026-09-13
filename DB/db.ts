@@ -19,6 +19,7 @@ import { RecipeFavorite } from './models/RecipeFavorite';
 import { Workout } from './models/Workout';
 import { WorkoutFavorite } from './models/WorkoutFavorite';
 import { HelpArticle } from './models/HelpArticle';
+import { ContentAttachment } from './models/ContentAttachment';
 
 const parseDatabaseUrl = (url?: string) => {
   if (!url) return null;
@@ -68,6 +69,7 @@ export const sequelize = new Sequelize({
     Workout,
     WorkoutFavorite,
     HelpArticle,
+    ContentAttachment,
   ],
   logging: process.env.NODE_ENV === 'development' ? console.log : false,
   define: {

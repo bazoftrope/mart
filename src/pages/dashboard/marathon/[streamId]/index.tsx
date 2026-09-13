@@ -15,6 +15,9 @@ type StreamCalendar = {
   stream: MarathonStream;
   currentDayNumber: number;
   measurementDays: number[];
+  trainingDays: number[];
+  restDays: number[];
+  healthyEatingDays: number[];
   targetCalories: number | null;
   goal: Goal | null;
   rating: MarathonRating;
@@ -90,7 +93,7 @@ export default function MarathonCalendarPage() {
     );
   }
 
-  const { stream, currentDayNumber, measurementDays, targetCalories, goal, reports, rating } = data;
+  const { stream, currentDayNumber, measurementDays, trainingDays, restDays, healthyEatingDays, targetCalories, goal, reports, rating } = data;
   const view = typeof router.query.view === 'string' ? router.query.view : undefined;
   const isMaterialsView = view === 'materials';
 
@@ -143,6 +146,9 @@ export default function MarathonCalendarPage() {
         rating={rating}
         reports={reports}
         measurementDays={measurementDays}
+        trainingDays={trainingDays ?? []}
+        restDays={restDays ?? []}
+        healthyEatingDays={healthyEatingDays ?? []}
         activeDay={activeDay}
         onDayChange={handleDayChange}
       />

@@ -6,6 +6,7 @@ import ParticipantCard, {
   type Participant,
   type ParticipantRating,
 } from '@/components/mentor/ParticipantCard';
+import MentorStreamChat from '@/components/Chat/MentorStreamChat';
 import styles from './MentorStreamDetails.module.css';
 import { apiFetch } from '@/lib/apiClient';
 
@@ -38,6 +39,8 @@ export default function MentorStreamDetailsPage() {
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const initialParticipantId = typeof router.query.participantId === 'string' ? router.query.participantId : undefined;
 
   useEffect(() => {
     const initAuth = useAuthStore.getState().initAuth;
@@ -97,12 +100,9 @@ export default function MentorStreamDetailsPage() {
         <p><strong>Всего участников:</strong> {stream.enrollmentsCount}</p>
       </div>
 
-      <Link
-        href={`/mentor/messages?streamId=${stream.id}&group=1`}
-        className={styles.chatBtn}
-      >
-        Общий чат потока
-      </Link>
+      <div id="chat">
+        <MentorStreamChat streamId={stream.id} enrollments={enrollments} streamStatus={stream.status} initialParticipantId={initialParticipantId} />
+      </div>
 
       <section className={styles.section}>
         <h2>Участники</h2>

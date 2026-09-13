@@ -65,6 +65,9 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
       dayNumber: day.dayNumber,
       textContent: day.textContent,
       isMeasurementDay: day.isMeasurementDay,
+      isTrainingDay: day.isTrainingDay,
+      isRestDay: day.isRestDay,
+      isHealthyEatingDay: day.isHealthyEatingDay,
       attachments: serializeAttachments(attachmentsByDay.get(day.id) ?? []),
     }))
   );
@@ -108,6 +111,9 @@ async function postHandler(req: NextApiRequest, res: NextApiResponse) {
           dayNumber: day.dayNumber,
           textContent: sanitizeTemplateText(day.textContent) ?? null,
           isMeasurementDay: day.isMeasurementDay,
+          isTrainingDay: day.isTrainingDay,
+          isRestDay: day.isRestDay,
+          isHealthyEatingDay: day.isHealthyEatingDay,
         },
         { transaction }
       );
@@ -118,13 +124,14 @@ async function postHandler(req: NextApiRequest, res: NextApiResponse) {
       templateId: string;
       templateDayId: string;
       scope: 'day';
-      kind: 'audio' | 'video' | 'file';
+      kind: 'audio' | 'video' | 'file' | 'image';
       url: string;
       fileName: string | null;
       mimeType: string | null;
       sizeBytes: number | null;
       position: number;
       pairId: string | null;
+      description: string | null;
     }> = [];
     for (let i = 0; i < createdDays.length; i++) {
       const createdDay = createdDays[i];
@@ -143,6 +150,7 @@ async function postHandler(req: NextApiRequest, res: NextApiResponse) {
           sizeBytes: attachment.sizeBytes ?? null,
           position: attachment.position ?? index,
           pairId: attachment.pairId ?? null,
+          description: attachment.description ? String(attachment.description).slice(0, 5000) : null,
         });
       });
     }
@@ -165,6 +173,9 @@ async function postHandler(req: NextApiRequest, res: NextApiResponse) {
       dayNumber: day.dayNumber,
       textContent: day.textContent,
       isMeasurementDay: day.isMeasurementDay,
+      isTrainingDay: day.isTrainingDay,
+      isRestDay: day.isRestDay,
+      isHealthyEatingDay: day.isHealthyEatingDay,
       attachments: serializeAttachments(attachmentsByDay.get(day.id) ?? []),
     }));
   });

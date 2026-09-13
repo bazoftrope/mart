@@ -5,6 +5,7 @@ import { Pencil, Trash2 } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 import { apiFetch } from '@/lib/apiClient';
 import FavoriteButton from '@/components/recipes/FavoriteButton';
+import AttachmentPlayers from '@/components/attachments/AttachmentPlayers';
 import type { Workout } from '@/types/workout';
 import styles from './[id].module.css';
 
@@ -201,6 +202,13 @@ export default function WorkoutDetailPage() {
               <p className="textMuted">Порядок выполнения не указан.</p>
             )}
           </section>
+
+          {(workout.attachments?.length ?? 0) > 0 && (
+            <section className={styles.section}>
+              <h2 className={styles.sectionTitle}>Материалы</h2>
+              <AttachmentPlayers attachments={workout.attachments} />
+            </section>
+          )}
 
           <p className={styles.updated}>
             Обновлено {new Date(workout.updatedAt).toLocaleDateString('ru-RU')}

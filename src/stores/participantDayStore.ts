@@ -1,14 +1,14 @@
 import { create } from 'zustand';
-import type { Product } from '@/components/ProductSearch';
+import type { Product } from '@/components/day/ProductSearch';
 import {
   computeLineCalories,
   type ReportLineItem,
-} from '@/components/ReportTable';
+} from '@/components/day/ReportTable';
 import {
   apiToPulseFormItems,
   pulseFormItemsToApi,
   type PulseFormItem,
-} from '@/components/PulseReadingsForm';
+} from '@/components/day/PulseReadingsForm';
 import type {
   MetricsState,
   ParticipantDayData,
@@ -22,14 +22,17 @@ interface ParticipantDayState {
   pulseReadings: PulseFormItem[];
   loading: boolean;
   saving: boolean;
+  savingPulse: boolean;
   error: string | null;
   saveError: string | null;
+  pulseSaveError: string | null;
 }
 
 interface ParticipantDayActions {
   loadAllDays: (streamId: string) => Promise<void>;
   selectDay: (day: ParticipantDayData) => void;
   saveReport: (streamId: string, dayNumber: number) => Promise<void>;
+  savePulse: (streamId: string, dayNumber: number) => Promise<void>;
   addProductLine: (product: Product) => void;
   updateLine: (index: number, weightGrams: number) => void;
   removeLine: (index: number) => void;
@@ -81,7 +84,7 @@ export function activityToParts(totalMinutes: number | null | undefined): {
 export function hasAnyData(
   lines: ReportLineItem[],
   metrics: MetricsState,
-  pulseReadings: PulseFormItem[]
+  pulseReadings?: PulseFormItem[]
 ): boolean {
   if (lines.length > 0) return true;
 
@@ -97,12 +100,24 @@ export function hasAnyData(
     metrics.legCm !== '';
   if (hasMetrics) return true;
 
-  const hasPulse = pulseReadings.some((item) => {
-    const pulse =
-      typeof item.pulse === 'number' ? item.pulse : Number(item.pulse);
-    return item.time !== '' && !Number.isNaN(pulse) && pulse > 0;
+  if (pulseReadings && hasPulseData(pulseReadings)) return true;
+  return false;
+}
+
+export function hasPulseData(pulseReadings: PulseFormItem[]): boolean {
+  return pulseReadings.some((item) => {
+    if (item.time === '') return false;
+    const pulse = typeof item.pulse === 'number' ? item.pulse : item.pulse === '' ? null : Number(item.pulse);
+    const sys = typeof item.systolic === 'number' ? item.systolic : item.systolic === '' ? null : Number(item.systolic);
+    const dia = typeof item.diastolic === 'number' ? item.diastolic : item.diastolic === '' ? null : Number(item.diastolic);
+    const hasPulse = pulse !== null && !Number.isNaN(pulse) && pulse >= 30 && pulse <= 250;
+    const hasPressure = sys !== null && !Number.isNaN(sys) && dia !== null && !Number.isNaN(dia);
+    return hasPulse || hasPressure;
   });
-  return hasPulse;
+}
+
+export function hasReportData(lines: ReportLineItem[], metrics: MetricsState): boolean {
+  return hasAnyData(lines, metrics);
 }
 
 function buildInitialPulseReadings(
@@ -140,8 +155,10 @@ const initialState: ParticipantDayState = {
   pulseReadings: [{ time: getCurrentTime(), pulse: '', systolic: '', diastolic: '' }],
   loading: true,
   saving: false,
+  savingPulse: false,
   error: null,
   saveError: null,
+  pulseSaveError: null,
 };
 
 function applyDay(day: ParticipantDayData) {
@@ -205,13 +222,12 @@ export const useParticipantDayStore = create<ParticipantDayStore>((set, get) => 
   },
 
   saveReport: async (streamId, dayNumber) => {
-    const { data, lines, metrics, pulseReadings } = get();
+    const { data, lines, metrics } = get();
     if (!data) return;
 
-    if (!hasAnyData(lines, metrics, pulseReadings)) {
+    if (!hasReportData(lines, metrics)) {
       set({
-        saveError:
-          'Необходимо заполнить хотя бы одно поле: еду, метрики или замеры пульса',
+        saveError: 'Необходимо заполнить хотя бы одно поле: еду или метрики',
       });
       return;
     }
@@ -234,7 +250,6 @@ export const useParticipantDayStore = create<ParticipantDayStore>((set, get) => 
       waistCm: metrics.waistCm === '' ? undefined : Number(metrics.waistCm),
       hipCm: metrics.hipCm === '' ? undefined : Number(metrics.hipCm),
       legCm: metrics.legCm === '' ? undefined : Number(metrics.legCm),
-      pulseReadings: pulseFormItemsToApi(pulseReadings),
     };
 
     try {
@@ -255,6 +270,9 @@ export const useParticipantDayStore = create<ParticipantDayStore>((set, get) => 
         throw new Error(json.message || json.error || 'Не удалось сохранить отчёт');
       }
 
+      // preserve existing pulseReadings from state (dedicated endpoint)
+      const currentPulse = get().pulseReadings;
+
       const updatedReport = {
         id: json.data.id,
         totalCalories: json.data.totalCalories,
@@ -270,7 +288,7 @@ export const useParticipantDayStore = create<ParticipantDayStore>((set, get) => 
         waistCm: json.data.waistCm ?? null,
         hipCm: json.data.hipCm ?? null,
         legCm: json.data.legCm ?? null,
-        pulseReadings: json.data.pulseReadings ?? [],
+        pulseReadings: json.data.pulseReadings ?? data.report?.pulseReadings ?? [],
         lines: json.data.lines,
       };
 
@@ -300,10 +318,8 @@ export const useParticipantDayStore = create<ParticipantDayStore>((set, get) => 
           hipCm: json.data.hipCm ?? '',
           legCm: json.data.legCm ?? '',
         },
-        pulseReadings:
-          json.data.pulseReadings?.length
-            ? apiToPulseFormItems(json.data.pulseReadings)
-            : [{ time: getCurrentTime(), pulse: '', systolic: '', diastolic: '' }],
+        // keep pulse form as is; server pulse preserved
+        pulseReadings: currentPulse,
         saving: false,
         saveError: null,
       }));
@@ -311,6 +327,90 @@ export const useParticipantDayStore = create<ParticipantDayStore>((set, get) => 
       set({
         saveError: err instanceof Error ? err.message : 'Что-то пошло не так',
         saving: false,
+      });
+    }
+  },
+
+  savePulse: async (streamId, dayNumber) => {
+    const { data, pulseReadings } = get();
+    if (!data) return;
+
+    if (!hasPulseData(pulseReadings)) {
+      set({ pulseSaveError: 'Добавьте хотя бы один замер: укажите время и пульс или давление (сист./диаст.)' });
+      return;
+    }
+
+    set({ savingPulse: true, pulseSaveError: null });
+
+    const payload = {
+      pulseReadings: pulseFormItemsToApi(pulseReadings),
+    };
+
+    try {
+      const res = await fetch(`/api/streams/${streamId}/pulse/${dayNumber}`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(json.message || json.error || 'Не удалось сохранить замеры');
+      }
+
+      const newPulse: typeof pulseReadings = json.data.pulseReadings?.length
+        ? apiToPulseFormItems(json.data.pulseReadings)
+        : [{ time: getCurrentTime(), pulse: '', systolic: '', diastolic: '' }];
+
+      const updatedReport = data.report
+        ? { ...data.report, pulseReadings: json.data.pulseReadings ?? [] }
+        : data.report;
+
+      // if report was null, we now have a report id from pulse endpoint
+      let nextReport = updatedReport;
+      if (!data.report && json.data.reportId) {
+        nextReport = {
+          id: json.data.reportId,
+          totalCalories: 0,
+          filledAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          waterLiters: null,
+          steps: null,
+          sleepHours: null,
+          activityMinutes: null,
+          trainingDone: null,
+          weightKg: null,
+          chestCm: null,
+          waistCm: null,
+          hipCm: null,
+          legCm: null,
+          pulseReadings: json.data.pulseReadings ?? [],
+          lines: [],
+        };
+      }
+
+      const updatedData: ParticipantDayData = {
+        ...data,
+        report: nextReport as ParticipantDayData['report'],
+      };
+
+      set((state) => ({
+        data: updatedData,
+        daysCache: {
+          ...state.daysCache,
+          [data.streamId]: {
+            ...state.daysCache[data.streamId],
+            [data.dayNumber]: updatedData,
+          },
+        },
+        pulseReadings: newPulse,
+        savingPulse: false,
+        pulseSaveError: null,
+      }));
+    } catch (err) {
+      set({
+        pulseSaveError: err instanceof Error ? err.message : 'Что-то пошло не так',
+        savingPulse: false,
       });
     }
   },

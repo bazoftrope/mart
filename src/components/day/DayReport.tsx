@@ -1,11 +1,9 @@
 import Link from 'next/link';
-import ProductSearch from '@/components/ProductSearch';
-import ReportTable from '@/components/ReportTable';
-import PulseReadingsForm from '@/components/PulseReadingsForm';
+import ProductSearch from './ProductSearch';
+import ReportTable from './ReportTable';
 import CalorieSummary from './CalorieSummary';
 import MetricBlock, { type MetricField } from './MetricBlock';
-import { useParticipantDayStore } from '@/stores/participantDayStore';
-import { hasAnyData } from '@/stores/participantDayStore';
+import { useParticipantDayStore, hasReportData } from '@/stores/participantDayStore';
 import { isCalorieTargetMissed } from '@/lib/calorieCalculator';
 import { HELP_SLUG_REPORT_GUIDE } from '@/lib/helpSlug';
 import styles from './DayReport.module.css';
@@ -20,7 +18,6 @@ export default function DayReport({ streamId, dayNumber, isEditable }: DayReport
   const {
     lines,
     metrics,
-    pulseReadings,
     saving,
     saveError,
     data,
@@ -29,13 +26,10 @@ export default function DayReport({ streamId, dayNumber, isEditable }: DayReport
     removeLine,
     updateMetric,
     setTrainingDone,
-    addPulseReading,
-    updatePulseReading,
-    removePulseReading,
     saveReport,
   } = useParticipantDayStore();
 
-  const canSave = hasAnyData(lines, metrics, pulseReadings);
+  const canSave = hasReportData(lines, metrics);
 
   const actualCalories = lines.reduce((sum, line) => sum + line.lineCalories, 0);
   const targetCalories = data?.targetCalories ?? null;
@@ -227,17 +221,6 @@ export default function DayReport({ streamId, dayNumber, isEditable }: DayReport
                 </button>
               </div>
             </label>
-          </MetricBlock>
-
-          <MetricBlock>
-            <PulseReadingsForm
-              className={styles.pulseBlockContent}
-              readings={pulseReadings}
-              onUpdateReading={updatePulseReading}
-              onAddReading={addPulseReading}
-              onRemoveReading={removePulseReading}
-              readOnly={!isEditable}
-            />
           </MetricBlock>
         </div>
       </div>

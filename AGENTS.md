@@ -26,16 +26,16 @@
 
 ### `src/`
 - `src/pages/` — Pages Router.
-  - `src/pages/api/` — **API-роуты** по доменам: `auth/`, `admin/`, `users/`, `marathons/`, `streams/`, `reports/`, `rating/`, `products/`, `recipes/`, `workouts/`, `help/`, `messages/`, `health/`.
+  - `src/pages/api/` — **API-роуты** по доменам: `auth/`, `admin/`, `users/`, `marathons/`, `streams/`, `reports/`, `rating/`, `products/`, `recipes/`, `workouts/`, `help/`, `messages/`, `uploads/`, `health/`.
   - `src/pages/dashboard/`, `mentor/`, `admin/`, `streams/`, `recipes/`, `workouts/`, `help/`, `onboarding.tsx`, `register.tsx`, `login.tsx` — страницы клиента.
-- `src/components/` — UI по модулям: `day/`, `marathon/`, `mentor/`, `recipes/`, `workouts/`, `help/`, `Chat/` + общие `Layout`, `ProductSearch`, `ReportTable`, `PulseReadingsForm`.
-- `src/lib/` — ключевые утилиты: `apiHandler.ts`, `middleware.ts`, `auth.ts`, `db.ts`, `api.ts`, `apiClient.ts`, `cookies.ts`, `ratingCalculator.ts`, `calorieCalculator.ts`, `calendar.ts`, `validate.ts` (+ `validation.ts` — реэкспорт), `recipeUtils.ts`, `workoutUtils.ts`, `helpUtils.ts`, `helpSlug.ts`, `sanitize.ts`, `errors.ts`, `cron.ts`, `kinescope.ts`.
+- `src/components/` — UI по модулям: `layout/` (`Header`, `Layout`), `day/` (в т.ч. `DayReport`, `ProductSearch`, `ReportTable`, `PulseReadingsForm`), `marathon/`, `mentor/`, `recipes/`, `workouts/`, `help/`, `Chat/` + общие `attachments/`, `editor/`, `stream/`.
+- `src/lib/` — ключевые утилиты: `apiHandler.ts`, `middleware.ts`, `auth.ts`, `db.ts`, `api.ts`, `apiClient.ts`, `cookies.ts`, `ratingCalculator.ts`, `calorieCalculator.ts`, `calendar.ts`, `validate.ts` (+ `validation.ts` — реэкспорт), `recipeUtils.ts`, `workoutUtils.ts`, `contentAttachmentUtils.ts`, `attachmentEditor.ts`, `attachmentUtils.ts`, `attachmentGroups.ts`, `fileUpload.ts`, `audioUpload.ts`, `helpUtils.ts`, `helpSlug.ts`, `sanitize.ts`, `errors.ts`, `cron.ts`, `kinescope.ts`.
 - `src/services/` — `authService.ts`, `messageService.ts`.
 - `src/stores/` — zustand-сторы: `authStore.ts`, `participantDayStore.ts`.
 - `src/middleware/`, `src/hooks/`, `src/styles/`, `src/types/`.
 
 ### `DB/`
-- `DB/models/` — Sequelize-модели (`User`, `MarathonTemplate`, `TemplateDay`, `Stream`, `StreamEnrollment`, `DailyReport`, `ReportLine`, `PulseReading`, `Product`, `Conversation`, `ConversationMember`, `Message`, `Recipe`, `RecipeFavorite`, `Workout`, `WorkoutFavorite`, `HelpArticle`, `StreamRating`, `index.ts`).
+- `DB/models/` — Sequelize-модели (`User`, `MarathonTemplate`, `TemplateDay`, `Stream`, `StreamEnrollment`, `DailyReport`, `ReportLine`, `PulseReading`, `Product`, `Conversation`, `ConversationMember`, `Message`, `Recipe`, `RecipeFavorite`, `ContentAttachment`, `Workout`, `WorkoutFavorite`, `HelpArticle`, `StreamRating`, `TemplateAttachment`, `index.ts`).
 - `DB/migrations/`, `DB/seeders/`, `DB/config/config.js` — конфиг Sequelize (см. `.sequelizerc`).
 
 ### `DOC/` — документация проекта

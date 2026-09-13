@@ -1,5 +1,5 @@
-import type { ReportLineItem } from '@/components/ReportTable';
-import type { PulseFormItem } from '@/components/PulseReadingsForm';
+import type { ReportLineItem } from '@/components/day/ReportTable';
+import type { PulseFormItem } from '@/components/day/PulseReadingsForm';
 import type { AttachmentData } from '@/types/attachments';
 
 export type Goal = 'lose' | 'maintain' | 'gain';
@@ -12,7 +12,7 @@ export type DayMaterialsData = {
 export type PulseReadingItem = {
   id?: string;
   measuredAt: string;
-  pulse: number;
+  pulse: number | null;
   systolic?: number | null;
   diastolic?: number | null;
 };
@@ -55,6 +55,9 @@ export type ParticipantDayData = {
   isEditable: boolean;
   isFinished: boolean;
   isMeasurementDay: boolean;
+  isTrainingDay: boolean;
+  isRestDay: boolean;
+  isHealthyEatingDay: boolean;
   targetCalories: number | null;
   goal: Goal | null;
   profileCompleted: boolean;

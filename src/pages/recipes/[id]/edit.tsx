@@ -57,6 +57,7 @@ export default function EditRecipePage() {
       description: values.description,
       ingredients: values.ingredients,
       steps: values.steps,
+      attachments: values.attachments,
     });
 
     router.push(`/recipes/${recipe.id}`);
@@ -98,6 +99,7 @@ export default function EditRecipePage() {
             description: recipe.description ?? '',
             ingredients: recipe.ingredients,
             steps: recipe.steps,
+            attachments: recipe.attachments ?? [],
           }}
           submitLabel="Сохранить изменения"
           onSubmit={handleSubmit}

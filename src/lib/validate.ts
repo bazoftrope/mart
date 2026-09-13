@@ -63,13 +63,14 @@ export const registerSchema = z.object({
 
 export const templateAttachmentSchema = z
   .object({
-    kind: z.enum(['audio', 'video', 'file']),
+    kind: z.enum(['audio', 'video', 'file', 'image']),
     url: z.string().trim().min(1, 'Ссылка вложения обязательна').max(2048, 'Ссылка вложения слишком длинная'),
     fileName: z.string().max(512, 'Имя файла слишком длинное').nullable().optional(),
     mimeType: z.string().max(255, 'MIME-тип слишком длинный').nullable().optional(),
     sizeBytes: z.number().int().nonnegative('Некорректный размер файла').nullable().optional(),
     position: z.number().int().nonnegative('Некорректная позиция').optional(),
     pairId: z.string().uuid('Неверный идентификатор комплекта').nullable().optional(),
+    description: z.string().max(5000, 'Описание слишком длинное').nullable().optional(),
   })
   .refine(
     (data) => {
@@ -100,6 +101,9 @@ export const templateDaySchema = z.object({
   dayNumber: z.number().int().min(1, 'Номер дня должен быть не менее 1'),
   textContent: z.string().max(50000, 'Содержимое слишком длинное').optional(),
   isMeasurementDay: z.boolean().optional().default(false),
+  isTrainingDay: z.boolean().optional().default(false),
+  isRestDay: z.boolean().optional().default(false),
+  isHealthyEatingDay: z.boolean().optional().default(false),
   attachments: z.array(templateAttachmentSchema).optional(),
 });
 
@@ -118,6 +122,34 @@ export const createStreamSchema = z.object({
   templateId: z.string().uuid('Неверный id шаблона'),
   startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Дата начала должна быть в формате ГГГГ-ММ-ДД'),
 });
+
+export const contentAttachmentSchema = z
+  .object({
+    kind: z.enum(['file', 'image', 'audio', 'video']),
+    url: z.string().trim().min(1, 'Ссылка вложения обязательна').max(2048, 'Ссылка вложения слишком длинная'),
+    fileName: z.string().max(512, 'Имя файла слишком длинное').nullable().optional(),
+    mimeType: z.string().max(255, 'MIME-тип слишком длинный').nullable().optional(),
+    sizeBytes: z.number().int().nonnegative('Некорректный размер файла').nullable().optional(),
+    position: z.number().int().nonnegative('Некорректная позиция').optional(),
+    pairId: z.string().uuid('Неверный идентификатор комплекта').nullable().optional(),
+    description: z.string().max(5000, 'Описание слишком длинное').nullable().optional(),
+  })
+  .refine(
+    (data) => {
+      if (data.kind !== 'video') return true;
+      return Boolean(normalizeKinescopeVideoId(data.url));
+    },
+    {
+      message: 'Вставьте корректную ссылку Kinescope (https://kinescope.io/...)',
+      path: ['url'],
+    }
+  )
+  .transform((data) => {
+    if (data.kind === 'video') {
+      return { ...data, url: normalizeKinescopeVideoId(data.url)! };
+    }
+    return data;
+  });
 
 export const recipeSchema = z.object({
   title: z
@@ -140,6 +172,7 @@ export const recipeSchema = z.object({
     .trim()
     .min(1, 'Добавьте шаги приготовления')
     .max(20000, 'Описание шагов слишком длинное'),
+  attachments: z.array(contentAttachmentSchema).optional(),
 });
 
 export const workoutSchema = z.object({
@@ -163,6 +196,7 @@ export const workoutSchema = z.object({
     .trim()
     .min(1, 'Добавьте порядок выполнения')
     .max(20000, 'Описание выполнения слишком длинное'),
+  attachments: z.array(contentAttachmentSchema).optional(),
 });
 
 export const helpArticleSchema = z.object({
@@ -225,46 +259,87 @@ export const reportLineSchema = z.object({
 export const pulseReadingSchema = z
   .object({
     measuredAt: z.string().datetime('Неверный формат даты измерения'),
-    pulse: z.number().int().min(30, 'Пульс должен быть не менее 30').max(250, 'Пульс должен быть не более 250'),
+    pulse: z
+      .number()
+      .int()
+      .min(30, 'Пульс должен быть не менее 30')
+      .max(250, 'Пульс должен быть не более 250')
+      .nullable()
+      .optional(),
     systolic: z
       .number()
       .int('Систолическое давление должно быть целым')
       .min(60, 'Систолическое давление должно быть не менее 60')
       .max(250, 'Систолическое давление должно быть не более 250')
+      .nullable()
       .optional(),
     diastolic: z
       .number()
       .int('Диастолическое давление должно быть целым')
       .min(40, 'Диастолическое давление должно быть не менее 40')
       .max(160, 'Диастолическое давление должно быть не более 160')
+      .nullable()
       .optional(),
   })
   .refine(
     (data) => {
-      if (data.systolic === undefined || data.diastolic === undefined) {
-        return true;
-      }
-      return data.systolic > data.diastolic;
+      const hasPulse = data.pulse !== undefined && data.pulse !== null;
+      const hasSys = data.systolic !== undefined && data.systolic !== null;
+      const hasDia = data.diastolic !== undefined && data.diastolic !== null;
+      // нужен хотя бы пульс или давление
+      if (!hasPulse && !hasSys && !hasDia) return false;
+      // если указано давление — нужны оба значения
+      if ((hasSys || hasDia) && !(hasSys && hasDia)) return false;
+      if (hasSys && hasDia) return (data.systolic as number) > (data.diastolic as number);
+      return true;
     },
     {
-      message: 'Систолическое давление должно быть больше диастолического',
-      path: ['systolic'],
+      message: 'Укажите пульс или оба значения давления (сист. > диаст.)',
+      path: ['pulse'],
+    }
+  );
+
+const reportCoreFields = {
+  lines: z.array(reportLineSchema).optional(),
+  waterLiters: z.number().int().min(0).max(50, 'Объём воды не может превышать 50 литров').optional(),
+  steps: z.number().int().min(0).max(100000, 'Количество шагов не может превышать 100000').optional(),
+  sleepHours: z.number().int().min(0).max(24, 'Сон не может превышать 24 часа').optional(),
+  activityMinutes: z.number().int().min(0).max(1440, 'Активность не может превышать 1440 минут').optional(),
+  trainingDone: z.boolean().nullable().optional(),
+  weightKg: z.number().int().min(20, 'Вес должен быть не менее 20 кг').max(300, 'Вес должен быть не более 300 кг').optional(),
+  chestCm: z.number().min(30, 'ОГ должен быть не менее 30 см').max(300, 'ОГ должен быть не более 300 см').optional(),
+  waistCm: z.number().min(30, 'ОТ должен быть не менее 30 см').max(300, 'ОТ должен быть не более 300 см').optional(),
+  hipCm: z.number().min(30, 'ОБ должен быть не менее 30 см').max(300, 'ОБ должен быть не более 300 см').optional(),
+  legCm: z.number().min(20, 'ОН должен быть не менее 20 см').max(200, 'ОН должен быть не более 200 см').optional(),
+} as const;
+
+export const saveReportCoreSchema = z
+  .object(reportCoreFields)
+  .refine(
+    (data) => {
+      const hasLines = Array.isArray(data.lines) && data.lines.length > 0;
+      const hasMetrics =
+        data.waterLiters !== undefined ||
+        data.steps !== undefined ||
+        data.sleepHours !== undefined ||
+        data.activityMinutes !== undefined ||
+        (data.trainingDone !== undefined && data.trainingDone !== null) ||
+        data.weightKg !== undefined ||
+        data.chestCm !== undefined ||
+        data.waistCm !== undefined ||
+        data.hipCm !== undefined ||
+        data.legCm !== undefined;
+      return hasLines || hasMetrics;
+    },
+    {
+      message: 'Необходимо указать хотя бы одно из: строки еды или метрики',
+      path: ['root'],
     }
   );
 
 export const saveReportSchema = z
   .object({
-    lines: z.array(reportLineSchema).optional(),
-    waterLiters: z.number().int().min(0).max(50, 'Объём воды не может превышать 50 литров').optional(),
-    steps: z.number().int().min(0).max(100000, 'Количество шагов не может превышать 100000').optional(),
-    sleepHours: z.number().int().min(0).max(24, 'Сон не может превышать 24 часа').optional(),
-    activityMinutes: z.number().int().min(0).max(1440, 'Активность не может превышать 1440 минут').optional(),
-    trainingDone: z.boolean().nullable().optional(),
-    weightKg: z.number().int().min(20, 'Вес должен быть не менее 20 кг').max(300, 'Вес должен быть не более 300 кг').optional(),
-    chestCm: z.number().min(30, 'ОГ должен быть не менее 30 см').max(300, 'ОГ должен быть не более 300 см').optional(),
-    waistCm: z.number().min(30, 'ОТ должен быть не менее 30 см').max(300, 'ОТ должен быть не более 300 см').optional(),
-    hipCm: z.number().min(30, 'ОБ должен быть не менее 30 см').max(300, 'ОБ должен быть не более 300 см').optional(),
-    legCm: z.number().min(20, 'ОН должен быть не менее 20 см').max(200, 'ОН должен быть не более 200 см').optional(),
+    ...reportCoreFields,
     pulseReadings: z.array(pulseReadingSchema).optional(),
   })
   .refine(
@@ -289,6 +364,10 @@ export const saveReportSchema = z
       path: ['root'],
     }
   );
+
+export const savePulseSchema = z.object({
+  pulseReadings: z.array(pulseReadingSchema).max(20, 'Слишком много замеров за день'),
+});
 
 export const updateUserRoleSchema = z.object({
   role: z.enum(['mentor', 'participant']),
@@ -325,4 +404,6 @@ export type UpdateTemplateDaysInput = z.infer<typeof updateTemplateDaysSchema>;
 export type ReportLineInput = z.infer<typeof reportLineSchema>;
 export type PulseReadingInput = z.infer<typeof pulseReadingSchema>;
 export type SaveReportInput = z.infer<typeof saveReportSchema>;
+export type SaveReportCoreInput = z.infer<typeof saveReportCoreSchema>;
+export type SavePulseInput = z.infer<typeof savePulseSchema>;
 export type UpdateUserRoleInput = z.infer<typeof updateUserRoleSchema>;

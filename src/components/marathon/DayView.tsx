@@ -5,9 +5,12 @@ import DayHeader from '@/components/day/DayHeader';
 import DayTabs, { type DayTabValue } from '@/components/day/DayTabs';
 import DayMaterials from '@/components/day/DayMaterials';
 import DayReport from '@/components/day/DayReport';
+import DayPulse from '@/components/day/DayPulse';
+import MarathonProgress, { type ProgressReport } from './MarathonProgress';
 import styles from './Marathon.module.css';
+import type { Goal } from '@db/models/StreamEnrollment';
 
-const VALID_TABS: DayTabValue[] = ['materials', 'report'];
+const VALID_TABS: DayTabValue[] = ['materials', 'report', 'pulse', 'progress'];
 
 function resolveTab(raw: unknown): DayTabValue {
   return VALID_TABS.includes(raw as DayTabValue) ? (raw as DayTabValue) : 'materials';
@@ -16,9 +19,20 @@ function resolveTab(raw: unknown): DayTabValue {
 type DayViewProps = {
   streamId: string;
   dayNumber: number;
+  reports: ProgressReport[];
+  targetCalories: number | null;
+  goal: Goal | null;
+  currentDayNumber: number;
 };
 
-export default function DayView({ streamId, dayNumber }: DayViewProps) {
+export default function DayView({
+  streamId,
+  dayNumber,
+  reports,
+  targetCalories,
+  goal,
+  currentDayNumber,
+}: DayViewProps) {
   const router = useRouter();
   const { data, loading, error, daysCache, loadAllDays, selectDay, resetState } =
     useParticipantDayStore();
@@ -74,6 +88,22 @@ export default function DayView({ streamId, dayNumber }: DayViewProps) {
           streamId={streamId}
           dayNumber={data.dayNumber}
           isEditable={data.isEditable}
+        />
+      )}
+      {activeTab === 'pulse' && (
+        <DayPulse
+          streamId={streamId}
+          dayNumber={data.dayNumber}
+          isEditable={data.isEditable}
+        />
+      )}
+      {activeTab === 'progress' && (
+        <MarathonProgress
+          reports={reports}
+          targetCalories={targetCalories}
+          goal={goal}
+          currentDayNumber={currentDayNumber}
+          collapsible={false}
         />
       )}
     </section>

@@ -30,7 +30,7 @@ export default function MarathonHeader({
       <div className={styles.ratingLine}>
         <h2 className={styles.title}>{stream.template.title}</h2>
         <span>{ratingText}</span>
-        <MarathonChatPopup streamId={stream.id} />
+        <MarathonChatPopup streamId={stream.id} streamStatus={stream.status} />
       </div>
     </header>
   );

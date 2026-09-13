@@ -26,6 +26,7 @@ export type MarathonReport = {
   id: string;
   dayNumber: number;
   totalCalories: number;
+  weightKg: number | null;
   filledAt: Date | string;
 };
 
@@ -37,6 +38,9 @@ type MarathonWindowProps = {
   rating: MarathonRating;
   reports: MarathonReport[];
   measurementDays: number[];
+  trainingDays?: number[];
+  restDays?: number[];
+  healthyEatingDays?: number[];
   activeDay: number | null;
   onDayChange: (dayNumber: number) => void;
 };
@@ -49,6 +53,9 @@ export default function MarathonWindow({
   rating,
   reports,
   measurementDays,
+  trainingDays = [],
+  restDays = [],
+  healthyEatingDays = [],
   activeDay,
   onDayChange,
 }: MarathonWindowProps) {
@@ -67,6 +74,9 @@ export default function MarathonWindow({
         goal={goal}
         reports={reports}
         measurementDays={measurementDays}
+        trainingDays={trainingDays}
+        restDays={restDays}
+        healthyEatingDays={healthyEatingDays}
         activeDay={activeDay}
         onDayChange={onDayChange}
       />
@@ -74,7 +84,14 @@ export default function MarathonWindow({
       {activeDay === null ? (
         <p className={styles.placeholder}>Марафон ещё не начат.</p>
       ) : (
-        <DayView streamId={stream.id} dayNumber={activeDay} />
+        <DayView
+          streamId={stream.id}
+          dayNumber={activeDay}
+          reports={reports}
+          targetCalories={targetCalories}
+          goal={goal}
+          currentDayNumber={currentDayNumber}
+        />
       )}
     </div>
   );

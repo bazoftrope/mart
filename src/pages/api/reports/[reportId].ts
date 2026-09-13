@@ -139,28 +139,38 @@ async function putHandler(req: NextApiRequest, res: NextApiResponse) {
       { transaction }
     );
 
-    await PulseReading.destroy({
-      where: { reportId: report.id },
-      transaction,
-    });
+    let createdPulse: PulseReading[] = [];
+    const hasPulsePayload = Object.prototype.hasOwnProperty.call(body, 'pulseReadings');
+    if (hasPulsePayload) {
+      await PulseReading.destroy({
+        where: { reportId: report.id },
+        transaction,
+      });
 
-    const pulseRecords =
-      pulseReadings?.map((reading) => ({
-        reportId: report.id,
-        measuredAt: buildMeasuredAtUtc(
-          stream.startDate,
-          report.dayNumber,
-          reading.measuredAt,
-          currentUser.timezone
-        ),
-        pulse: reading.pulse,
-        systolic: reading.systolic ?? null,
-        diastolic: reading.diastolic ?? null,
-      })) ?? [];
+      const pulseRecords =
+        pulseReadings?.map((reading) => ({
+          reportId: report.id,
+          measuredAt: buildMeasuredAtUtc(
+            stream.startDate,
+            report.dayNumber,
+            reading.measuredAt,
+            currentUser.timezone
+          ),
+          pulse: reading.pulse ?? null,
+          systolic: reading.systolic ?? null,
+          diastolic: reading.diastolic ?? null,
+        })) ?? [];
 
-    const createdPulse = pulseRecords.length
-      ? await PulseReading.bulkCreate(pulseRecords, { transaction })
-      : [];
+      createdPulse = pulseRecords.length
+        ? await PulseReading.bulkCreate(pulseRecords, { transaction })
+        : [];
+    } else {
+      createdPulse = await PulseReading.findAll({
+        where: { reportId: report.id },
+        order: [['measured_at', 'ASC']],
+        transaction,
+      });
+    }
 
     if (isMeasurementDay && weightKg !== undefined && weightKg !== null) {
       currentUser.weightKg = weightKg;

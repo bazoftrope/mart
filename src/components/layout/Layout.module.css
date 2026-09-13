@@ -1,0 +1,7 @@
+.main {
+  padding-top: var(--space-6);
+}
+
+.wrapper {
+  min-height: 100vh;
+}

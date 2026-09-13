@@ -17,6 +17,7 @@ type MessageData = {
 
 type MarathonChatPopupProps = {
   streamId: string;
+  streamStatus?: string;
 };
 
 function formatTime(iso: string): string {
@@ -30,7 +31,7 @@ function formatTime(iso: string): string {
   });
 }
 
-export default function MarathonChatPopup({ streamId }: MarathonChatPopupProps) {
+export default function MarathonChatPopup({ streamId, streamStatus }: MarathonChatPopupProps) {
   const userId = useAuthStore((s) => s.userId);
 
   const [open, setOpen] = useState(false);
@@ -250,6 +251,10 @@ export default function MarathonChatPopup({ streamId }: MarathonChatPopupProps) 
 
   const activeConversation =
     conversations.find((c) => c.id === activeConversationId) ?? null;
+  const isFinished =
+    streamStatus === 'finished' ||
+    activeConversation?.stream?.status === 'finished' ||
+    streamConversations.some((c) => c.stream?.status === 'finished');
   const tabTitle =
     activeTab === 'group'
       ? activeConversation?.stream?.template?.title || 'Общий чат'
@@ -304,6 +309,7 @@ export default function MarathonChatPopup({ streamId }: MarathonChatPopupProps) 
               onClick={() => {
                 void activateTab('group');
               }}
+              disabled={isFinished && !groupConversation}
             >
               Общий
             </button>
@@ -317,6 +323,7 @@ export default function MarathonChatPopup({ streamId }: MarathonChatPopupProps) 
               onClick={() => {
                 void activateTab('mentor');
               }}
+              disabled={isFinished && !mentorConversation}
             >
               Ментор
             </button>
@@ -328,7 +335,7 @@ export default function MarathonChatPopup({ streamId }: MarathonChatPopupProps) 
             )}
             {!loadingMessages && messages.length === 0 && (
               <p className={styles.muted}>
-                {creating ? 'Создаём чат...' : 'Напишите первое сообщение'}
+                {isFinished ? 'Чат потока закрыт' : creating ? 'Создаём чат...' : 'Напишите первое сообщение'}
               </p>
             )}
             {messages.map((message) => {
@@ -358,6 +365,7 @@ export default function MarathonChatPopup({ streamId }: MarathonChatPopupProps) 
           </div>
 
           {error && <p className={styles.error}>{error}</p>}
+          {isFinished && <p className={styles.muted}>Чат потока закрыт</p>}
 
           <form
             className={styles.composer}
@@ -370,14 +378,14 @@ export default function MarathonChatPopup({ streamId }: MarathonChatPopupProps) 
               className={styles.input}
               type="text"
               value={text}
-              placeholder="Написать сообщение..."
+              placeholder={isFinished ? 'Чат закрыт' : 'Написать сообщение...'}
               onChange={(e) => setText(e.target.value)}
-              disabled={sending || creating === activeTab}
+              disabled={sending || creating === activeTab || isFinished}
             />
             <button
               className={styles.sendBtn}
               type="submit"
-              disabled={sending || creating === activeTab || !text.trim()}
+              disabled={sending || creating === activeTab || isFinished || !text.trim()}
             >
               Отправить
             </button>

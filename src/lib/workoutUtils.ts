@@ -1,5 +1,6 @@
 import type { Workout } from '@db/models/Workout';
 import type { TokenPayload } from '@/types/auth';
+import type { ContentAttachmentData } from '@/types/attachments';
 
 export type WorkoutDto = {
   id: string;
@@ -11,6 +12,7 @@ export type WorkoutDto = {
   updatedAt: Date;
   isFavorite: boolean;
   canEdit: boolean;
+  attachments: ContentAttachmentData[];
 };
 
 /**
@@ -28,7 +30,7 @@ export function canManageWorkout(
 
 export function toWorkoutDto(
   workout: Workout,
-  options: { isFavorite: boolean; canEdit: boolean }
+  options: { isFavorite: boolean; canEdit: boolean; attachments?: ContentAttachmentData[] }
 ): WorkoutDto {
   return {
     id: workout.id,
@@ -40,5 +42,6 @@ export function toWorkoutDto(
     updatedAt: workout.updatedAt,
     isFavorite: options.isFavorite,
     canEdit: options.canEdit,
+    attachments: options.attachments ?? [],
   };
 }

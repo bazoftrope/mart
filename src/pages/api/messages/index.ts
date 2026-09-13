@@ -45,6 +45,9 @@ async function postHandler(req: NextApiRequest, res: NextApiResponse) {
     if (!stream) {
       throw new NotFound('Stream not found');
     }
+    if (stream.status === 'finished') {
+      throw new Forbidden('Чат потока закрыт');
+    }
     const template = await MarathonTemplate.findByPk(stream.templateId);
     if (!template) {
       throw new NotFound('Template not found');
@@ -111,6 +114,9 @@ async function postHandler(req: NextApiRequest, res: NextApiResponse) {
   const stream = await Stream.findByPk(streamId!);
   if (!stream) {
     throw new NotFound('Stream not found');
+  }
+  if (stream.status === 'finished') {
+    throw new Forbidden('Чат потока закрыт');
   }
   const template = await MarathonTemplate.findByPk(stream.templateId);
   if (!template) {

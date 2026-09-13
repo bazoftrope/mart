@@ -1,3 +1,5 @@
+import type { ContentAttachmentData } from './attachments';
+
 export type Workout = {
   id: string;
   title: string;
@@ -8,6 +10,7 @@ export type Workout = {
   updatedAt: string;
   isFavorite: boolean;
   canEdit: boolean;
+  attachments: ContentAttachmentData[];
 };
 
 export type WorkoutListResponse = {

@@ -26,7 +26,7 @@ type ReportLineItem = {
 type PulseReadingItem = {
   id: string;
   measuredAt: string;
-  pulse: number;
+  pulse: number | null;
   systolic?: number | null;
   diastolic?: number | null;
 };
@@ -204,7 +204,7 @@ export default function ParticipantDetailPage() {
       </p>
 
       <Link
-        href={`/mentor/messages?streamId=${sid}&participantId=${data.participant.id}`}
+        href={`/mentor/streams/${sid}?participantId=${data.participant.id}#chat`}
         className={styles.messageBtn}
       >
         Написать участнику
@@ -397,7 +397,7 @@ export default function ParticipantDetailPage() {
       </section>
 
       <section className={styles.section}>
-        <h2>Пульс</h2>
+        <h2>Пульс и давление</h2>
         <div className={styles.tableWrap}>
           <table className={styles.table}>
             <thead>
@@ -428,7 +428,7 @@ export default function ParticipantDetailPage() {
                       <td rowSpan={readings.length}>{day}</td>
                     ) : null}
                     <td>{formatTime(reading.measuredAt)}</td>
-                    <td className={styles.numCol}>{reading.pulse}</td>
+                    <td className={styles.numCol}>{reading.pulse ?? '—'}</td>
                     <td className={styles.numCol}>
                       {reading.systolic && reading.diastolic
                         ? `${reading.systolic}/${reading.diastolic}`

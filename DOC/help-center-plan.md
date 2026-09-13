@@ -64,7 +64,7 @@
 - `src/pages/admin/help/new.tsx`, `src/pages/admin/help/[slug].tsx` — создание и
   редактирование.
 
-Навигация: общая ссылка «Правила и помощь» в `src/components/Layout.tsx` (видна
+Навигация: общая ссылка «Правила и помощь» в `src/components/layout/Header.tsx` (видна
 гостям и всем ролям); в админ-блоке — «Статьи помощи» → `/admin/help`.
 
 Контекстные ссылки:

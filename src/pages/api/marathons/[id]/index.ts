@@ -93,6 +93,9 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
         dayNumber: day.dayNumber,
         textContent: day.textContent,
         isMeasurementDay: day.isMeasurementDay,
+        isTrainingDay: day.isTrainingDay,
+        isRestDay: day.isRestDay,
+        isHealthyEatingDay: day.isHealthyEatingDay,
         attachments: serializeAttachments(attachmentsByDay.get(day.id) ?? []),
       })),
     })
@@ -149,6 +152,8 @@ async function putHandler(req: NextApiRequest, res: NextApiResponse) {
             mimeType: attachment.mimeType ?? null,
             sizeBytes: attachment.sizeBytes ?? null,
             position: attachment.position ?? index,
+            pairId: attachment.pairId ?? null,
+            description: attachment.description ? String(attachment.description).slice(0, 5000) : null,
           })),
           { transaction }
         ).then(() => template);

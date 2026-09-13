@@ -7,12 +7,16 @@ import { useAuthStore } from '@/stores/authStore';
 import styles from './AdminReviewTemplate.module.css';
 import { apiFetch } from '@/lib/apiClient';
 import AttachmentPlayers from '@/components/attachments/AttachmentPlayers';
+import { Icon } from '@/components/icons';
 
 type TemplateDay = {
   id: string;
   dayNumber: number;
   textContent?: string;
   isMeasurementDay?: boolean;
+  isTrainingDay?: boolean;
+  isRestDay?: boolean;
+  isHealthyEatingDay?: boolean;
   attachments: AttachmentData[];
 };
 
@@ -152,9 +156,28 @@ export default function AdminReviewTemplatePage() {
               <article key={day.id} className={styles.card}>
                 <h4 className={styles.cardTitle}>
                   День {day.dayNumber}
-                  {day.isMeasurementDay && (
-                    <span className={styles.measurementBadge}>замер</span>
-                  )}
+                  <span className={styles.badgeRow}>
+                    {day.isMeasurementDay && (
+                      <span className={styles.measurementBadge} title="День замера">
+                        <Icon name="mesure" width={18} height={18} /> замер
+                      </span>
+                    )}
+                    {day.isTrainingDay && (
+                      <span className={styles.badgeTraining} title="День тренировки">
+                        <Icon name="training" width={18} height={18} /> тренировка
+                      </span>
+                    )}
+                    {day.isRestDay && (
+                      <span className={styles.badgeRest} title="День отдыха">
+                        <Icon name="rest" width={18} height={18} /> отдых
+                      </span>
+                    )}
+                    {day.isHealthyEatingDay && (
+                      <span className={styles.badgeHealthy} title="День здоровой еды">
+                        <Icon name="diet_food" width={18} height={18} /> здоровая еда
+                      </span>
+                    )}
+                  </span>
                 </h4>
                 {day.textContent ? (
                   renderText(day.textContent)

@@ -3,10 +3,11 @@ import { Op, type WhereOptions } from 'sequelize';
 import '@/lib/db';
 import { apiHandler, success } from '@/lib/apiHandler';
 import { withAuth, withOptionalAuth } from '@/lib/middleware';
-import { Workout, WorkoutFavorite } from '@db/models';
+import { ContentAttachment, Workout, WorkoutFavorite } from '@db/models';
 import { workoutSchema } from '@/lib/validate';
 import { Unauthorized } from '@/lib/errors';
 import { canManageWorkout, toWorkoutDto } from '@/lib/workoutUtils';
+import { serializeContentAttachments } from '@/lib/contentAttachmentUtils';
 import type { AuthenticatedRequest } from '@/types/auth';
 
 const DEFAULT_LIMIT = 12;
@@ -23,6 +24,25 @@ async function favoriteIdsForUser(userId: string): Promise<string[]> {
     attributes: ['workoutId'],
   });
   return rows.map((row) => row.workoutId);
+}
+
+async function attachmentsMapForWorkouts(workoutIds: string[]) {
+  if (workoutIds.length === 0) return new Map<string, ReturnType<typeof serializeContentAttachments>>();
+  const rows = await ContentAttachment.findAll({
+    where: { ownerType: 'workout', ownerId: workoutIds },
+    order: [['position', 'ASC']],
+  });
+  const map = new Map<string, typeof rows>();
+  for (const row of rows) {
+    const arr = map.get(row.ownerId) ?? [];
+    arr.push(row);
+    map.set(row.ownerId, arr);
+  }
+  const serialized = new Map<string, ReturnType<typeof serializeContentAttachments>>();
+  Array.from(map.entries()).forEach(([k, v]) => {
+    serialized.set(k, serializeContentAttachments(v));
+  });
+  return serialized;
 }
 
 /**
@@ -77,10 +97,13 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
     offset: (page - 1) * limit,
   });
 
+  const attachmentsMap = await attachmentsMapForWorkouts(rows.map((r) => r.id));
+
   const items = rows.map((workout) =>
     toWorkoutDto(workout, {
       isFavorite: favoriteSet.has(workout.id),
       canEdit: canManageWorkout(workout, user),
+      attachments: attachmentsMap.get(workout.id) ?? [],
     })
   );
 
@@ -105,9 +128,28 @@ async function postHandler(req: NextApiRequest, res: NextApiResponse) {
     createdBy: user.userId,
   });
 
+  let attachments: ReturnType<typeof serializeContentAttachments> = [];
+  if (body.attachments && body.attachments.length > 0) {
+    const rows = await ContentAttachment.bulkCreate(
+      body.attachments.map((a, idx) => ({
+        ownerType: 'workout' as const,
+        ownerId: workout.id,
+        kind: a.kind,
+        url: a.url,
+        fileName: a.fileName ?? null,
+        mimeType: a.mimeType ?? null,
+        sizeBytes: a.sizeBytes ?? null,
+        position: a.position ?? idx,
+        pairId: a.pairId ?? null,
+        description: a.description ?? null,
+      }))
+    );
+    attachments = serializeContentAttachments(rows);
+  }
+
   return success(
     res,
-    toWorkoutDto(workout, { isFavorite: false, canEdit: true }),
+    toWorkoutDto(workout, { isFavorite: false, canEdit: true, attachments }),
     201
   );
 }

@@ -28,6 +28,7 @@ export default function NewWorkoutPage() {
       description: values.description,
       exercises: values.exercises,
       execution: values.execution,
+      attachments: values.attachments,
     });
     router.push(`/workouts/${workout.id}`);
   }

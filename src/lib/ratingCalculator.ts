@@ -5,6 +5,7 @@ import {
   Stream,
   StreamEnrollment,
   DailyReport,
+  ReportLine,
   StreamRating,
   MarathonTemplate,
 } from '@db/models';
@@ -44,12 +45,66 @@ export async function calculateRatingsForStream(streamId: string): Promise<void>
   for (const enrollment of enrollments) {
     const reports = await DailyReport.findAll({
       where: { enrollmentId: enrollment.id },
-      attributes: ['dayNumber', 'weightKg'],
+      attributes: [
+        'id',
+        'dayNumber',
+        'weightKg',
+        'totalCalories',
+        'waterLiters',
+        'steps',
+        'sleepHours',
+        'activityMinutes',
+        'trainingDone',
+        'chestCm',
+        'waistCm',
+        'hipCm',
+        'legCm',
+      ],
       order: [['dayNumber', 'ASC']],
       raw: true,
     });
 
-    const filledDays = reports.length;
+    // pulse-only reports (totalCalories 0 + no metrics + no lines) must not count toward discipline
+    const reportIds = reports.map((r) => (r as unknown as { id: string }).id);
+    const lineRows = reportIds.length
+      ? await ReportLine.findAll({
+          where: { reportId: reportIds } as never,
+          attributes: ['reportId'],
+          raw: true,
+        })
+      : [];
+    const lineSet = new Set((lineRows as unknown as Array<{ reportId: string }>).map((r) => r.reportId));
+
+    const filledReports = reports.filter((r) => {
+      const row = r as unknown as {
+        id: string;
+        totalCalories: unknown;
+        waterLiters: unknown;
+        steps: unknown;
+        sleepHours: unknown;
+        activityMinutes: unknown;
+        trainingDone: unknown;
+        weightKg: unknown;
+        chestCm: unknown;
+        waistCm: unknown;
+        hipCm: unknown;
+        legCm: unknown;
+      };
+      if (lineSet.has(row.id)) return true;
+      if (row.totalCalories !== null && Number(row.totalCalories) > 0) return true;
+      if (row.waterLiters !== null && row.waterLiters !== undefined) return true;
+      if (row.steps !== null && row.steps !== undefined) return true;
+      if (row.sleepHours !== null && row.sleepHours !== undefined) return true;
+      if (row.activityMinutes !== null && row.activityMinutes !== undefined) return true;
+      if (row.trainingDone !== null && row.trainingDone !== undefined) return true;
+      if (row.weightKg !== null && row.weightKg !== undefined && Number(row.weightKg) > 0) return true;
+      if (row.chestCm !== null && row.chestCm !== undefined) return true;
+      if (row.waistCm !== null && row.waistCm !== undefined) return true;
+      if (row.hipCm !== null && row.hipCm !== undefined) return true;
+      if (row.legCm !== null && row.legCm !== undefined) return true;
+      return false;
+    });
+    const filledDays = filledReports.length;
     const weightReports = reports.filter(
       (r) => r.weightKg !== null && r.weightKg !== undefined && Number(r.weightKg) > 0
     );

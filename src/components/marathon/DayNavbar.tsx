@@ -5,7 +5,7 @@ import { ru } from 'date-fns/locale';
 import type { Goal } from '@db/models/StreamEnrollment';
 import { isCalorieTargetMissed } from '@/lib/calorieCalculator';
 
-type DayNavbarReport = { dayNumber: number; totalCalories: number };
+type DayNavbarReport = { dayNumber: number; totalCalories: number; weightKg?: number | null };
 
 type DayNavbarProps = {
   startDate: string;
@@ -15,6 +15,9 @@ type DayNavbarProps = {
   goal: Goal | null;
   reports: DayNavbarReport[];
   measurementDays: number[];
+  trainingDays?: number[];
+  restDays?: number[];
+  healthyEatingDays?: number[];
   activeDay: number | null;
   onDayChange: (dayNumber: number) => void;
 };
@@ -27,11 +30,17 @@ export default function DayNavbar({
   goal,
   reports,
   measurementDays,
+  trainingDays = [],
+  restDays = [],
+  healthyEatingDays = [],
   activeDay,
   onDayChange,
 }: DayNavbarProps) {
   const reportMap = new Map(reports.map((r) => [r.dayNumber, r.totalCalories]));
   const measurementDaySet = new Set(measurementDays);
+  const trainingDaySet = new Set(trainingDays);
+  const restDaySet = new Set(restDays);
+  const healthyDaySet = new Set(healthyEatingDays);
 
   return (
     <nav className={styles.dayNavbar} aria-label="Дни марафона">
@@ -62,6 +71,9 @@ export default function DayNavbar({
             isFilled={isFilled}
             isCalorieProblem={isCalorieProblem}
             isMeasurementDay={measurementDaySet.has(dayNumber)}
+            isTrainingDay={trainingDaySet.has(dayNumber)}
+            isRestDay={restDaySet.has(dayNumber)}
+            isHealthyEatingDay={healthyDaySet.has(dayNumber)}
             calories={calories ?? null}
             onSelect={onDayChange}
           />

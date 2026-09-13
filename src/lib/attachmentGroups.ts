@@ -4,9 +4,14 @@ export type AttachmentPairGroup = {
   pairId: string;
   pdf?: AttachmentData;
   audio?: AttachmentData;
+  video?: AttachmentData;
 };
 
-export function groupPairedAttachments(
+/**
+ * Группирует строки с одинаковым `pairId` в комплекты «медиа + PDF».
+ * Комплекты сортируются по минимальной позиции входящих строк.
+ */
+export function groupMediaAttachments(
   attachments: AttachmentData[],
 ): AttachmentPairGroup[] {
   const rowsByPairId = new Map<string, AttachmentData[]>();
@@ -24,6 +29,7 @@ export function groupPairedAttachments(
       pairId,
       pdf: rows.find((row) => row.kind === 'file'),
       audio: rows.find((row) => row.kind === 'audio'),
+      video: rows.find((row) => row.kind === 'video'),
     });
   });
 
@@ -32,6 +38,7 @@ export function groupPairedAttachments(
       Math.min(
         group.pdf?.position ?? Number.MAX_SAFE_INTEGER,
         group.audio?.position ?? Number.MAX_SAFE_INTEGER,
+        group.video?.position ?? Number.MAX_SAFE_INTEGER,
       );
     return positionOf(a) - positionOf(b);
   });

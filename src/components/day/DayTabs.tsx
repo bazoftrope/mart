@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import styles from './DayTabs.module.css';
 
-export type DayTabValue = 'materials' | 'report';
+export type DayTabValue = 'materials' | 'report' | 'pulse' | 'progress';
 
 type DayTabsProps = {
   streamId: string;
@@ -27,6 +27,20 @@ export default function DayTabs({ streamId, dayNumber, activeTab }: DayTabsProps
         aria-current={activeTab === 'report' ? 'page' : undefined}
       >
         Отчёт
+      </Link>
+      <Link
+        href={`${basePath}?day=${dayNumber}&tab=pulse`}
+        className={`${styles.tab} ${activeTab === 'pulse' ? styles.active : ''}`}
+        aria-current={activeTab === 'pulse' ? 'page' : undefined}
+      >
+        Самочувствие
+      </Link>
+      <Link
+        href={`${basePath}?day=${dayNumber}&tab=progress`}
+        className={`${styles.tab} ${activeTab === 'progress' ? styles.active : ''}`}
+        aria-current={activeTab === 'progress' ? 'page' : undefined}
+      >
+        Прогресс
       </Link>
     </nav>
   );

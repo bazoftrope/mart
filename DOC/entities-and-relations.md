@@ -81,6 +81,9 @@ pending_review → approved (админ одобряет, POST /api/admin/:id/ap
 | dayNumber | integer | not null | `day_number`, 1..N |
 | textContent | text | nullable | `text_content` — HTML от Quill (всегда) |
 | isMeasurementDay | boolean | not null, default false | `is_measurement_day` — день замера веса и охватов |
+| isTrainingDay | boolean | not null, default false | `is_training_day` — запланирована тренировка |
+| isRestDay | boolean | not null, default false | `is_rest_day` — день отдыха/восстановления |
+| isHealthyEatingDay | boolean | not null, default false | `is_healthy_eating_day` — день здорового питания |
 
 **Ограничения:**
 - Материалы дня (аудио, видео, PDF) хранятся не в этой таблице, а в `template_attachments` со `scope = 'day'`.
@@ -97,13 +100,14 @@ pending_review → approved (админ одобряет, POST /api/admin/:id/ap
 | templateId | UUID | not null | `template_id` → MarathonTemplate.id |
 | templateDayId | UUID | nullable | `template_day_id` → TemplateDay.id; NULL = предстартовое вложение |
 | scope | enum | not null | `intro` / `day` |
-| kind | enum | not null | `audio` / `video` / `file` |
-| url | string | not null | Путь `/api/uploads/audio/...`, `/api/uploads/file/...` или `videoId` Kinescope |
+| kind | enum | not null | `audio` / `video` / `file` / `image` |
+| url | string | not null | Путь `/api/uploads/audio/...`, `/api/uploads/file/...`, `/api/uploads/image/...` или `videoId` Kinescope |
 | fileName | string | nullable | Исходное имя файла |
 | mimeType | string | nullable | MIME |
 | sizeBytes | integer | nullable | Размер |
 | position | integer | not null, default 0 | Порядок вывода |
 | pairId | UUID | nullable | `pair_id` — общий идентификатор комплекта «PDF + аудио»; у двух строк пары одинаковый |
+| description | text | nullable | Описание аудио/видео (до 5000 символов) |
 | createdAt | datetime | | `created_at` |
 
 **Ограничения:**
@@ -185,7 +189,7 @@ pending_review → approved (админ одобряет, POST /api/admin/:id/ap
 | weightGrams | decimal(8,2) | not null | `weight_grams` |
 | lineCalories | decimal(10,2) | not null | `line_calories` |
 
-**Расчёт** (`computeLineCalories` в `src/components/ReportTable.tsx`):
+**Расчёт** (`computeLineCalories` в `src/components/day/ReportTable.tsx`):
 ```
 lineCalories = round(weightGrams × Product.calories / 100)
 DailyReport.totalCalories = SUM(ReportLine.lineCalories)
@@ -288,6 +292,7 @@ DailyReport.totalCalories = SUM(ReportLine.lineCalories)
 - Смотреть, искать и открывать карточку может любой посетитель, в том числе гость.
 - Добавлять рецепт может любой авторизованный пользователь (любая роль).
 - `createdBy` нигде в интерфейсе не отображается и нужен только для прав: редактировать/удалять может автор или админ (`ON DELETE SET NULL`).
+- Изображения (галерея) и PDF — в `content_attachments` с `owner_type = 'recipe'` (см. §17.1).
 - Индексы: `created_at` (сортировка списка), `title`.
 
 ---
@@ -326,6 +331,7 @@ DailyReport.totalCalories = SUM(ReportLine.lineCalories)
 - Смотреть, искать и открывать карточку может любой посетитель, в том числе гость.
 - Добавлять тренировку может любой авторизованный пользователь (любая роль).
 - `createdBy` нигде в интерфейсе не отображается и нужен только для прав: редактировать/удалять может автор или админ (`ON DELETE SET NULL`).
+- Изображения (галерея) и PDF — в `content_attachments` с `owner_type = 'workout'` (см. §17.1).
 - Индексы: `created_at` (сортировка списка), `title`.
 - Полное зеркало сущности Recipe (см. §14), отличается названиями содержательных блоков.
 
@@ -344,6 +350,31 @@ DailyReport.totalCalories = SUM(ReportLine.lineCalories)
 - Уникальность `workout_id + user_id` — одна тренировка в избранном один раз.
 - `ON DELETE CASCADE` при удалении тренировки или пользователя.
 - Избранное доступно только авторизованным пользователям (у гостей — приглашение войти).
+
+---
+
+## 17.1 ContentAttachment (Вложение контента) — `content_attachments`
+
+| Поле | Тип | Ограничение | Описание |
+|------|-----|-------------|----------|
+| id | UUID | PK | |
+| ownerType | enum | not null | `recipe` / `workout` |
+| ownerId | UUID | not null | `owner_id` — id рецепта или тренировки (без FK, удаляется вручную в API) |
+| kind | enum | not null | `file` (PDF) / `image` / `audio` / `video` |
+| url | string | not null | `/api/uploads/file/content/...` или `/api/uploads/image/content/...` |
+| fileName | string | nullable | Исходное имя файла |
+| mimeType | string | nullable | MIME |
+| sizeBytes | integer | nullable | Размер |
+| position | integer | not null, default 0 | Порядок вывода |
+| pairId | UUID | nullable | `pair_id`, зарезервировано |
+| description | text | nullable | Описание (до 5000 символов) |
+| createdAt | datetime | | `created_at` |
+
+**Ограничения:**
+- Общие вложения для книг рецептов и тренировок: изображения (галерея), PDF и видео по ссылке Kinescope.
+- Изображения и PDF загружаются файлом: `POST /api/uploads/image` (без `templateId`) и `POST /api/uploads/content/file`. Видео не загружается файлом — в `url` хранится нормализованный id Kinescope (валидация в `contentAttachmentSchema`).
+- Файлы хранятся в `<UPLOAD_DIR>/content/`, отдаются через `/api/uploads/image/[...path]` и `/api/uploads/file/[...path]`.
+- При сохранении рецепта/тренировки (`POST`/`PUT`) вложения пересоздаются; при удалении владельца — удаляются.
 
 ---
 
@@ -393,6 +424,8 @@ Stream (1) ───< (N) Conversation  ──< (N) ConversationMember (N) User
 
 User (1) ───< (N) RecipeFavorite (N) ─── (1) Recipe
 User (1) ───< (N) WorkoutFavorite (N) ─── (1) Workout
+Recipe (1) ───< (N) ContentAttachment
+Workout (1) ───< (N) ContentAttachment
 
 User (0..1) ───< (N) HelpArticle
 ```
@@ -413,6 +446,7 @@ User (0..1) ───< (N) HelpArticle
 | RecipeFavorite | recipe_id, user_id unique | Один рецепт в избранном один раз |
 | Workout | created_at, title | Сортировка и поиск по книге тренировок |
 | WorkoutFavorite | workout_id, user_id unique | Одна тренировка в избранном один раз |
+| ContentAttachment | owner_type+owner_id+position; owner_id; pair_id | Вложения рецепта/тренировки |
 | HelpArticle | slug unique; section+audience; is_published+position | Адрес статьи и выборка раздела |
 
 > Примечание: фактический список индексов лучше сверять с миграциями в `DB/migrations/` — в коде моделей (Sequelize-TS) индексы описываются не всегда, часть задана прямо в миграциях.

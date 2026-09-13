@@ -57,6 +57,7 @@ export default function EditWorkoutPage() {
       description: values.description,
       exercises: values.exercises,
       execution: values.execution,
+      attachments: values.attachments,
     });
 
     router.push(`/workouts/${workout.id}`);
@@ -98,6 +99,7 @@ export default function EditWorkoutPage() {
             description: workout.description ?? '',
             exercises: workout.exercises,
             execution: workout.execution,
+            attachments: workout.attachments ?? [],
           }}
           submitLabel="Сохранить изменения"
           onSubmit={handleSubmit}

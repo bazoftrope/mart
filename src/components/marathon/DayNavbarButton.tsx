@@ -1,4 +1,4 @@
-import { Scale } from 'lucide-react';
+import { Icon } from '@/components/icons';
 import styles from './Marathon.module.css';
 
 type DayNavbarButtonProps = {
@@ -11,6 +11,9 @@ type DayNavbarButtonProps = {
   isFilled: boolean;
   isCalorieProblem: boolean;
   isMeasurementDay: boolean;
+  isTrainingDay: boolean;
+  isRestDay: boolean;
+  isHealthyEatingDay: boolean;
   calories: number | null;
   onSelect: (dayNumber: number) => void;
 };
@@ -25,13 +28,19 @@ export default function DayNavbarButton({
   isFilled,
   isCalorieProblem,
   isMeasurementDay,
+  isTrainingDay,
+  isRestDay,
+  isHealthyEatingDay,
   calories,
   onSelect,
 }: DayNavbarButtonProps) {
+  // Выбранным может быть только доступный день: будущие дни не нажимаются.
+  const isSelected = isActive && isAccessible;
+
   const className = [
     styles.dayItem,
     isAccessible ? styles.dayAccessible : styles.dayDisabled,
-    isActive ? styles.dayActive : '',
+    isSelected ? styles.dayActive : '',
     isCurrent ? styles.dayCurrent : '',
     isFilled ? (isCalorieProblem ? styles.dayOverLimit : styles.dayFilled) : '',
   ]
@@ -45,10 +54,28 @@ export default function DayNavbarButton({
     .filter(Boolean)
     .join(' ');
 
+  const flags: Array<{ key: string; name: 'mesure' | 'training' | 'rest' | 'diet_food'; label: string }> = [];
+  if (isMeasurementDay) flags.push({ key: 'measurement', name: 'mesure', label: 'День замера' });
+  if (isTrainingDay) flags.push({ key: 'training', name: 'training', label: 'День тренировки' });
+  if (isRestDay) flags.push({ key: 'rest', name: 'rest', label: 'День отдыха' });
+  if (isHealthyEatingDay) flags.push({ key: 'healthy', name: 'diet_food', label: 'День здоровой еды' });
+
   const content = (
     <>
       <span className={styles.dayDate}>{weekday} · {dateLabel}</span>
       <span className={styles.dayNumber}>{dayNumber}</span>
+      <span className={styles.dayFlagsBar}>
+        {flags.map((flag) => (
+          <Icon
+            key={flag.key}
+            name={flag.name}
+            width={16}
+            height={16}
+            className={styles.dayFlagIcon}
+            aria-label={flag.label}
+          />
+        ))}
+      </span>
       <span className={styles.dayCaloriesSlot}>
         {isFilled && calories !== null ? (
           <span
@@ -70,21 +97,11 @@ export default function DayNavbarButton({
       type="button"
       className={className}
       onClick={() => onSelect(dayNumber)}
-      aria-current={isActive ? 'true' : undefined}
+      aria-current={isSelected ? 'true' : undefined}
     >
       {content}
     </button>
   );
 
-  return (
-    <div className={wrapperClassName}>
-      {isMeasurementDay && (
-        <Scale
-          className={styles.measurementIcon}
-          aria-label="День замера"
-        />
-      )}
-      {control}
-    </div>
-  );
+  return <div className={wrapperClassName}>{control}</div>;
 }

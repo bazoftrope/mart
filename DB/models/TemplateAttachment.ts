@@ -9,7 +9,7 @@ import {
 } from 'sequelize-typescript';
 
 export type AttachmentScope = 'intro' | 'day';
-export type AttachmentKind = 'audio' | 'video' | 'file';
+export type AttachmentKind = 'audio' | 'video' | 'file' | 'image';
 
 @Table({
   tableName: 'template_attachments',
@@ -42,7 +42,7 @@ export class TemplateAttachment extends Model {
   scope!: AttachmentScope;
 
   @Column({
-    type: DataType.ENUM('audio', 'video', 'file'),
+    type: DataType.ENUM('audio', 'video', 'file', 'image'),
     allowNull: false,
   })
   kind!: AttachmentKind;
@@ -83,6 +83,12 @@ export class TemplateAttachment extends Model {
     allowNull: true,
   })
   pairId?: string | null;
+
+  @Column({
+    type: DataType.TEXT,
+    allowNull: true,
+  })
+  description?: string | null;
 
   @CreatedAt
   createdAt!: Date;

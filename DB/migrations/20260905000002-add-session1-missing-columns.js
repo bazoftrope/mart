@@ -26,6 +26,27 @@ module.exports = {
         defaultValue: false,
       });
     }
+    if (!templateDayColumns.has('is_training_day')) {
+      await queryInterface.addColumn('template_days', 'is_training_day', {
+        type: Sequelize.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+      });
+    }
+    if (!templateDayColumns.has('is_rest_day')) {
+      await queryInterface.addColumn('template_days', 'is_rest_day', {
+        type: Sequelize.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+      });
+    }
+    if (!templateDayColumns.has('is_healthy_eating_day')) {
+      await queryInterface.addColumn('template_days', 'is_healthy_eating_day', {
+        type: Sequelize.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+      });
+    }
 
     const dailyReportColumns = await tableColumns('daily_reports');
     if (!dailyReportColumns.has('training_done')) {

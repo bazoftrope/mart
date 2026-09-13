@@ -31,7 +31,7 @@ type ReportLineItem = {
   lineCalories: number;
 };
 
-type PulseReadingItem = { id: string; measuredAt: Date; pulse: number; systolic: number | null; diastolic: number | null };
+type PulseReadingItem = { id: string; measuredAt: Date; pulse: number | null; systolic: number | null; diastolic: number | null };
 
 async function getHandler(req: NextApiRequest, res: NextApiResponse) {
   const { user } = req as AuthenticatedRequest;
@@ -194,6 +194,9 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
       isEditable: isDayAccessible(dayNumber, currentDayNumber) && !isFinished,
       isFinished,
       isMeasurementDay: templateDay?.isMeasurementDay ?? false,
+      isTrainingDay: templateDay?.isTrainingDay ?? false,
+      isRestDay: templateDay?.isRestDay ?? false,
+      isHealthyEatingDay: templateDay?.isHealthyEatingDay ?? false,
       targetCalories,
       goal,
       profileCompleted,

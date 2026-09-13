@@ -166,7 +166,7 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
     weightGrams: number;
     lineCalories: number;
   }> = [];
-  let pulseReadings: Array<{ id: string; measuredAt: Date; pulse: number; systolic: number | null; diastolic: number | null }> = [];
+  let pulseReadings: Array<{ id: string; measuredAt: Date; pulse: number | null; systolic: number | null; diastolic: number | null }> = [];
 
   if (report) {
     const [reportLines, reportPulseReadings] = await Promise.all([
@@ -213,6 +213,9 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
     isEditable: isDayAccessible(dayNumber, currentDayNumber) && !isFinished,
     isFinished,
     isMeasurementDay: day?.isMeasurementDay ?? false,
+    isTrainingDay: day?.isTrainingDay ?? false,
+    isRestDay: day?.isRestDay ?? false,
+    isHealthyEatingDay: day?.isHealthyEatingDay ?? false,
     targetCalories,
     goal,
     profileCompleted,
@@ -362,28 +365,40 @@ async function postHandler(req: NextApiRequest, res: NextApiResponse) {
       { transaction }
     );
 
-    await PulseReading.destroy({
-      where: { reportId: report.id },
-      transaction,
-    });
+    // Pulse is now managed via dedicated pulse endpoint. Keep backward-compat:
+    // only touch pulse_readings if client explicitly sent pulseReadings.
+    let createdPulse: PulseReading[] = [];
+    const hasPulsePayload = Object.prototype.hasOwnProperty.call(body, 'pulseReadings');
+    if (hasPulsePayload) {
+      await PulseReading.destroy({
+        where: { reportId: report.id },
+        transaction,
+      });
 
-    const pulseRecords =
-      pulseReadings?.map((reading) => ({
-        reportId: report.id,
-        measuredAt: buildMeasuredAtUtc(
-          stream.startDate,
-          dayNumber,
-          reading.measuredAt,
-          currentUser.timezone
-        ),
-        pulse: reading.pulse,
-        systolic: reading.systolic ?? null,
-        diastolic: reading.diastolic ?? null,
-      })) ?? [];
+      const pulseRecords =
+        pulseReadings?.map((reading) => ({
+          reportId: report.id,
+          measuredAt: buildMeasuredAtUtc(
+            stream.startDate,
+            dayNumber,
+            reading.measuredAt,
+            currentUser.timezone
+          ),
+          pulse: reading.pulse ?? null,
+          systolic: reading.systolic ?? null,
+          diastolic: reading.diastolic ?? null,
+        })) ?? [];
 
-    const createdPulse = pulseRecords.length
-      ? await PulseReading.bulkCreate(pulseRecords, { transaction })
-      : [];
+      createdPulse = pulseRecords.length
+        ? await PulseReading.bulkCreate(pulseRecords, { transaction })
+        : [];
+    } else {
+      createdPulse = await PulseReading.findAll({
+        where: { reportId: report.id },
+        order: [['measured_at', 'ASC']],
+        transaction,
+      });
+    }
 
     if (isMeasurementDay && weightKg !== undefined && weightKg !== null) {
       currentUser.weightKg = weightKg;

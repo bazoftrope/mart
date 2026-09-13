@@ -12,6 +12,7 @@ export function serializeAttachment(attachment: TemplateAttachment): AttachmentD
     sizeBytes: attachment.sizeBytes ?? null,
     position: attachment.position,
     pairId: attachment.pairId ?? null,
+    description: (attachment.description as string | null | undefined) ?? null,
   };
 }
 

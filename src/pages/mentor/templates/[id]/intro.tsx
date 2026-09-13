@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useAuthStore } from '@/stores/authStore';
 import { apiFetch } from '@/lib/apiClient';
 import RichTextEditor from '@/components/editor/RichTextEditor';
-import AttachmentManager from '@/components/mentor/AttachmentManager';
+import AttachmentsEditor from '@/components/mentor/AttachmentsEditor';
 import type { AttachmentData } from '@/types/attachments';
 import styles from './edit.module.css';
 import { canEditMarathonTemplate } from '@/lib/templateStatus';
@@ -26,6 +26,9 @@ function toPayloadAttachment(attachment: AttachmentData) {
     fileName: attachment.fileName ?? null,
     mimeType: attachment.mimeType ?? null,
     sizeBytes: attachment.sizeBytes ?? null,
+    position: attachment.position,
+    pairId: attachment.pairId ?? null,
+    description: attachment.description ?? null,
   };
 }
 
@@ -161,32 +164,15 @@ export default function TemplateIntroPage() {
         </div>
 
         {templateId && (
-          <>
-            <AttachmentManager
+          <div className={styles.attachmentsRow}>
+            <AttachmentsEditor
               templateId={templateId}
-              kind="audio"
-              label="Аудио для предстартовой страницы"
+              kinds={['audio', 'file', 'video']}
               attachments={introAttachments}
               onChange={setIntroAttachments}
               disabled={!isEditable}
             />
-            <AttachmentManager
-              templateId={templateId}
-              kind="video"
-              label="Видео для предстартовой страницы"
-              attachments={introAttachments}
-              onChange={setIntroAttachments}
-              disabled={!isEditable}
-            />
-            <AttachmentManager
-              templateId={templateId}
-              kind="file"
-              label="Документы (PDF)"
-              attachments={introAttachments}
-              onChange={setIntroAttachments}
-              disabled={!isEditable}
-            />
-          </>
+          </div>
         )}
 
         {error && <p className="error">{error}</p>}

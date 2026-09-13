@@ -4,7 +4,7 @@ import { apiHandler, success } from '@/lib/apiHandler';
 import { withAuth } from '@/lib/middleware';
 import { Message, ConversationMember, User } from '@db/models';
 import { sendMessageSchema } from '@/lib/validation';
-import { NotFound } from '@/lib/errors';
+import { Forbidden, NotFound } from '@/lib/errors';
 import {
   getConversationAccess,
   sendMessage,
@@ -79,10 +79,13 @@ async function postHandler(req: NextApiRequest, res: NextApiResponse) {
     throw new NotFound('Conversation not found');
   }
 
-  const { conversation } = await getConversationAccess(
+  const { conversation, stream } = await getConversationAccess(
     conversationId,
     user.userId
   );
+  if (stream?.status === 'finished') {
+    throw new Forbidden('Чат потока закрыт');
+  }
 
   const parsed = sendMessageSchema.safeParse(req.body);
   if (!parsed.success) {

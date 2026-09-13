@@ -36,7 +36,8 @@ module.exports = {
         allowNull: false,
       },
       kind: {
-        type: Sequelize.ENUM('audio', 'video', 'file'),
+        // image добавлен для галереи картинок в материалах дня.
+        type: Sequelize.ENUM('audio', 'video', 'file', 'image'),
         allowNull: false,
       },
       url: {
@@ -62,6 +63,10 @@ module.exports = {
       },
       pair_id: {
         type: Sequelize.UUID,
+        allowNull: true,
+      },
+      description: {
+        type: Sequelize.TEXT,
         allowNull: true,
       },
       created_at: {
@@ -216,9 +221,79 @@ module.exports = {
       unique: true,
     });
     await queryInterface.addIndex('recipe_favorites', ['user_id']);
+
+    // --- Вложения контента (книга рецептов и книга тренировок) ---
+    // Изображения и PDF для рецепта/тренировки. owner_id — UUID без FK
+    // (владелец может быть recipe или workout), удаляются вручную в API.
+    await queryInterface.createTable('content_attachments', {
+      id: {
+        type: Sequelize.UUID,
+        defaultValue: Sequelize.UUIDV4,
+        primaryKey: true,
+      },
+      owner_type: {
+        type: Sequelize.ENUM('recipe', 'workout'),
+        allowNull: false,
+      },
+      owner_id: {
+        type: Sequelize.UUID,
+        allowNull: false,
+      },
+      kind: {
+        type: Sequelize.ENUM('file', 'image', 'audio', 'video'),
+        allowNull: false,
+      },
+      url: {
+        type: Sequelize.STRING(2048),
+        allowNull: false,
+      },
+      file_name: {
+        type: Sequelize.STRING(512),
+        allowNull: true,
+      },
+      mime_type: {
+        type: Sequelize.STRING(255),
+        allowNull: true,
+      },
+      size_bytes: {
+        type: Sequelize.INTEGER,
+        allowNull: true,
+      },
+      position: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+      },
+      pair_id: {
+        type: Sequelize.UUID,
+        allowNull: true,
+      },
+      description: {
+        type: Sequelize.TEXT,
+        allowNull: true,
+      },
+      created_at: {
+        type: Sequelize.DATE,
+        allowNull: false,
+        defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
+      },
+    });
+
+    await queryInterface.addIndex('content_attachments', ['owner_type', 'owner_id', 'position']);
+    await queryInterface.addIndex('content_attachments', ['owner_id']);
+    await queryInterface.addIndex('content_attachments', ['pair_id']);
   },
 
   async down(queryInterface, Sequelize) {
+    // Вложения контента (обратный порядок к up).
+    await queryInterface.dropTable('content_attachments');
+    await queryInterface.sequelize.query(
+      'DROP TYPE IF EXISTS "enum_content_attachments_owner_type";'
+    );
+    await queryInterface.sequelize.query(
+      'DROP TYPE IF EXISTS "enum_content_attachments_kind";'
+    );
+
     // Книга рецептов (обратный порядок к up).
     await queryInterface.dropTable('recipe_favorites');
     await queryInterface.dropTable('recipes');

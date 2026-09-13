@@ -140,9 +140,10 @@ marathon-platform/
 
 **uploads/**
 - `POST /api/uploads/audio` — загрузка аудиофайлов (ментор)
-- `POST /api/uploads/file` — загрузка PDF (ментор)
-- `POST /api/uploads/pair` — загрузка комплекта «PDF + аудио» одним запросом (ментор)
-- `GET /api/uploads/audio/[...path]`, `GET /api/uploads/file/[...path]` — отдача файлов (Range)
+- `POST /api/uploads/file` — загрузка PDF для шаблона (ментор)
+- `POST /api/uploads/image` — загрузка изображений: для шаблона (с `templateId`, ментор) и для контента рецептов/тренировок (без `templateId`, любая роль)
+- `POST /api/uploads/content/file` — загрузка PDF для контента рецептов/тренировок (любая роль)
+- `GET /api/uploads/audio/[...path]`, `GET /api/uploads/file/[...path]`, `GET /api/uploads/image/[...path]` — отдача файлов (Range)
 
 **rating/**
 - `POST /api/rating/calculate` — ручной пересчёт рейтинга (admin)
@@ -306,8 +307,9 @@ male:   База = (6.25×Рост + 10×Вес − 5×Возраст + 5) × 1.
 ## Key design & рефакторинги
 
 - Структура дня участника вынесена в компоненты `src/components/day/*` (`DayHeader`, `DayMaterials`, `DayReport`, `DayTabs`, `KinescopePlayer`) и `src/components/marathon/*` (`MarathonWindow`, `DayView`, `DayNavbar`, `MarathonHeader`).
-- Чат: `src/components/Chat/Chat.tsx` — переиспользуется в `dashboard/messages` и `mentor/messages`.
-- Книга рецептов: общая, без привязки к марафонам. Модели `Recipe` (служебный `createdBy` в UI не показывается) и `RecipeFavorite`; публичный `GET /api/recipes` через `withOptionalAuth` дополняется `isFavorite`/`canEdit`. UI: `src/pages/recipes/*`, компоненты `src/components/recipes/*`.
-- Книга тренировок: полное зеркало книги рецептов (та же механика — публичное чтение, поиск, пагинация, избранное, права автор/админ). Модели `Workout` (`title`, `description`, `exercises`, `execution`, служебный `createdBy`) и `WorkoutFavorite`; UI: `src/pages/workouts/*`, компоненты `src/components/workouts/*`. Кнопка избранного переиспользуется из книги рецептов (`src/components/recipes/FavoriteButton`).
+- Материалы шаблона/дня (ментор): один редактор на день — `src/components/mentor/AttachmentsEditor` (секции изображений, PDF, аудио, видео); правила комплектов «медиа + PDF» — чистые функции в `src/lib/attachmentEditor.ts` (строки идентифицируются ключом `id`/`clientKey`, `pairId` генерируется на клиенте).
+- Чат: компоненты `src/components/Chat/MarathonChatPopup` (участник, всплывающий чат в шапке марафона) и `src/components/Chat/MentorStreamChat` (ментор, чат на странице потока). Общие типы — в `src/components/Chat/Chat.tsx`. Страницы `/dashboard/messages` и `/mentor/messages` — редиректы («чат переехал»). Для завершённых потоков чат закрыт (только чтение).
+- Книга рецептов: общая, без привязки к марафонам. Модели `Recipe` (служебный `createdBy` в UI не показывается) и `RecipeFavorite`, вложения — `ContentAttachment` (`owner_type = 'recipe'`): изображения (галерея), PDF и видео по ссылке Kinescope. Публичный `GET /api/recipes` через `withOptionalAuth` дополняется `isFavorite`/`canEdit` и вложениями. UI: `src/pages/recipes/*`, компоненты `src/components/recipes/*`, редактор вложений `src/components/attachments/ContentAttachmentManager` (логика списка — общая `src/lib/attachmentEditor.ts`).
+- Книга тренировок: полное зеркало книги рецептов (та же механика — публичное чтение, поиск, пагинация, избранное, права автор/админ, вложения `ContentAttachment` с `owner_type = 'workout'`: изображения, PDF, видео Kinescope). Модели `Workout` (`title`, `description`, `exercises`, `execution`, служебный `createdBy`) и `WorkoutFavorite`; UI: `src/pages/workouts/*`, компоненты `src/components/workouts/*`. Кнопка избранного переиспользуется из книги рецептов (`src/components/recipes/FavoriteButton`).
 - Раздел «Правила и помощь»: модель `HelpArticle` (разделы `rules`/`faq`/`guide`, аудитории `all`/`participant`/`mentor`/`admin`, `slug`, черновики); публичное чтение через `withOptionalAuth`, запись — только `withAdmin`. UI: `src/pages/help/*` (список с поиском и табами, страница статьи), админка `src/pages/admin/help/*` (CRUD с Quill), компоненты `src/components/help/*`. Тексты санируются `sanitizeRichText` при сохранении; слаги формирует `src/lib/helpSlug.ts`, где лежат константы `HELP_SLUG_RULES`/`HELP_SLUG_REPORT_GUIDE` для контекстных ссылок (на странице дня, потоке и регистрации). Стартовый набор статей — сидер `20260911000001-demo-help-articles.js`. Подробнее: `DOC/help-center-plan.md`.
 - Планы рефакторингов: `DOC/css-refactor-plan.md`, `DOC/participant-day-refactor-plan.md`, `DOC/report-extension-plan.md`.

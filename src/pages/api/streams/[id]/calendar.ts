@@ -11,6 +11,7 @@ import {
   TemplateDay,
   StreamEnrollment,
   DailyReport,
+  ReportLine,
   StreamRating,
   User,
 } from '@db/models';
@@ -56,16 +57,87 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
     template.durationDays
   );
 
-  const reports = await DailyReport.findAll({
+  const rawReports = await DailyReport.findAll({
     where: { enrollmentId: enrollment.id },
-    attributes: ['id', 'dayNumber', 'totalCalories', 'filledAt'],
+    attributes: [
+      'id',
+      'dayNumber',
+      'totalCalories',
+      'weightKg',
+      'waterLiters',
+      'steps',
+      'sleepHours',
+      'activityMinutes',
+      'trainingDone',
+      'chestCm',
+      'waistCm',
+      'hipCm',
+      'legCm',
+      'filledAt',
+    ],
     order: [['dayNumber', 'ASC']],
+    raw: true,
   });
+
+  // exclude pulse-only stubs (no calories/metrics/lines) from calendar progress
+  const reportIdsForLines = rawReports.map((r) => (r as unknown as { id: string }).id);
+  const lineRowsCal = reportIdsForLines.length
+    ? await ReportLine.findAll({
+        where: { reportId: reportIdsForLines } as never,
+        attributes: ['reportId'],
+        raw: true,
+      })
+    : [];
+  const lineSetCal = new Set((lineRowsCal as unknown as Array<{ reportId: string }>).map((r) => r.reportId));
+  const reports = rawReports.filter((r) => {
+    const row = r as unknown as {
+      id: string;
+      totalCalories: unknown;
+      waterLiters: unknown;
+      steps: unknown;
+      sleepHours: unknown;
+      activityMinutes: unknown;
+      trainingDone: unknown;
+      weightKg: unknown;
+      chestCm: unknown;
+      waistCm: unknown;
+      hipCm: unknown;
+      legCm: unknown;
+    };
+    if (lineSetCal.has(row.id)) return true;
+    if (row.totalCalories !== null && Number(row.totalCalories) > 0) return true;
+    if (row.waterLiters !== null && row.waterLiters !== undefined) return true;
+    if (row.steps !== null && row.steps !== undefined) return true;
+    if (row.sleepHours !== null && row.sleepHours !== undefined) return true;
+    if (row.activityMinutes !== null && row.activityMinutes !== undefined) return true;
+    if (row.trainingDone !== null && row.trainingDone !== undefined) return true;
+    if (row.weightKg !== null && row.weightKg !== undefined && Number(row.weightKg) > 0) return true;
+    if (row.chestCm !== null && row.chestCm !== undefined) return true;
+    if (row.waistCm !== null && row.waistCm !== undefined) return true;
+    if (row.hipCm !== null && row.hipCm !== undefined) return true;
+    if (row.legCm !== null && row.legCm !== undefined) return true;
+    return false;
+  }) as unknown as typeof rawReports;
 
   const measurementDays = await TemplateDay.findAll({
     where: { templateId: template.id, isMeasurementDay: true },
     attributes: ['dayNumber'],
   });
+
+  const [trainingDays, restDays, healthyEatingDays] = await Promise.all([
+    TemplateDay.findAll({
+      where: { templateId: template.id, isTrainingDay: true },
+      attributes: ['dayNumber'],
+    }),
+    TemplateDay.findAll({
+      where: { templateId: template.id, isRestDay: true },
+      attributes: ['dayNumber'],
+    }),
+    TemplateDay.findAll({
+      where: { templateId: template.id, isHealthyEatingDay: true },
+      attributes: ['dayNumber'],
+    }),
+  ]);
 
   const [myRating, totalParticipants] = await Promise.all([
     StreamRating.findOne({
@@ -88,6 +160,9 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
     },
     currentDayNumber,
     measurementDays: measurementDays.map((d) => d.dayNumber),
+    trainingDays: trainingDays.map((d) => d.dayNumber),
+    restDays: restDays.map((d) => d.dayNumber),
+    healthyEatingDays: healthyEatingDays.map((d) => d.dayNumber),
     targetCalories: enrollment.targetCalories ?? null,
     goal: enrollment.goal ?? null,
     rating: {
@@ -99,6 +174,10 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
       id: report.id,
       dayNumber: report.dayNumber,
       totalCalories: Number(report.totalCalories),
+      weightKg:
+        report.weightKg !== null && report.weightKg !== undefined
+          ? Number(report.weightKg)
+          : null,
       filledAt: report.filledAt,
     })),
   });

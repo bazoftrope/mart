@@ -25,7 +25,8 @@ module.exports = {
       },
       pulse: {
         type: Sequelize.INTEGER,
-        allowNull: false,
+        allowNull: true,
+        defaultValue: null,
       },
       systolic: {
         type: Sequelize.SMALLINT,

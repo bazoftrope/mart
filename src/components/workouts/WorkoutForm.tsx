@@ -1,5 +1,7 @@
 import { useState, type ChangeEvent, type FormEvent } from 'react';
 import { ApiClientError } from '@/lib/apiClient';
+import type { ContentAttachmentData } from '@/types/attachments';
+import ContentAttachmentManager from '@/components/attachments/ContentAttachmentManager';
 import styles from './WorkoutForm.module.css';
 
 export type WorkoutFormValues = {
@@ -7,6 +9,7 @@ export type WorkoutFormValues = {
   description: string;
   exercises: string;
   execution: string;
+  attachments: ContentAttachmentData[];
 };
 
 type WorkoutFormProps = {
@@ -21,6 +24,7 @@ const EMPTY_VALUES: WorkoutFormValues = {
   description: '',
   exercises: '',
   execution: '',
+  attachments: [],
 };
 
 export default function WorkoutForm({
@@ -52,6 +56,7 @@ export default function WorkoutForm({
       description: values.description.trim(),
       exercises: values.exercises.trim(),
       execution: values.execution.trim(),
+      attachments: values.attachments.map((a, idx) => ({ ...a, position: idx })),
     };
 
     const localIssues: Record<string, string> = {};
@@ -152,6 +157,41 @@ export default function WorkoutForm({
         {issues.execution && (
           <p className={styles.fieldError}>{issues.execution}</p>
         )}
+      </div>
+
+      <div className={styles.field}>
+        <label className={styles.label}>Галерея изображений</label>
+        <ContentAttachmentManager
+          kind="image"
+          label="Изображения (jpg, png, webp)"
+          attachments={values.attachments}
+          onChange={(next) => setValues((prev) => ({ ...prev, attachments: next }))}
+        />
+        <p className={styles.hint}>До 10 МБ на файл, до 10 изображений. Показываются галереей.</p>
+      </div>
+
+      <div className={styles.field}>
+        <label className={styles.label}>Видео</label>
+        <ContentAttachmentManager
+          kind="video"
+          label="Видео (ссылка Kinescope)"
+          attachments={values.attachments}
+          onChange={(next) => setValues((prev) => ({ ...prev, attachments: next }))}
+        />
+        <p className={styles.hint}>
+          Вставьте ссылку https://kinescope.io/... — видео покажется плеером.
+        </p>
+      </div>
+
+      <div className={styles.field}>
+        <label className={styles.label}>PDF-файлы</label>
+        <ContentAttachmentManager
+          kind="file"
+          label="PDF"
+          attachments={values.attachments}
+          onChange={(next) => setValues((prev) => ({ ...prev, attachments: next }))}
+        />
+        <p className={styles.hint}>Тренировка в PDF, до 25 МБ на файл.</p>
       </div>
 
       {error && <p className="error">{error}</p>}

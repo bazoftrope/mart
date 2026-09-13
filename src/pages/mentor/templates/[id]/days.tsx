@@ -5,10 +5,10 @@ import { useAuthStore } from '@/stores/authStore';
 import styles from '../../TemplateDays.module.css';
 import { apiFetch } from '@/lib/apiClient';
 import RichTextEditor from '@/components/editor/RichTextEditor';
-import AttachmentManager from '@/components/mentor/AttachmentManager';
-import PairManager from '@/components/mentor/PairManager';
+import AttachmentsEditor from '@/components/mentor/AttachmentsEditor';
 import { canEditMarathonTemplate } from '@/lib/templateStatus';
 import type { AttachmentData } from '@/types/attachments';
+import { Icon } from '@/components/icons';
 
 type Template = {
   id: string;
@@ -21,6 +21,9 @@ type DayInput = {
   dayNumber: number;
   textContent: string;
   isMeasurementDay: boolean;
+  isTrainingDay: boolean;
+  isRestDay: boolean;
+  isHealthyEatingDay: boolean;
   attachments: AttachmentData[];
 };
 
@@ -29,6 +32,9 @@ type ApiDay = {
   dayNumber: number;
   textContent: string | null;
   isMeasurementDay: boolean;
+  isTrainingDay: boolean;
+  isRestDay: boolean;
+  isHealthyEatingDay: boolean;
   attachments: AttachmentData[];
 };
 
@@ -37,6 +43,9 @@ function createEmptyDays(count: number): DayInput[] {
     dayNumber: index + 1,
     textContent: '',
     isMeasurementDay: false,
+    isTrainingDay: false,
+    isRestDay: false,
+    isHealthyEatingDay: false,
     attachments: [],
   }));
 }
@@ -50,6 +59,7 @@ function toPayloadAttachment(attachment: AttachmentData) {
     sizeBytes: attachment.sizeBytes ?? null,
     position: attachment.position,
     pairId: attachment.pairId ?? null,
+    description: attachment.description ?? null,
   };
 }
 
@@ -96,6 +106,9 @@ export default function TemplateDaysPage() {
               dayNumber: day.dayNumber,
               textContent: day.textContent || '',
               isMeasurementDay: day.isMeasurementDay || false,
+              isTrainingDay: (day as ApiDay).isTrainingDay || false,
+              isRestDay: (day as ApiDay).isRestDay || false,
+              isHealthyEatingDay: (day as ApiDay).isHealthyEatingDay || false,
               attachments: day.attachments || [],
             }))
           );
@@ -141,6 +154,9 @@ export default function TemplateDaysPage() {
             dayNumber: day.dayNumber,
             textContent: day.textContent,
             isMeasurementDay: day.isMeasurementDay,
+            isTrainingDay: day.isTrainingDay,
+            isRestDay: day.isRestDay,
+            isHealthyEatingDay: day.isHealthyEatingDay,
             attachments: day.attachments.map(toPayloadAttachment),
           })),
         }),
@@ -218,8 +234,8 @@ export default function TemplateDaysPage() {
       <h1>Шаг 3 из 3. Дни: {template.title}</h1>
       <p>
         Длительность: {template.durationDays} дн. Для каждого дня можно написать текст в
-        редакторе, добавить комплект «PDF + аудио», прикрепить PDF-документы и добавить
-        аудио/видео. День можно оставить пустым.
+        редакторе, прикрепить независимые PDF, и добавить аудио/видео — каждое с
+        опциональным описанием и PDF рядом. День можно оставить пустым.
       </p>
 
       {template.status === 'approved' && (
@@ -238,8 +254,8 @@ export default function TemplateDaysPage() {
         {days.map((day, index) => (
           <fieldset key={index} className={styles.fieldset}>
             <legend>День {day.dayNumber}</legend>
-            <div className={styles.formGroup}>
-              <label className={styles.checkboxLabel}>
+            <div className={styles.dayFlags}>
+              <label className={styles.flagLabel}>
                 <input
                   type="checkbox"
                   checked={day.isMeasurementDay}
@@ -248,7 +264,44 @@ export default function TemplateDaysPage() {
                     updateDay(index, 'isMeasurementDay', e.target.checked)
                   }
                 />
-                День замера (вес и охваты)
+                <Icon name="mesure" width={32} height={32} />
+                <span>День замера</span>
+              </label>
+              <label className={styles.flagLabel}>
+                <input
+                  type="checkbox"
+                  checked={day.isTrainingDay}
+                  disabled={!isEditable}
+                  onChange={(e) =>
+                    updateDay(index, 'isTrainingDay', e.target.checked)
+                  }
+                />
+                <Icon name="training" width={32} height={32} />
+                <span>День тренировки</span>
+              </label>
+              <label className={styles.flagLabel}>
+                <input
+                  type="checkbox"
+                  checked={day.isRestDay}
+                  disabled={!isEditable}
+                  onChange={(e) =>
+                    updateDay(index, 'isRestDay', e.target.checked)
+                  }
+                />
+                <Icon name="rest" width={32} height={32} />
+                <span>День отдыха</span>
+              </label>
+              <label className={styles.flagLabel}>
+                <input
+                  type="checkbox"
+                  checked={day.isHealthyEatingDay}
+                  disabled={!isEditable}
+                  onChange={(e) =>
+                    updateDay(index, 'isHealthyEatingDay', e.target.checked)
+                  }
+                />
+                <Icon name="diet_food" width={32} height={32} />
+                <span>День здоровой еды</span>
               </label>
             </div>
 
@@ -263,38 +316,15 @@ export default function TemplateDaysPage() {
             </div>
 
             {templateId && (
-              <>
-                <PairManager
+              <div className={styles.attachmentsRow}>
+                <AttachmentsEditor
                   templateId={templateId}
+                  kinds={['image', 'file', 'audio', 'video']}
                   attachments={day.attachments}
                   onChange={(attachments) => updateDayAttachments(index, attachments)}
                   disabled={!isEditable}
                 />
-                <AttachmentManager
-                  templateId={templateId}
-                  kind="file"
-                  label="Документы (PDF)"
-                  attachments={day.attachments}
-                  onChange={(attachments) => updateDayAttachments(index, attachments)}
-                  disabled={!isEditable}
-                />
-                <AttachmentManager
-                  templateId={templateId}
-                  kind="audio"
-                  label="Аудио для дня"
-                  attachments={day.attachments}
-                  onChange={(attachments) => updateDayAttachments(index, attachments)}
-                  disabled={!isEditable}
-                />
-                <AttachmentManager
-                  templateId={templateId}
-                  kind="video"
-                  label="Видео для дня"
-                  attachments={day.attachments}
-                  onChange={(attachments) => updateDayAttachments(index, attachments)}
-                  disabled={!isEditable}
-                />
-              </>
+              </div>
             )}
           </fieldset>
         ))}

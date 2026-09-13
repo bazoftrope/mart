@@ -13,8 +13,18 @@ export { parseMultipart, ALLOWED_AUDIO_MIME };
 
 export const MAX_FILE_SIZE_BYTES = Number(process.env.MAX_FILE_SIZE_MB ?? 25) * 1024 * 1024;
 
+export const MAX_IMAGE_SIZE_BYTES = Number(process.env.MAX_IMAGE_SIZE_MB ?? 10) * 1024 * 1024;
+
 export const ALLOWED_FILE_MIME: Record<string, string> = {
   'application/pdf': '.pdf',
+};
+
+export const ALLOWED_IMAGE_MIME: Record<string, string> = {
+  'image/jpeg': '.jpg',
+  'image/jpg': '.jpg',
+  'image/png': '.png',
+  'image/webp': '.webp',
+  'image/gif': '.gif',
 };
 
 export function getUploadRoot(): string {
@@ -23,8 +33,16 @@ export function getUploadRoot(): string {
     : path.resolve(process.cwd(), 'data', 'uploads', 'audio');
 }
 
+export function getContentUploadRoot(): string {
+  return getUploadRoot();
+}
+
 export function getTemplateUploadDir(templateId: string): string {
   return path.join(getUploadRoot(), templateId);
+}
+
+export function getOwnerUploadDir(ownerType: string, ownerId: string): string {
+  return path.join(getUploadRoot(), ownerType, ownerId);
 }
 
 export function ensureUploadRoot(): void {
@@ -53,6 +71,13 @@ export function buildUploadUrl(kind: 'audio' | 'file', templateId: string, filen
   return `/api/uploads/${kind}/${templateId}/${filename}`;
 }
 
+export function buildContentUploadUrl(kind: 'file' | 'image', ownerType: string, ownerId: string, filename: string): string {
+  // Публичный URL для content_attachments (рецепты/тренировки)
+  // Используем тот же префикс /api/uploads/<kind>/<ownerType>/<ownerId>/<filename>
+  // Для обратной совместимости file/image шаблона остаются /api/uploads/file/<templateId>/...
+  return `/api/uploads/${kind}/${ownerType}/${ownerId}/${filename}`;
+}
+
 export function extensionFromFilename(filename: string): string | null {
   const ext = path.extname(filename).toLowerCase();
   return ext ? ext : null;
@@ -73,6 +98,19 @@ export function fileExtensionFromMimeOrFilename(
   const mimeExt = ALLOWED_FILE_MIME[contentType.toLowerCase()];
   if (mimeExt) return mimeExt;
   return path.extname(filename).toLowerCase() === '.pdf' ? '.pdf' : null;
+}
+
+export function imageExtensionFromMimeOrFilename(
+  contentType: string,
+  filename: string
+): string | null {
+  const mimeExt = ALLOWED_IMAGE_MIME[contentType.toLowerCase()];
+  if (mimeExt) return mimeExt;
+  const ext = path.extname(filename).toLowerCase();
+  if (['.jpg', '.jpeg', '.png', '.webp', '.gif'].includes(ext)) {
+    return ext === '.jpeg' ? '.jpg' : ext;
+  }
+  return null;
 }
 
 export type UploadedFile = {

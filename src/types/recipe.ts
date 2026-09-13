@@ -1,3 +1,5 @@
+import type { ContentAttachmentData } from './attachments';
+
 export type Recipe = {
   id: string;
   title: string;
@@ -8,6 +10,7 @@ export type Recipe = {
   updatedAt: string;
   isFavorite: boolean;
   canEdit: boolean;
+  attachments: ContentAttachmentData[];
 };
 
 export type RecipeListResponse = {

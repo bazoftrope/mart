@@ -27,11 +27,56 @@
 }
 
 .measurementBadge {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
   padding: 0.15rem 0.5rem;
   border-radius: 999px;
   background: #e8f0fe;
   color: #1a3a6e;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.badgeRow {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-left: 0.5rem;
+}
+
+.badgeTraining {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  background: #fff4e6;
+  color: #7a4a0a;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.badgeRest {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  background: #ede9fe;
+  color: #4c1d95;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.badgeHealthy {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  background: #e6f4f1;
+  color: #134e4a;
   font-size: 0.75rem;
   font-weight: 500;
 }

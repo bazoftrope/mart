@@ -32,6 +32,21 @@ module.exports = {
         allowNull: false,
         defaultValue: false,
       },
+      is_training_day: {
+        type: Sequelize.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+      },
+      is_rest_day: {
+        type: Sequelize.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+      },
+      is_healthy_eating_day: {
+        type: Sequelize.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+      },
       audio_url: {
         type: Sequelize.STRING,
         allowNull: true,

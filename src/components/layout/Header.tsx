@@ -3,9 +3,9 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useAuthStore } from '@/stores/authStore';
-import styles from './Layout.module.css';
+import styles from './Header.module.css';
 
-export default function Layout({ children }: { children: React.ReactNode }) {
+export default function Header() {
   const router = useRouter();
   const role = useAuthStore((s) => s.role);
   const initAuth = useAuthStore((s) => s.initAuth);
@@ -89,9 +89,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <Link href="/mentor/streams" className={styles.link}>
             Мои потоки
           </Link>
-          <Link href="/mentor/messages" className={styles.link}>
-            Сообщения
-          </Link>
           <button onClick={handleLogout} className={styles.button}>
             Выйти
           </button>
@@ -106,9 +103,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <Link href="/dashboard" className={styles.link}>
           Мои марафоны
         </Link>
-        <Link href="/dashboard/messages" className={styles.link}>
-          Сообщения
-        </Link>
         <button onClick={handleLogout} className={styles.button}>
           Выйти
         </button>
@@ -117,23 +111,20 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className={styles.wrapper}>
-      <header className={styles.header}>
-        <div className={styles.container}>
-          <Link href="/" className={styles.logo}>
-            <Image
-              src="/logo.png"
-              alt="Marathon Platform"
-              width={33}
-              height={36}
-              className={styles.logoImage}
-            />
-            <span>Marathon Platform</span>
-          </Link>
-          <nav className={styles.nav}>{renderNav()}</nav>
-        </div>
-      </header>
-      <main className={styles.main}>{children}</main>
-    </div>
+    <header className={styles.header}>
+      <div className={styles.container}>
+        <Link href="/" className={styles.logo}>
+          <Image
+            src="/logo.png"
+            alt="Marathon Platform"
+            width={33}
+            height={36}
+            className={styles.logoImage}
+          />
+          <span>Marathon Platform</span>
+        </Link>
+        <nav className={styles.nav}>{renderNav()}</nav>
+      </div>
+    </header>
   );
 }

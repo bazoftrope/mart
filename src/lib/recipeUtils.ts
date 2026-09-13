@@ -1,5 +1,6 @@
 import type { Recipe } from '@db/models/Recipe';
 import type { TokenPayload } from '@/types/auth';
+import type { ContentAttachmentData } from '@/types/attachments';
 
 export type RecipeDto = {
   id: string;
@@ -11,6 +12,7 @@ export type RecipeDto = {
   updatedAt: Date;
   isFavorite: boolean;
   canEdit: boolean;
+  attachments: ContentAttachmentData[];
 };
 
 /**
@@ -28,7 +30,7 @@ export function canManageRecipe(
 
 export function toRecipeDto(
   recipe: Recipe,
-  options: { isFavorite: boolean; canEdit: boolean }
+  options: { isFavorite: boolean; canEdit: boolean; attachments?: ContentAttachmentData[] }
 ): RecipeDto {
   return {
     id: recipe.id,
@@ -40,5 +42,6 @@ export function toRecipeDto(
     updatedAt: recipe.updatedAt,
     isFavorite: options.isFavorite,
     canEdit: options.canEdit,
+    attachments: options.attachments ?? [],
   };
 }

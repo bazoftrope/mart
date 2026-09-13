@@ -28,6 +28,7 @@ export default function NewRecipePage() {
       description: values.description,
       ingredients: values.ingredients,
       steps: values.steps,
+      attachments: values.attachments,
     });
     router.push(`/recipes/${recipe.id}`);
   }

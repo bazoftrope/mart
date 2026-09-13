@@ -43,4 +43,25 @@ export class TemplateDay extends Model {
     defaultValue: false,
   })
   isMeasurementDay!: boolean;
+
+  @Column({
+    type: DataType.BOOLEAN,
+    allowNull: false,
+    defaultValue: false,
+  })
+  isTrainingDay!: boolean;
+
+  @Column({
+    type: DataType.BOOLEAN,
+    allowNull: false,
+    defaultValue: false,
+  })
+  isRestDay!: boolean;
+
+  @Column({
+    type: DataType.BOOLEAN,
+    allowNull: false,
+    defaultValue: false,
+  })
+  isHealthyEatingDay!: boolean;
 }

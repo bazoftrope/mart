@@ -5,6 +5,7 @@ import { Pencil, Trash2 } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 import { apiFetch } from '@/lib/apiClient';
 import FavoriteButton from '@/components/recipes/FavoriteButton';
+import AttachmentPlayers from '@/components/attachments/AttachmentPlayers';
 import type { Recipe } from '@/types/recipe';
 import styles from './[id].module.css';
 
@@ -201,6 +202,13 @@ export default function RecipeDetailPage() {
               <p className="textMuted">Шаги приготовления не указаны.</p>
             )}
           </section>
+
+          {(recipe.attachments?.length ?? 0) > 0 && (
+            <section className={styles.section}>
+              <h2 className={styles.sectionTitle}>Материалы</h2>
+              <AttachmentPlayers attachments={recipe.attachments} />
+            </section>
+          )}
 
           <p className={styles.updated}>
             Обновлено {new Date(recipe.updatedAt).toLocaleDateString('ru-RU')}

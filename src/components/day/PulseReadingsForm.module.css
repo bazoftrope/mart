@@ -61,3 +61,26 @@
   color: #666;
   font-size: 0.9rem;
 }
+
+.hint {
+  font-size: 0.82rem;
+  color: #6b7280;
+  margin: 0 0 0.75rem;
+  line-height: 1.4;
+}
+
+.hintMuted {
+  color: #9ca3af;
+  font-weight: 400;
+}
+
+.pressureGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.slash {
+  color: #9ca3af;
+  font-weight: 600;
+}
