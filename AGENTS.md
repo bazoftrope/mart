@@ -21,6 +21,7 @@
 | `npm run build` | Прод-сборка (проверка типов перед сдачей) |
 | `npm run lint` | ESLint |
 | `npm run cron` | Cron-worker (`src/cron-worker.ts`, `node-cron` в dev) |
+| `npm run db:reset` | Пересоздать БД + миграции + все сиды (включая dev-аккаунты) |
 
 ## Структура проекта
 
@@ -38,18 +39,19 @@
 - `DB/models/` — Sequelize-модели (`User`, `MarathonTemplate`, `TemplateDay`, `Stream`, `StreamEnrollment`, `DailyReport`, `ReportLine`, `PulseReading`, `Product`, `Conversation`, `ConversationMember`, `Message`, `Recipe`, `RecipeFavorite`, `ContentAttachment`, `Workout`, `WorkoutFavorite`, `HelpArticle`, `StreamRating`, `TemplateAttachment`, `index.ts`).
 - `DB/migrations/`, `DB/seeders/`, `DB/config/config.js` — конфиг Sequelize (см. `.sequelizerc`).
 
-### `DOC/` — документация проекта
-- `architecture.md` — архитектура (читать при входе в курс).
-- `entities-and-relations.md` — сущности и связи БД.
-- `implementation-plan.md` — дорожная карта, шаги отмечаются `[v]` (показывают, что реализовано).
-- `product-vision.md`, `screens-and-ui.md`, `user-flows.md`, `rating-and-formulas.md`.
-- `*/plan.md` (напр. `css-refactor-plan.md`, `participant-day-refactor-plan.md`, `report-extension-plan.md`), `admin-workflow.md`, `decisions-log.md`, `task-*.md` — планы и ТЗ по задачам.
+### `DOC/` — документация проекта (живая)
+- `architecture.md` — архитектура, стек, API-роуты, миграции, формулы.
+- `entities-and-relations.md` — сущности и связи БД (19 моделей).
+- `decisions-log.md` — лог принятых решений (с датами и версиями).
+- `screens-and-ui.md` — экраны и структура интерфейса.
+- `local/info.md` — доступы, dev-аккаунты, сброс БД. **Папка `local/` в git не хранится** (см. `DOC/local/.gitignore`); у каждого разработчика она своя.
+- `archive/` — **историческое**: MVP-роадмап, планы рефакторингов, ТЗ и проектные документы (product-vision, user-flows и т.п.). Не описывает текущее состояние, **не читать как источник правды**.
 
 ## Документация, которую следует прочитать в начале работы
 
 1. `DOC/architecture.md`
 2. `DOC/entities-and-relations.md`
-3. `DOC/implementation-plan.md` (оценить прогресс по `[v]`)
+3. `DOC/decisions-log.md` (учесть уже принятые решения)
 
 ## Паттерны кодирования (следовать им обязательно)
 
@@ -65,7 +67,19 @@
 - `node_modules/`, `.next/`, `.git/`
 - `*.tsbuildinfo`
 
+## Тестовые аккаунты (dev, не теряются после сброса)
+
+Сидер `DB/seeders/20260915000001-dev-personal-accounts.js` + `scripts/reset-db.cjs` (auto `db:seed:all`). Пароль для всех — `12345678`.
+
+| Ирина ментор | `irina.mentor@test.ru` | `mentor` |
+| Ирина участник | `irina@test.ru` | `participant` |
+| Вова ментор | `vova.mentor@test.ru` | `mentor` |
+| Вова участник | `vova@test.ru` | `participant` |
+
+Подробнее: `DOC/local/info.md` (локальный файл, в git не хранится).
+
 ## Прочее
 
+- **Миграции БД:** изменения схемы — отдельным файлом в `DB/migrations/`; подробнее — `DOC/architecture.md` → «База данных → Миграции».
 - Локальный cron использует `node-cron` (`npm run cron`); в проде схема может отличаться.
 - Переменные окружения — см. `.env.example` (ключи: `DATABASE_URL`, `JWT_SECRET`, `JWT_REFRESH_SECRET`, `ADMIN_EMAIL`, `ADMIN_PASSWORD_HASH`, `NEXT_PUBLIC_APP_URL`).

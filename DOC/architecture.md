@@ -39,7 +39,7 @@ marathon-platform/
 │   ├── config/config.js         # Конфиг Sequelize CLI (dev/test/prod)
 │   ├── models/                  # 19 моделей (index.ts экспортирует все + `models` map + `AppModels`)
 │   ├── migrations/              # Sequelize CLI миграции (20 файлов)
-│   └── seeders/                 # Seed-данные (продукты, демо-рецепты, демо-тренировки, статьи помощи)
+│   └── seeders/                 # Seed-данные (продукты, демо-рецепты, демо-тренировки, статьи помощи, dev-аккаунты Ирина/Вова)
 ├── src/
 │   ├── pages/                   # Pages Router
 │   │   ├── _app.tsx             # Layout + globals.css
@@ -236,7 +236,18 @@ export default apiHandler({ GET: withMentor(getHandler) });
 | `20260910000002-create-workouts.js` | книга тренировок (`workouts`, `workout_favorites`) |
 | `20260911000001-create-help-articles.js` | раздел «Правила и помощь» (`help_articles`) |
 
-Команды: `npx sequelize-cli db:migrate` / `db:migrate:undo` / `db:seed:all` / `db:seed:undo:all`.
+Команды: `npx sequelize-cli db:migrate` / `db:migrate:undo` / `db:seed:all` / `db:seed:undo:all` (`npm run db:reset` — drop+create+migrate+seed:all).
+
+### Сидеры (`DB/seeders/`)
+
+| Файл | Назначение |
+|------|-----------|
+| `20240724000001-products.js` | Базовый каталог продуктов |
+| `20260913000001-products-catalog.js` | Расширенный каталог продуктов |
+| `20260910000001-demo-recipes.js` | Демо-рецепты |
+| `20260910000002-demo-workouts.js` | Демо-тренировки |
+| `20260911*` + `20260914*` | Статьи «Правила и помощь» |
+| `20260915000001-dev-personal-accounts.js` | **Личные dev-аккаунты Ирина/Вова (2 пары mentor+participant)** — `irina.mentor@test.ru`, `irina@test.ru`, `vova.mentor@test.ru`, `vova@test.ru` (пароль `12345678` для всех). Идемпотентный, `scripts/reset-db.cjs` вызывает `db:seed:all` автоматически. См. `DOC/local/info.md` (локальный файл, в git не хранится). |
 
 > **Соглашение по миграциям (важно для агента).** Пока в базе нет прод-данных
 > (и пользователей, которых нельзя потерять), новые файлы миграций **не создаём** —
@@ -311,5 +322,5 @@ male:   База = (6.25×Рост + 10×Вес − 5×Возраст + 5) × 1.
 - Чат: компоненты `src/components/Chat/MarathonChatPopup` (участник, всплывающий чат в шапке марафона) и `src/components/Chat/MentorStreamChat` (ментор, чат на странице потока). Общие типы — в `src/components/Chat/Chat.tsx`. Страницы `/dashboard/messages` и `/mentor/messages` — редиректы («чат переехал»). Для завершённых потоков чат закрыт (только чтение).
 - Книга рецептов: общая, без привязки к марафонам. Модели `Recipe` (служебный `createdBy` в UI не показывается) и `RecipeFavorite`, вложения — `ContentAttachment` (`owner_type = 'recipe'`): изображения (галерея), PDF и видео по ссылке Kinescope. Публичный `GET /api/recipes` через `withOptionalAuth` дополняется `isFavorite`/`canEdit` и вложениями. UI: `src/pages/recipes/*`, компоненты `src/components/recipes/*`, редактор вложений `src/components/attachments/ContentAttachmentManager` (логика списка — общая `src/lib/attachmentEditor.ts`).
 - Книга тренировок: полное зеркало книги рецептов (та же механика — публичное чтение, поиск, пагинация, избранное, права автор/админ, вложения `ContentAttachment` с `owner_type = 'workout'`: изображения, PDF, видео Kinescope). Модели `Workout` (`title`, `description`, `exercises`, `execution`, служебный `createdBy`) и `WorkoutFavorite`; UI: `src/pages/workouts/*`, компоненты `src/components/workouts/*`. Кнопка избранного переиспользуется из книги рецептов (`src/components/recipes/FavoriteButton`).
-- Раздел «Правила и помощь»: модель `HelpArticle` (разделы `rules`/`faq`/`guide`, аудитории `all`/`participant`/`mentor`/`admin`, `slug`, черновики); публичное чтение через `withOptionalAuth`, запись — только `withAdmin`. UI: `src/pages/help/*` (список с поиском и табами, страница статьи), админка `src/pages/admin/help/*` (CRUD с Quill), компоненты `src/components/help/*`. Тексты санируются `sanitizeRichText` при сохранении; слаги формирует `src/lib/helpSlug.ts`, где лежат константы `HELP_SLUG_RULES`/`HELP_SLUG_REPORT_GUIDE` для контекстных ссылок (на странице дня, потоке и регистрации). Стартовый набор статей — сидер `20260911000001-demo-help-articles.js`. Подробнее: `DOC/help-center-plan.md`.
-- Планы рефакторингов: `DOC/css-refactor-plan.md`, `DOC/participant-day-refactor-plan.md`, `DOC/report-extension-plan.md`.
+- Раздел «Правила и помощь»: модель `HelpArticle` (разделы `rules`/`faq`/`guide`, аудитории `all`/`participant`/`mentor`/`admin`, `slug`, черновики); публичное чтение через `withOptionalAuth`, запись — только `withAdmin`. UI: `src/pages/help/*` (список с поиском и табами, страница статьи), админка `src/pages/admin/help/*` (CRUD с Quill), компоненты `src/components/help/*`. Тексты санируются `sanitizeRichText` при сохранении; слаги формирует `src/lib/helpSlug.ts`, где лежат константы `HELP_SLUG_RULES`/`HELP_SLUG_REPORT_GUIDE` для контекстных ссылок (на странице дня, потоке и регистрации). Стартовый набор статей — сидер `20260911000001-demo-help-articles.js`. Подробнее (историческое ТЗ): `DOC/archive/help-center-plan.md`.
+- Исторические планы рефакторингов: `DOC/archive/css-refactor-plan.md`, `DOC/archive/participant-day-refactor-plan.md`, `DOC/archive/report-extension-plan.md`.
