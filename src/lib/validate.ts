@@ -23,6 +23,19 @@ export const sexSchema = z.enum(['male', 'female']);
 
 export const goalSchema = z.enum(['lose', 'maintain', 'gain']);
 
+export const consentTypeSchema = z.enum(['general', 'health']);
+
+/**
+ * Обязательная галочка согласия. Значение `true` подтверждает, что
+ * пользователь осознанно дал согласие; иначе сервер отклоняет запрос.
+ */
+const requiredConsent = (message: string) =>
+  z.boolean().refine((value) => value === true, { message });
+
+export const grantConsentSchema = z.object({
+  type: consentTypeSchema,
+});
+
 export const profileSchema = z.object({
   sex: sexSchema,
   heightCm: z
@@ -37,8 +50,11 @@ export const profileSchema = z.object({
   age: z
     .number()
     .int('Возраст должен быть целым числом')
-    .min(10, 'Возраст должен быть не менее 10 лет')
+    .min(18, 'Сервис доступен только с 18 лет')
     .max(120, 'Возраст должен быть не более 120 лет'),
+  healthConsentAccepted: requiredConsent(
+    'Нужно согласие на обработку данных о здоровье'
+  ),
 });
 
 export const enrollSchema = z.object({
@@ -59,6 +75,23 @@ export const registerSchema = z.object({
   password: passwordSchema,
   name: nameSchema,
   role: roleSchema,
+  acceptPolicy: requiredConsent(
+    'Нужно подтвердить ознакомление с политикой обработки персональных данных'
+  ),
+  acceptGeneralConsent: requiredConsent(
+    'Нужно согласие на обработку персональных данных'
+  ),
+});
+
+/** Подтверждение удаления аккаунта: пароль + контрольное слово. */
+export const deleteAccountSchema = z.object({
+  password: passwordSchema,
+  confirmation: z
+    .string()
+    .trim()
+    .refine((value) => value.toLowerCase() === 'удалить', {
+      message: 'Введите слово «удалить» для подтверждения',
+    }),
 });
 
 export const templateAttachmentSchema = z
@@ -114,6 +147,8 @@ export const updateTemplateDaysSchema = z.object({
 export type LoginInput = z.infer<typeof loginSchema>;
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type ProfileInput = z.infer<typeof profileSchema>;
+export type GrantConsentInput = z.infer<typeof grantConsentSchema>;
+export type DeleteAccountInput = z.infer<typeof deleteAccountSchema>;
 export type EnrollInput = z.infer<typeof enrollSchema>;
 export type MarathonTemplateInput = z.infer<typeof marathonTemplateSchema>;
 export type TemplateDayInput = z.infer<typeof templateDaySchema>;
@@ -236,20 +271,41 @@ export const helpArticleSchema = z.object({
   isPublished: z.boolean().optional().default(true),
 });
 
-export const createProductSchema = z.object({
-  name: z
-    .string()
-    .trim()
-    .min(1, 'Название продукта обязательно')
-    .max(200, 'Название слишком длинное'),
-  calories: z
-    .number()
-    .positive('Калорийность должна быть положительной')
-    .max(2000, 'Калорийность слишком большая'),
-});
+const macroField = z
+  .number()
+  .min(0, 'Значение не может быть отрицательным')
+  .max(100, 'Значение не может быть больше 100 г');
+
+export const createProductSchema = z
+  .object({
+    name: z
+      .string()
+      .trim()
+      .min(1, 'Название продукта обязательно')
+      .max(200, 'Название слишком длинное'),
+    calories: z
+      .number()
+      .positive('Калорийность должна быть положительной')
+      .max(2000, 'Калорийность слишком большая'),
+    protein: macroField,
+    fat: macroField,
+    carbs: macroField,
+  })
+  .refine((data) => data.protein + data.fat + data.carbs <= 100, {
+    message: 'Сумма белков, жиров и углеводов не может превышать 100 г',
+    path: ['protein'],
+  });
+
+export const mealTypeSchema = z.enum([
+  'breakfast',
+  'lunch',
+  'dinner',
+  'snack',
+]);
 
 export const reportLineSchema = z.object({
   productId: z.string().uuid('Неверный id продукта'),
+  mealType: mealTypeSchema,
   weightGrams: z
     .number()
     .positive('Вес должен быть положительным')

@@ -17,7 +17,7 @@
 
 .helpLink {
   font-size: 0.9rem;
-  color: var(--accent-primary);
+  color: var(--text-link);
   text-decoration: none;
 }
 
@@ -35,43 +35,69 @@
 }
 
 
+/* Слева — сайдбар с итогами дня и метриками, справа — таблица отчёта.
+   Сайдбар держим обычным блоком (flex-свойства карточек внутри него инертны),
+   а на мобильном «разворачиваем» через display: contents, чтобы вернуть
+   порядок «итоги → таблица → метрики». */
 .reportLayout {
   display: flex;
-  align-items: stretch;
+  align-items: flex-start;
   gap: 1rem;
-  flex-wrap: wrap;
 }
 
-.tableWrap {
+.summaryColumn {
+  flex: 0 1 320px;
+  min-width: 280px;
+}
+
+.tableCell {
   flex: 1 1 auto;
   min-width: 0;
   max-width: 100%;
 }
 
-.metricsSection {
-  margin-top: 1.5rem;
+.metricsCell {
+  margin-top: 1rem;
 }
 
-.metricsTitle {
-  font-size: 0.95rem;
-  font-weight: 800;
-  letter-spacing: -0.015em;
-  color: #0f172a;
-  margin-bottom: 0.85rem;
-}
-
-.metricsRow {
+.mealSelector {
   display: flex;
-  align-items: stretch;
-  gap: 1rem;
   flex-wrap: wrap;
-  padding: 6px;
-  margin: -6px;
-  overflow: visible;
+  gap: 0.35rem;
+  margin-bottom: 0.75rem;
 }
 
-.pulseBlockContent {
-  margin-top: 0;
+.mealTab {
+  padding: 0.42rem 0.85rem;
+  border: none;
+  border-radius: 999px;
+  background: var(--bg-surface-secondary);
+  color: var(--text-secondary);
+  font-size: 0.86rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.mealTab:hover {
+  background: var(--bg-surface-hover);
+}
+
+.mealTabActive {
+  background: var(--accent-primary);
+  color: var(--text-on-accent);
+  box-shadow: var(--shadow-clay-sm);
+}
+
+.mealTab:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.searchHint {
+  margin: 0.5rem 0 0;
+  font-size: 0.82rem;
+  color: var(--text-muted-extra);
 }
 
 .trainingField {
@@ -81,7 +107,7 @@
   justify-content: space-between;
   gap: 0.5rem;
   font-size: 0.9rem;
-  color: #333;
+  color: var(--text-secondary);
 }
 
 .trainingField > span {
@@ -93,14 +119,12 @@
   flex: 0 0 auto;
   width: 1.28rem;
   height: 1.28rem;
-  accent-color: var(--accent-primary);
+  accent-color: var(--accent-strong);
   cursor: pointer;
   border: none;
-  border-radius: 6px;
-  background: #ffffff;
-  box-shadow:
-    0 0 0 1px rgba(15, 23, 42, 0.12) inset,
-    0 1px 2px rgba(15, 23, 42, 0.06);
+  border-radius: var(--radius-xs);
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-inset);
   box-sizing: border-box;
   appearance: auto;
 }
@@ -112,10 +136,7 @@
 
 .trainingCheckbox:focus {
   outline: none;
-  box-shadow:
-    0 0 0 1px rgba(234, 88, 12, 0.22),
-    0 0 0 3px rgba(234, 88, 12, 0.16),
-    0 1px 4px rgba(15, 23, 42, 0.06);
+  box-shadow: var(--shadow-inset), var(--focus-ring);
 }
 
 .trainingCheckbox:focus-visible {
@@ -123,9 +144,15 @@
 }
 
 .saveBtnDiv {
-  margin-top: 1.5rem;
+  margin-top: var(--space-6);
+  display: flex;
 }
 
+.saveBtnDiv > button {
+  min-width: 220px;
+}
+
+/* Легаси-класс оставлен для совместимости: теперь визуал даёт <Button> */
 .saveBtn {
   padding: 0.75rem 1.5rem;
   font-size: 1rem;
@@ -135,13 +162,46 @@
   cursor: not-allowed;
 }
 
+@media (max-width: 640px) {
+  .saveBtnDiv > button {
+    width: 100%;
+  }
+}
+
 .saveError {
-  color: red;
+  color: var(--text-danger);
   margin-top: 1rem;
 }
 
 .lastUpdated {
   margin-top: 1rem;
-  color: #555;
+  color: var(--text-secondary);
   font-size: 0.9rem;
+}
+
+@media (max-width: 640px) {
+  .reportLayout {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  /* .summaryColumn исчезает как бокс, его дети становятся flex-элементами
+     .reportLayout — так на мобильном сохраняется порядок «итоги → таблица →
+     метрики» вместо «итоги → метрики → таблица». */
+  .summaryColumn {
+    display: contents;
+  }
+
+  .summaryCell {
+    order: 1;
+  }
+
+  .tableCell {
+    order: 2;
+  }
+
+  .metricsCell {
+    order: 3;
+    margin-top: 0;
+  }
 }

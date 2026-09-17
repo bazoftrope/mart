@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { Pencil, Trash2 } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 import { apiClient, ApiClientError } from '@/lib/apiClient';
+import Button from '@/components/ui/Button';
+import { ButtonLink } from '@/components/ui';
 import {
   HELP_AUDIENCE_LABELS,
   HELP_SECTION_LABELS,
@@ -82,12 +84,12 @@ export default function AdminHelpPage() {
           </p>
         </div>
         <div className={styles.headerActions}>
-          <Link href="/help" className="btn btnOutline">
+          <ButtonLink href="/help" variant="outline">
             Открыть раздел
-          </Link>
-          <Link href="/admin/help/new" className="btn btnPrimary">
+          </ButtonLink>
+          <ButtonLink href="/admin/help/new" variant="primary">
             Добавить статью
-          </Link>
+          </ButtonLink>
         </div>
       </header>
 
@@ -98,9 +100,9 @@ export default function AdminHelpPage() {
       {!loading && !error && articles.length === 0 && (
         <div className={styles.empty}>
           <p>Статей пока нет.</p>
-          <Link href="/admin/help/new" className="btn btnPrimary">
+          <ButtonLink href="/admin/help/new" variant="primary">
             Добавить первую статью
-          </Link>
+          </ButtonLink>
         </div>
       )}
 
@@ -142,24 +144,20 @@ export default function AdminHelpPage() {
                 </td>
                 <td>
                   <div className={styles.actions}>
-                    <Link
-                      href={`/admin/help/${article.slug}`}
-                      className={styles.actionLink}
-                    >
+                    <ButtonLink href={`/admin/help/${article.slug}`} variant="outline" size="sm">
                       <Pencil size={16} />
                       Изменить
-                    </Link>
-                    <button
+                    </ButtonLink>
+                    <Button
                       type="button"
-                      className={styles.deleteButton}
+                      variant="danger"
+                      size="sm"
                       onClick={() => handleDelete(article)}
                       disabled={deletingSlug === article.slug}
                     >
                       <Trash2 size={16} />
-                      {deletingSlug === article.slug
-                        ? 'Удаляем...'
-                        : 'Удалить'}
-                    </button>
+                      {deletingSlug === article.slug ? 'Удаляем...' : 'Удалить'}
+                    </Button>
                   </div>
                 </td>
               </tr>

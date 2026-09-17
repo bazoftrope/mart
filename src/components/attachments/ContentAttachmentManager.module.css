@@ -79,7 +79,7 @@
 
 .fileLink {
   flex: 1;
-  color: var(--accent-primary);
+  color: var(--accent-strong);
   text-decoration: none;
   font-size: var(--font-size-sm);
   overflow: hidden;

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
-import Link from 'next/link';
 import { useAuthStore } from '@/stores/authStore';
+import { ButtonLink } from '@/components/ui';
 import styles from './MentorStreams.module.css';
 import { apiFetch } from '@/lib/apiClient';
 import StreamCard from '@/components/stream/StreamCard';
@@ -56,9 +56,9 @@ export default function MentorStreamsPage() {
     <main className={styles.main}>
       <div className={styles.header}>
         <h1>Мои потоки</h1>
-        <Link href="/mentor/streams/launch">
-          <button className={styles.launchBtn}>Запустить поток</button>
-        </Link>
+        <ButtonLink href="/mentor/streams/launch" variant="primary">
+          Запустить поток
+        </ButtonLink>
       </div>
 
       {loading && <p>Загрузка...</p>}

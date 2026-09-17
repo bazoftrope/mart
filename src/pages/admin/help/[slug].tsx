@@ -7,6 +7,8 @@ import { apiClient } from '@/lib/apiClient';
 import HelpForm, {
   type HelpFormValues,
 } from '@/components/help/HelpForm';
+import Button from '@/components/ui/Button';
+import { ButtonLink } from '@/components/ui';
 import type { HelpArticle } from '@/types/help';
 import styles from './AdminHelpEdit.module.css';
 
@@ -108,18 +110,13 @@ export default function AdminHelpEditPage() {
         <h1 className="pageTitle">Редактирование статьи</h1>
         {article && (
           <div className={styles.headerActions}>
-            <Link href={`/help/${article.slug}`} className="btn btnOutline">
+            <ButtonLink href={`/help/${article.slug}`} variant="outline">
               Открыть в разделе
-            </Link>
-            <button
-              type="button"
-              className="btn btnDanger"
-              onClick={handleDelete}
-              disabled={deleting}
-            >
+            </ButtonLink>
+            <Button type="button" variant="danger" onClick={handleDelete} disabled={deleting}>
               <Trash2 size={16} />
               {deleting ? 'Удаляем...' : 'Удалить'}
-            </button>
+            </Button>
           </div>
         )}
       </div>

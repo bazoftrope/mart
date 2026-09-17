@@ -1,7 +1,9 @@
 import { useEffect, useState, FormEvent } from 'react';
 import { useRouter } from 'next/router';
+import Link from 'next/link';
 import { useAuthStore } from '@/stores/authStore';
 import { apiClient } from '@/lib/apiClient';
+import Button from '@/components/ui/Button';
 
 type MeResponse = {
   user: {
@@ -19,6 +21,7 @@ export default function OnboardingPage() {
   const [heightCm, setHeightCm] = useState('');
   const [weightKg, setWeightKg] = useState('');
   const [age, setAge] = useState('');
+  const [acceptedHealthConsent, setAcceptedHealthConsent] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -63,6 +66,7 @@ export default function OnboardingPage() {
         heightCm: Number(heightCm),
         weightKg: Number(weightKg),
         age: Number(age),
+        healthConsentAccepted: true,
       });
       const next =
         typeof router.query.next === 'string' ? router.query.next : '/dashboard';
@@ -75,11 +79,13 @@ export default function OnboardingPage() {
   }
 
   return (
-    <main className="containerNarrow">
+    <main className="authPage">
       <h1 className="pageTitle">Анкета участника</h1>
       <p className="textMuted">
-        Эти данные нужны для расчёта дневной нормы калорий. Они сохраняются в
-        профиле, а вес можно обновлять в отчётах.
+        Вес, рост и возраст относятся к сведениям о здоровье. Они нужны только
+        для расчёта дневной нормы калорий и сохраняются в профиле, а вес можно
+        обновлять в отчётах. Для обработки этих данных нужно отдельное
+        согласие — оно ниже.
       </p>
 
       {error && <p className="error">{error}</p>}
@@ -142,7 +148,7 @@ export default function OnboardingPage() {
             id="age"
             type="number"
             inputMode="numeric"
-            min={10}
+            min={18}
             max={120}
             step={1}
             placeholder="полных лет"
@@ -153,9 +159,33 @@ export default function OnboardingPage() {
           />
         </div>
 
-        <button type="submit" disabled={saving} className="btn btnPrimary btnBlock">
+        <div className="checkboxGroup">
+          <label className="checkboxLabel">
+            <input
+              type="checkbox"
+              checked={acceptedHealthConsent}
+              onChange={(e) => setAcceptedHealthConsent(e.target.checked)}
+              required
+            />
+            <span>
+              Я даю{' '}
+              <Link href="/privacy#consent-health">
+                согласие на обработку данных о здоровье
+              </Link>{' '}
+              (пол, рост, вес, возраст)
+            </span>
+          </label>
+        </div>
+
+        <Button
+          type="submit"
+          variant="primary"
+          block
+          loading={saving}
+          disabled={!acceptedHealthConsent}
+        >
           {saving ? 'Сохранение...' : 'Сохранить и продолжить'}
-        </button>
+        </Button>
       </form>
     </main>
   );

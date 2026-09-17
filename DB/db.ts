@@ -20,6 +20,7 @@ import { Workout } from './models/Workout';
 import { WorkoutFavorite } from './models/WorkoutFavorite';
 import { HelpArticle } from './models/HelpArticle';
 import { ContentAttachment } from './models/ContentAttachment';
+import { UserConsent } from './models/UserConsent';
 
 const parseDatabaseUrl = (url?: string) => {
   if (!url) return null;
@@ -70,6 +71,7 @@ export const sequelize = new Sequelize({
     WorkoutFavorite,
     HelpArticle,
     ContentAttachment,
+    UserConsent,
   ],
   logging: process.env.NODE_ENV === 'development' ? console.log : false,
   define: {

@@ -9,7 +9,8 @@
 }
 
 .backLink {
-  color: #1a1a2e;
+  color: var(--text-primary);
+  font-size: var(--font-size-body);
 }
 
 .titleRow {
@@ -26,10 +27,11 @@
 }
 
 .description {
-  color: #555;
+  color: var(--text-secondary);
   margin-top: 0.5rem;
 }
 
+/* Название потока и рейтинг: светлая «поднятая» плашка — разделяет тень и хейрлайн, а не рамка */
 .ratingLine {
   display: flex;
   flex-direction: row;
@@ -37,11 +39,12 @@
   align-items: center;
   margin-top: 1rem;
   padding: 0.6rem 1rem;
-  border-radius: 8px;
-  background:var(--bg-fon1);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
   border: 1px solid var(--border-default);
-  color: #1a3a6e;
-  font-weight: 600;
+  box-shadow: var(--shadow-clay-sm);
+  color: var(--text-primary);
+  font-weight: var(--font-weight-semibold);
 }
 
 .infoBlock {
@@ -61,9 +64,9 @@
   min-height: 136px;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
-  /* Firefox: тонкий скролл, трек прозрачный, бегунок как есть */
+  /* Firefox: тонкий скролл, трек прозрачный, бегунок нейтральный */
   scrollbar-width: thin;
-  scrollbar-color: #c1c1c1 transparent;
+  scrollbar-color: var(--accent-neutral) transparent;
 }
 
 .dayNavbar::-webkit-scrollbar {
@@ -93,6 +96,9 @@
   margin-right: 6px;
 }
 
+/* Плитка дня — «поднятая» поверхность с мягкой тенью.
+   Прозрачная рамка 2px зарезервирована под индикатор текущего дня,
+   поэтому геометрия плитки одинакова у всех дней. */
 .dayItem {
   position: relative;
   display: flex;
@@ -103,56 +109,64 @@
   width: 88px;
   height: 88px;
   padding: 0.4rem 0.3rem;
-  border: none;
-  border-radius: 12px;
+  border: 2px solid transparent;
+  border-radius: var(--radius-md);
   font-family: inherit;
-  /* границей вместо border служит тень */
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08), 0 3px 8px rgba(0, 0, 0, 0.08);
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: var(--shadow-clay-sm);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .dayAccessible {
-  background-color: #f8f9fa;
-  color: #1a1a2e;
+  background-color: var(--bg-surface);
+  color: var(--text-primary);
   cursor: pointer;
 }
 
 .dayAccessible:hover {
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1), 0 6px 14px rgba(0, 0, 0, 0.14);
+  box-shadow: var(--shadow-clay);
 }
 
 .dayDisabled {
-  background-color: #e9ecef;
-  color: #6c757d;
+  background-color: var(--bg-surface-disabled);
+  color: var(--text-secondary);
   cursor: not-allowed;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  box-shadow: none;
 }
 
-/* выбранный день: увеличенный размер + подсветка тенью */
+/* Выбранный день: мятная заливка выбранного чипа + «сильный» текст, размер чуть больше */
 .dayItem.dayActive {
   transform: scale(1.1);
-  box-shadow: 0 0 0 3px rgba(244, 125, 32, 0.28), 0 6px 14px rgba(0, 0, 0, 0.18);
+  background-color: var(--accent-primary);
+  color: var(--text-on-accent);
+  box-shadow: var(--shadow-clay);
   z-index: 1;
 }
 
-/* текущий день: оранжевый бордер */
+/* Текущий день: индикатор --accent-strong (светлая мята как индикатор не читается) */
 .dayCurrent {
-  border: 1px solid orange;
+  border-color: var(--accent-strong);
 }
 
+/* День с отчётом: семантика успеха; перебор калорий — семантика ошибки.
+   У выбранного дня заливка мятная (селектор выше по специфичности),
+   статус остаётся читаемым цветом числа калорий. */
 .dayFilled {
-  background-color: #d4edda;
+  background-color: var(--bg-success);
 }
 
 .dayOverLimit {
-  background-color: #fee2e2;
+  background-color: var(--bg-danger);
 }
 
 .dayDate {
-  font-size: 0.62rem;
-  color: #6c757d;
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
   line-height: 1.1;
   white-space: nowrap;
+}
+
+.dayItem.dayActive .dayDate {
+  color: var(--text-on-accent);
 }
 
 .dayFlagsBar {
@@ -165,16 +179,16 @@
   max-width: 100%;
 }
 
+/* Иконки наследуют цвет плитки (Решение 29) — отдельная тень им не нужна */
 .dayFlagIcon {
   flex-shrink: 0;
   width: 16px;
   height: 16px;
-  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.08));
 }
 
 .dayNumber {
-  font-weight: bold;
-  font-size: 1.25rem;
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-xl);
   line-height: 1.1;
 }
 
@@ -186,14 +200,14 @@
 }
 
 .dayCalories {
-  font-size: 0.62rem;
-  font-weight: 600;
-  color: #155724;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-success);
   white-space: nowrap;
 }
 
 .dayCaloriesOver {
-  color: #c0392b;
+  color: var(--text-danger);
 }
 
 .day {
@@ -214,9 +228,9 @@
 }
 
 .placeholder {
-  color: #555;
+  color: var(--text-secondary);
 }
 
 .error {
-  color: red;
+  color: var(--text-error);
 }

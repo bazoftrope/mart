@@ -1,7 +1,8 @@
 import { useEffect, useState, FormEvent } from 'react';
 import { useRouter } from 'next/router';
-import Link from 'next/link';
 import { useAuthStore } from '@/stores/authStore';
+import Button from '@/components/ui/Button';
+import { ButtonLink } from '@/components/ui';
 import styles from './edit.module.css';
 import { apiFetch } from '@/lib/apiClient';
 import { canEditMarathonTemplate } from '@/lib/templateStatus';
@@ -108,9 +109,9 @@ export default function EditTemplatePage() {
     return (
       <main className="containerMd">
         <p className="error">{error}</p>
-        <Link href="/mentor/templates">
-          <button className="btn btnOutline">Назад к шаблонам</button>
-        </Link>
+        <ButtonLink href="/mentor/templates" variant="outline">
+          Назад к шаблонам
+        </ButtonLink>
       </main>
     );
   }
@@ -179,18 +180,18 @@ export default function EditTemplatePage() {
         {error && <p className="error">{error}</p>}
 
         <div className={styles.actions}>
-          <button type="submit" disabled={saving || !isEditable} className="btn btnPrimary">
+          <Button type="submit" variant="primary" loading={saving} disabled={!isEditable}>
             {saving ? 'Сохранение...' : 'Сохранить изменения'}
-          </button>
-          <Link href={`/mentor/templates/${templateId}/intro`}>
-            <button type="button" className="btn btnOutline">Предстартовая страница</button>
-          </Link>
-          <Link href={`/mentor/templates/${templateId}/days`}>
-            <button type="button" className="btn btnOutline">Дни</button>
-          </Link>
-          <Link href="/mentor/templates">
-            <button type="button" className="btn btnOutline">Отмена</button>
-          </Link>
+          </Button>
+          <ButtonLink href={`/mentor/templates/${templateId}/intro`} variant="outline">
+            Предстартовая страница
+          </ButtonLink>
+          <ButtonLink href={`/mentor/templates/${templateId}/days`} variant="outline">
+            Дни
+          </ButtonLink>
+          <ButtonLink href="/mentor/templates" variant="outline">
+            Отмена
+          </ButtonLink>
         </div>
       </form>
     </main>

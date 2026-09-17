@@ -80,8 +80,8 @@
 
 .pdfLink:hover,
 .pdfLink:focus-visible {
-  border-color: var(--accent-primary);
-  color: var(--accent-primary);
+  border-color: var(--accent-strong);
+  color: var(--accent-strong);
 }
 
 .textContent {
@@ -124,7 +124,7 @@
 }
 
 .richText a {
-  color: var(--accent-primary);
+  color: var(--accent-strong);
 }
 
 .richText img {

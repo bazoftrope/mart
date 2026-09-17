@@ -8,6 +8,8 @@ import {
 } from 'sequelize-typescript';
 
 
+export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
+
 @Table({
   tableName: 'report_lines',
   underscored: true,
@@ -32,6 +34,12 @@ export class ReportLine extends Model {
   productId!: string;
 
   @Column({
+    type: DataType.ENUM('breakfast', 'lunch', 'dinner', 'snack'),
+    allowNull: false,
+  })
+  mealType!: MealType;
+
+  @Column({
     type: DataType.DECIMAL(8, 2),
     allowNull: false,
   })
@@ -43,5 +51,27 @@ export class ReportLine extends Model {
   })
   lineCalories!: number;
 
+  /** Белки строки с учётом веса, г. */
+  @Column({
+    type: DataType.DECIMAL(10, 2),
+    allowNull: false,
+    defaultValue: 0,
+  })
+  lineProtein!: number;
 
+  /** Жиры строки с учётом веса, г. */
+  @Column({
+    type: DataType.DECIMAL(10, 2),
+    allowNull: false,
+    defaultValue: 0,
+  })
+  lineFat!: number;
+
+  /** Углеводы строки с учётом веса, г. */
+  @Column({
+    type: DataType.DECIMAL(10, 2),
+    allowNull: false,
+    defaultValue: 0,
+  })
+  lineCarbs!: number;
 }

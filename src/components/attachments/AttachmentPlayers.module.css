@@ -84,7 +84,7 @@
 }
 
 .audioPlayer :global(.rhap_play-pause-button) {
-  color: var(--accent-primary);
+  color: var(--accent-strong);
 }
 
 .fileLink {

@@ -20,7 +20,7 @@
 
 .sectionBadge {
   background: var(--bg-info);
-  color: var(--accent-primary);
+  color: var(--accent-strong);
 }
 
 .audienceBadge {
@@ -78,7 +78,7 @@
 }
 
 .richText a {
-  color: var(--accent-primary);
+  color: var(--accent-strong);
 }
 
 .richText code {

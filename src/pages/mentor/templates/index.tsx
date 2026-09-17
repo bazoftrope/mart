@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
-import Link from 'next/link';
 import { useAuthStore } from '@/stores/authStore';
+import Button from '@/components/ui/Button';
+import { ButtonLink } from '@/components/ui';
 import { apiFetch } from '@/lib/apiClient';
 
 type Template = {
@@ -108,9 +109,9 @@ export default function MentorTemplatesPage() {
     <main className="container2xl">
       <div className="flexBetween">
         <h1 className="pageTitle">Мои шаблоны марафонов</h1>
-        <Link href="/mentor/templates/new">
-          <button className="btn btnPrimary">Создать шаблон</button>
-        </Link>
+        <ButtonLink href="/mentor/templates/new" variant="primary">
+          Создать шаблон
+        </ButtonLink>
       </div>
 
       {error && <p className="error">{error}</p>}
@@ -136,26 +137,23 @@ export default function MentorTemplatesPage() {
                   </p>
                 </div>
                 <div className="cardActions">
-                  <Link href={`/mentor/templates/${template.id}/edit`}>
-                    <button className="btn btnOutline">Редакт.</button>
-                  </Link>
-                  <Link href={`/mentor/templates/${template.id}/intro`}>
-                    <button className="btn btnOutline">Предстарт.</button>
-                  </Link>
-                  <Link href={`/mentor/templates/${template.id}/days`}>
-                    <button className="btn btnOutline">Дни</button>
-                  </Link>
+                  <ButtonLink href={`/mentor/templates/${template.id}/edit`} variant="outline" size="sm">
+                    Редакт.
+                  </ButtonLink>
+                  <ButtonLink href={`/mentor/templates/${template.id}/intro`} variant="outline" size="sm">
+                    Предстарт.
+                  </ButtonLink>
+                  <ButtonLink href={`/mentor/templates/${template.id}/days`} variant="outline" size="sm">
+                    Дни
+                  </ButtonLink>
                   {template.status === 'draft' && (
                     <>
-                      <button onClick={() => handleSubmit(template.id)} className="btn btnPrimary">
+                      <Button onClick={() => handleSubmit(template.id)} variant="primary" size="sm">
                         Отправить
-                      </button>
-                      <button
-                        onClick={() => handleDelete(template.id)}
-                        className="btn btnDanger"
-                      >
+                      </Button>
+                      <Button onClick={() => handleDelete(template.id)} variant="danger" size="sm">
                         Удалить
-                      </button>
+                      </Button>
                     </>
                   )}
                 </div>

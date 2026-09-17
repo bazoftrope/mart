@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import type { AttachmentData, ContentAttachmentData } from '@/types/attachments';
 import { apiFetch } from '@/lib/apiClient';
 import { normalizeKinescopeVideoId } from '@/lib/kinescope';
+import Button from '@/components/ui/Button';
 import KinescopePlayer from '@/components/day/KinescopePlayer';
 import {
   addUploaded,
@@ -175,13 +176,9 @@ export default function ContentAttachmentManager({
                 )}
 
                 {!disabled && (
-                  <button
-                    type="button"
-                    className={styles.removeButton}
-                    onClick={() => handleRemove(key)}
-                  >
+                  <Button type="button" variant="ghost" size="sm" onClick={() => handleRemove(key)}>
                     Удалить
-                  </button>
+                  </Button>
                 )}
               </div>
             );
@@ -200,9 +197,9 @@ export default function ContentAttachmentManager({
                 onChange={(e) => setVideoInput(e.target.value)}
                 placeholder="https://kinescope.io/..."
               />
-              <button type="button" className={styles.addButton} onClick={handleAddVideo}>
+              <Button type="button" variant="primary" size="sm" onClick={handleAddVideo}>
                 Добавить
-              </button>
+              </Button>
             </div>
           ) : (
             <>

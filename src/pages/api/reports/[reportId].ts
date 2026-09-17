@@ -3,11 +3,15 @@ import '@/lib/db';
 import { sequelize } from '@db/db';
 import { apiHandler, success } from '@/lib/apiHandler';
 import { withParticipant } from '@/lib/middleware';
-import { BadRequest, Forbidden, NotFound } from '@/lib/errors';
+import { Forbidden, NotFound } from '@/lib/errors';
 import { saveReportSchema } from '@/lib/validation';
 import { buildMeasuredAtUtc } from '@/lib/calendar';
 import { ensureStreamStatus } from '@/lib/streamStatus';
 import { calculateRatingsForStream } from '@/lib/ratingCalculator';
+import {
+  buildReportLineRecords,
+  serializeReportLine,
+} from '@/lib/reportLineUtils';
 import {
   DailyReport,
   ReportLine,
@@ -27,10 +31,6 @@ function parseReportId(req: NextApiRequest): string {
     throw new NotFound('Report not found');
   }
   return reportId;
-}
-
-function round2(value: number): number {
-  return Math.round(value * 100) / 100;
 }
 
 async function putHandler(req: NextApiRequest, res: NextApiResponse) {
@@ -93,23 +93,10 @@ async function putHandler(req: NextApiRequest, res: NextApiResponse) {
     : [];
   const productMap = new Map(products.map((p) => [p.id, p]));
 
-  let totalCalories = 0;
-  const lineRecords = lines.map((line) => {
-    const product = productMap.get(line.productId);
-    if (!product) {
-      throw new BadRequest(`Product ${line.productId} not found`);
-    }
-    const lineCalories = round2(
-      (line.weightGrams * Number(product.calories)) / 100
-    );
-    totalCalories += lineCalories;
-    return {
-      productId: line.productId,
-      weightGrams: line.weightGrams,
-      lineCalories,
-    };
-  });
-  totalCalories = round2(totalCalories);
+  const { records: lineRecords, totalCalories } = buildReportLineRecords(
+    lines,
+    productMap
+  );
 
   const transaction = await sequelize.transaction();
   try {
@@ -131,7 +118,7 @@ async function putHandler(req: NextApiRequest, res: NextApiResponse) {
       transaction,
     });
 
-    await ReportLine.bulkCreate(
+    const createdLines = await ReportLine.bulkCreate(
       lineRecords.map((record) => ({
         ...record,
         reportId: report.id,
@@ -181,16 +168,9 @@ async function putHandler(req: NextApiRequest, res: NextApiResponse) {
 
     await calculateRatingsForStream(stream.id);
 
-    const savedLines = lineRecords.map((record) => {
-      const product = productMap.get(record.productId)!;
-      return {
-        productId: record.productId,
-        name: product.name,
-        calories: Number(product.calories),
-        weightGrams: record.weightGrams,
-        lineCalories: record.lineCalories,
-      };
-    });
+    const savedLines = createdLines.map((line) =>
+      serializeReportLine(line, productMap.get(line.productId))
+    );
 
     createdPulse.sort(
       (a, b) => a.measuredAt.getTime() - b.measuredAt.getTime()

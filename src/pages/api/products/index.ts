@@ -5,6 +5,7 @@ import { sequelize } from '@db/db';
 import { apiHandler, success } from '@/lib/apiHandler';
 import { withAuth } from '@/lib/middleware';
 import { Product } from '@db/models/Product';
+import { serializeProduct } from '@/lib/productUtils';
 import { createProductSchema } from '@/lib/validation';
 
 const MAX_RESULTS = 20;
@@ -22,13 +23,7 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
     limit: MAX_RESULTS,
   });
 
-  const data = products.map((product) => ({
-    id: product.id,
-    name: product.name,
-    calories: Number(product.calories),
-  }));
-
-  return success(res, data);
+  return success(res, products.map(serializeProduct));
 }
 
 async function postHandler(req: NextApiRequest, res: NextApiResponse) {
@@ -45,27 +40,18 @@ async function postHandler(req: NextApiRequest, res: NextApiResponse) {
   });
 
   if (existing) {
-    return success(res, {
-      id: existing.id,
-      name: existing.name,
-      calories: Number(existing.calories),
-    });
+    return success(res, serializeProduct(existing));
   }
 
   const product = await Product.create({
     name,
     calories: body.calories,
+    protein: body.protein,
+    fat: body.fat,
+    carbs: body.carbs,
   });
 
-  return success(
-    res,
-    {
-      id: product.id,
-      name: product.name,
-      calories: Number(product.calories),
-    },
-    201
-  );
+  return success(res, serializeProduct(product), 201);
 }
 
 export default apiHandler({

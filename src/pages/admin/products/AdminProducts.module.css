@@ -1,0 +1,91 @@
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.lead {
+  margin-top: 0.35rem;
+  color: #64748b;
+  font-size: 0.92rem;
+}
+
+.headerActions {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+}
+
+.search {
+  flex: 1 1 260px;
+  min-width: 0;
+}
+
+.macros {
+  white-space: nowrap;
+  color: #475569;
+  font-variant-numeric: tabular-nums;
+}
+
+.numCol {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.actionsCell {
+  display: flex;
+  gap: 0.4rem;
+  justify-content: flex-end;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  padding: 0.65rem 0.7rem;
+  border-bottom: 1px solid #f1f5f9;
+  text-align: left;
+  font-size: 0.92rem;
+}
+
+.table th {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.empty {
+  padding: 1.25rem;
+  border-radius: 12px;
+  background: #f8fafc;
+  color: #64748b;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.85rem;
+  margin-top: 1.25rem;
+}
+
+.pageInfo {
+  font-size: 0.88rem;
+  color: #475569;
+}

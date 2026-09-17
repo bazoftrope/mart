@@ -22,6 +22,10 @@ import {
   User,
 } from '@db/models';
 import { serializeAttachments } from '@/lib/attachmentUtils';
+import {
+  buildReportLineRecords,
+  serializeReportLine,
+} from '@/lib/reportLineUtils';
 import type { AuthenticatedRequest } from '@/types/auth';
 
 function parseParams(req: NextApiRequest): { streamId: string; dayNumber: number } {
@@ -106,10 +110,6 @@ async function loadParticipantContext(userId: string, streamId: string) {
   };
 }
 
-function round2(value: number): number {
-  return Math.round(value * 100) / 100;
-}
-
 async function getHandler(req: NextApiRequest, res: NextApiResponse) {
   const { user } = req as AuthenticatedRequest;
   const { streamId, dayNumber } = parseParams(req);
@@ -158,14 +158,7 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
     attachmentsByDay.set(attachment.templateDayId, list);
   }
 
-  let lines: Array<{
-    id: string;
-    productId: string;
-    name: string;
-    calories: number;
-    weightGrams: number;
-    lineCalories: number;
-  }> = [];
+  let lines: ReturnType<typeof serializeReportLine>[] = [];
   let pulseReadings: Array<{ id: string; measuredAt: Date; pulse: number | null; systolic: number | null; diastolic: number | null }> = [];
 
   if (report) {
@@ -185,17 +178,9 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
       : [];
     const productMap = new Map(products.map((p) => [p.id, p]));
 
-    lines = reportLines.map((line) => {
-      const product = productMap.get(line.productId);
-      return {
-        id: line.id,
-        productId: line.productId,
-        name: product?.name || 'Unknown product',
-        calories: Number(product?.calories || 0),
-        weightGrams: Number(line.weightGrams),
-        lineCalories: Number(line.lineCalories),
-      };
-    });
+    lines = reportLines.map((line) =>
+      serializeReportLine(line, productMap.get(line.productId))
+    );
 
     pulseReadings = reportPulseReadings.map((p) => ({
       id: p.id,
@@ -309,23 +294,10 @@ async function postHandler(req: NextApiRequest, res: NextApiResponse) {
     : [];
   const productMap = new Map(products.map((p) => [p.id, p]));
 
-  let totalCalories = 0;
-  const lineRecords = lines.map((line) => {
-    const product = productMap.get(line.productId);
-    if (!product) {
-      throw new BadRequest(`Product ${line.productId} not found`);
-    }
-    const lineCalories = round2(
-      (line.weightGrams * Number(product.calories)) / 100
-    );
-    totalCalories += lineCalories;
-    return {
-      productId: line.productId,
-      weightGrams: line.weightGrams,
-      lineCalories,
-    };
-  });
-  totalCalories = round2(totalCalories);
+  const { records: lineRecords, totalCalories } = buildReportLineRecords(
+    lines,
+    productMap
+  );
 
   const transaction = await sequelize.transaction();
   try {
@@ -357,7 +329,7 @@ async function postHandler(req: NextApiRequest, res: NextApiResponse) {
       transaction,
     });
 
-    await ReportLine.bulkCreate(
+    const createdLines = await ReportLine.bulkCreate(
       lineRecords.map((record) => ({
         ...record,
         reportId: report.id,
@@ -409,16 +381,9 @@ async function postHandler(req: NextApiRequest, res: NextApiResponse) {
 
     await calculateRatingsForStream(stream.id);
 
-    const savedLines = lineRecords.map((record) => {
-      const product = productMap.get(record.productId)!;
-      return {
-        productId: record.productId,
-        name: product.name,
-        calories: Number(product.calories),
-        weightGrams: record.weightGrams,
-        lineCalories: record.lineCalories,
-      };
-    });
+    const savedLines = createdLines.map((line) =>
+      serializeReportLine(line, productMap.get(line.productId))
+    );
 
     createdPulse.sort(
       (a, b) => a.measuredAt.getTime() - b.measuredAt.getTime()

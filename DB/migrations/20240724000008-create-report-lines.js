@@ -37,6 +37,25 @@ module.exports = {
         type: Sequelize.DECIMAL(10, 2),
         allowNull: false,
       },
+      meal_type: {
+        type: Sequelize.ENUM('breakfast', 'lunch', 'dinner', 'snack'),
+        allowNull: false,
+      },
+      line_protein: {
+        type: Sequelize.DECIMAL(10, 2),
+        allowNull: false,
+        defaultValue: 0,
+      },
+      line_fat: {
+        type: Sequelize.DECIMAL(10, 2),
+        allowNull: false,
+        defaultValue: 0,
+      },
+      line_carbs: {
+        type: Sequelize.DECIMAL(10, 2),
+        allowNull: false,
+        defaultValue: 0,
+      },
     });
 
     await queryInterface.addIndex('report_lines', ['report_id']);

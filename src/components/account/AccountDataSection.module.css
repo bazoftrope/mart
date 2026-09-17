@@ -1,0 +1,117 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: var(--container-xl);
+}
+
+.cardTitle {
+  margin: 0 0 0.5rem;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+}
+
+.muted {
+  margin: 0 0 1rem;
+  color: var(--text-secondary);
+  line-height: var(--line-height-normal);
+  font-size: var(--font-size-body);
+}
+
+.notice {
+  margin: 0;
+  padding: 0.65rem 1rem;
+  border-radius: var(--radius-sm);
+  background: var(--bg-success);
+  color: var(--text-success);
+  font-size: var(--font-size-body);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--border-lightest);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface-muted);
+}
+
+.docLink {
+  color: var(--text-link);
+  font-weight: var(--font-weight-medium);
+}
+
+.meta {
+  margin: 0.25rem 0 0;
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+}
+
+.itemActions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.statusActive,
+.statusNone {
+  padding: 0.2rem 0.6rem;
+  border-radius: var(--radius-pill);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+}
+
+.statusActive {
+  background: var(--bg-success);
+  color: var(--text-success);
+}
+
+.statusNone {
+  background: var(--bg-surface-secondary);
+  color: var(--text-secondary);
+}
+
+.dangerCard {
+  border-color: var(--text-danger);
+}
+
+/* Предупреждение о последствиях удаления для ментора */
+.impactWarning {
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  border-left: 3px solid var(--text-danger);
+  border-radius: var(--radius-sm);
+  background: var(--bg-danger);
+  color: var(--text-danger);
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-normal);
+}
+
+.deleteFields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  max-width: var(--container-sm);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: var(--font-size-body);
+  color: var(--text-secondary);
+}

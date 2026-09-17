@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import type { AttachmentData, AttachmentKind } from '@/types/attachments';
 import { apiFetch } from '@/lib/apiClient';
 import { normalizeKinescopeVideoId } from '@/lib/kinescope';
+import Button from '@/components/ui/Button';
 import KinescopePlayer from '@/components/day/KinescopePlayer';
 import {
   addUploaded,
@@ -307,13 +308,14 @@ export default function AttachmentsEditor({
                               {pdf.fileName || 'Открыть PDF'}
                             </a>
                             {!disabled && (
-                              <button
+                              <Button
                                 type="button"
-                                className={styles.removePdfButton}
+                                variant="ghost"
+                                size="sm"
                                 onClick={() => handleDetachPdf(key)}
                               >
                                 Удалить PDF
-                              </button>
+                              </Button>
                             )}
                           </>
                         ) : (
@@ -341,13 +343,14 @@ export default function AttachmentsEditor({
                   )}
 
                   {!disabled && (
-                    <button
+                    <Button
                       type="button"
-                      className={styles.removeButton}
+                      variant="ghost"
+                      size="sm"
                       onClick={() => handleRemove(key)}
                     >
                       Удалить {isMedia ? (kind === 'video' ? 'видео' : 'аудио') : ''}
-                    </button>
+                    </Button>
                   )}
                 </div>
               );
@@ -364,9 +367,9 @@ export default function AttachmentsEditor({
                       onChange={(e) => setVideoInput(e.target.value)}
                       placeholder="https://kinescope.io/..."
                     />
-                    <button type="button" className={styles.addButton} onClick={handleAddVideo}>
+                    <Button type="button" variant="primary" size="sm" onClick={handleAddVideo}>
                       Добавить
-                    </button>
+                    </Button>
                   </div>
                 ) : (
                   <>

@@ -28,15 +28,15 @@
 ### `src/`
 - `src/pages/` — Pages Router.
   - `src/pages/api/` — **API-роуты** по доменам: `auth/`, `admin/`, `users/`, `marathons/`, `streams/`, `reports/`, `rating/`, `products/`, `recipes/`, `workouts/`, `help/`, `messages/`, `uploads/`, `health/`.
-  - `src/pages/dashboard/`, `mentor/`, `admin/`, `streams/`, `recipes/`, `workouts/`, `help/`, `onboarding.tsx`, `register.tsx`, `login.tsx` — страницы клиента.
-- `src/components/` — UI по модулям: `layout/` (`Header`, `Layout`), `day/` (в т.ч. `DayReport`, `ProductSearch`, `ReportTable`, `PulseReadingsForm`), `marathon/`, `mentor/`, `recipes/`, `workouts/`, `help/`, `Chat/` + общие `attachments/`, `editor/`, `stream/`.
-- `src/lib/` — ключевые утилиты: `apiHandler.ts`, `middleware.ts`, `auth.ts`, `db.ts`, `api.ts`, `apiClient.ts`, `cookies.ts`, `ratingCalculator.ts`, `calorieCalculator.ts`, `calendar.ts`, `validate.ts` (+ `validation.ts` — реэкспорт), `recipeUtils.ts`, `workoutUtils.ts`, `contentAttachmentUtils.ts`, `attachmentEditor.ts`, `attachmentUtils.ts`, `attachmentGroups.ts`, `fileUpload.ts`, `audioUpload.ts`, `helpUtils.ts`, `helpSlug.ts`, `sanitize.ts`, `errors.ts`, `cron.ts`, `kinescope.ts`.
+  - `src/pages/dashboard/`, `mentor/`, `admin/`, `streams/`, `recipes/`, `workouts/`, `help/`, `onboarding.tsx`, `register.tsx`, `login.tsx`, `privacy.tsx` (ПДн), `account.tsx` (согласия, экспорт, удаление) — страницы клиента.
+- `src/components/` — UI по модулям: `layout/` (`Header`, `Layout`), `day/` (в т.ч. `DayReport`, `ProductSearch`, `ReportTable`, `PulseReadingsForm`), `marathon/`, `mentor/`, `recipes/`, `workouts/`, `help/`, `account/`, `Chat/` + общие `attachments/`, `editor/`, `stream/`.
+- `src/lib/` — ключевые утилиты: `apiHandler.ts`, `middleware.ts`, `auth.ts`, `db.ts`, `api.ts`, `apiClient.ts`, `cookies.ts`, `ratingCalculator.ts`, `calorieCalculator.ts`, `calendar.ts`, `validate.ts` (+ `validation.ts` — реэкспорт), `recipeUtils.ts`, `workoutUtils.ts`, `contentAttachmentUtils.ts`, `attachmentEditor.ts`, `attachmentUtils.ts`, `attachmentGroups.ts`, `fileUpload.ts`, `audioUpload.ts`, `helpUtils.ts`, `helpSlug.ts`, `sanitize.ts`, `consent.ts`, `consentService.ts`, `userDataService.ts`, `errors.ts`, `cron.ts`, `kinescope.ts`.
 - `src/services/` — `authService.ts`, `messageService.ts`.
 - `src/stores/` — zustand-сторы: `authStore.ts`, `participantDayStore.ts`.
 - `src/middleware/`, `src/hooks/`, `src/styles/`, `src/types/`.
 
 ### `DB/`
-- `DB/models/` — Sequelize-модели (`User`, `MarathonTemplate`, `TemplateDay`, `Stream`, `StreamEnrollment`, `DailyReport`, `ReportLine`, `PulseReading`, `Product`, `Conversation`, `ConversationMember`, `Message`, `Recipe`, `RecipeFavorite`, `ContentAttachment`, `Workout`, `WorkoutFavorite`, `HelpArticle`, `StreamRating`, `TemplateAttachment`, `index.ts`).
+- `DB/models/` — Sequelize-модели (`User`, `MarathonTemplate`, `TemplateDay`, `Stream`, `StreamEnrollment`, `DailyReport`, `ReportLine`, `PulseReading`, `Product`, `Conversation`, `ConversationMember`, `Message`, `Recipe`, `RecipeFavorite`, `ContentAttachment`, `Workout`, `WorkoutFavorite`, `HelpArticle`, `StreamRating`, `TemplateAttachment`, `UserConsent`, `index.ts`).
 - `DB/migrations/`, `DB/seeders/`, `DB/config/config.js` — конфиг Sequelize (см. `.sequelizerc`).
 
 ### `DOC/` — документация проекта (живая)
@@ -44,6 +44,8 @@
 - `entities-and-relations.md` — сущности и связи БД (19 моделей).
 - `decisions-log.md` — лог принятых решений (с датами и версиями).
 - `screens-and-ui.md` — экраны и структура интерфейса.
+- `style-guide.md` — концепция стиля: палитра с контрастами, типографика, компоненты, брейкпоинты, правила. Источник правды по визуальному языку.
+- `legal-fz152.md` — правовая часть (152-ФЗ): инвентаризация ПДн, спец. категории (данные о здоровье), чек-лист, пакет документов, открытые вопросы юристу. Черновик, не юрконсультация.
 - `local/info.md` — доступы, dev-аккаунты, сброс БД. **Папка `local/` в git не хранится** (см. `DOC/local/.gitignore`); у каждого разработчика она своя.
 - `archive/` — **историческое**: MVP-роадмап, планы рефакторингов, ТЗ и проектные документы (product-vision, user-flows и т.п.). Не описывает текущее состояние, **не читать как источник правды**.
 
@@ -52,6 +54,7 @@
 1. `DOC/architecture.md`
 2. `DOC/entities-and-relations.md`
 3. `DOC/decisions-log.md` (учесть уже принятые решения)
+4. `DOC/style-guide.md` (перед любой правкой стилей)
 
 ## Паттерны кодирования (следовать им обязательно)
 
@@ -60,7 +63,10 @@
 - **Ошибки:** бросать `NotFound`, `Forbidden`, `BadRequest` и т.п. (см. `src/lib/errors.ts`).
 - **Модели БД:** в `DB/models/`, импорт через `@db/models`.
 - **Клиентские страницы:** `useEffect` + `fetch` + `useState`; роль через `getCookie('mp_role')`; API через `@/lib/apiClient`.
-- **Стили:** CSS Modules (`*.module.css`) + глобальные переменные.
+- **Стили:** CSS Modules (`*.module.css`) + токены. **Обязательно:** цвета, радиусы, тени, отступы и шрифты
+  брать только из токенов `src/styles/globals.css`; литеральные hex в модулях не хардкодить. Палитра,
+  типографика, правила контраста и брейкпоинты — в `DOC/style-guide.md`, это источник правды. Новые
+  фреймворки стилей (Tailwind, styled-components) не добавляем.
 
 ## Директории-исключения (не читать, не менять)
 

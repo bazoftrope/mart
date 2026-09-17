@@ -18,6 +18,7 @@ import { Workout } from './Workout';
 import { WorkoutFavorite } from './WorkoutFavorite';
 import { HelpArticle } from './HelpArticle';
 import { ContentAttachment } from './ContentAttachment';
+import { UserConsent } from './UserConsent';
 
 export * from './User';
 export * from './Product';
@@ -39,6 +40,7 @@ export * from './Workout';
 export * from './WorkoutFavorite';
 export * from './HelpArticle';
 export * from './ContentAttachment';
+export * from './UserConsent';
 
 export const models = {
   User,
@@ -61,6 +63,7 @@ export const models = {
   WorkoutFavorite,
   HelpArticle,
   ContentAttachment,
+  UserConsent,
 };
 
 export type AppModels = typeof models;

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { useAuthStore } from '@/stores/authStore';
+import Button from '@/components/ui/Button';
 import styles from './index.module.css';
 import { apiFetch } from '@/lib/apiClient';
 import { HELP_SLUG_RULES } from '@/lib/helpSlug';
@@ -149,9 +150,9 @@ export default function StreamPage() {
       {role === 'participant' && (
         <div className="mt-1-5">
           {stream.isEnrolled ? (
-            <button disabled className="btn">
+            <Button disabled variant="secondary">
               Вы записаны
-            </button>
+            </Button>
           ) : (
             <div className={styles.enrollBox}>
               <div className={styles.enrollTitle}>Цель на этот поток</div>
@@ -187,13 +188,9 @@ export default function StreamPage() {
                   <span>Набор веса</span>
                 </label>
               </div>
-              <button
-                onClick={handleEnroll}
-                disabled={enrolling}
-                className="btn btnPrimary"
-              >
+              <Button onClick={handleEnroll} variant="primary" loading={enrolling}>
                 {enrolling ? 'Запись...' : 'Записаться в поток'}
-              </button>
+              </Button>
             </div>
           )}
         </div>

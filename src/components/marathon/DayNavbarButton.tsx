@@ -55,10 +55,11 @@ export default function DayNavbarButton({
     .join(' ');
 
   const flags: Array<{ key: string; name: 'mesure' | 'training' | 'rest' | 'diet_food'; label: string }> = [];
+  // diet_food — всегда первым в ряду иконок
+  if (isHealthyEatingDay) flags.push({ key: 'healthy', name: 'diet_food', label: 'День здоровой еды' });
   if (isMeasurementDay) flags.push({ key: 'measurement', name: 'mesure', label: 'День замера' });
   if (isTrainingDay) flags.push({ key: 'training', name: 'training', label: 'День тренировки' });
   if (isRestDay) flags.push({ key: 'rest', name: 'rest', label: 'День отдыха' });
-  if (isHealthyEatingDay) flags.push({ key: 'healthy', name: 'diet_food', label: 'День здоровой еды' });
 
   const content = (
     <>

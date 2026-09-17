@@ -42,8 +42,8 @@
 }
 
 .actionLink:hover {
-  border-color: var(--accent-primary);
-  color: var(--accent-primary);
+  border-color: var(--accent-strong);
+  color: var(--accent-strong);
 }
 
 .deleteButton {
@@ -93,7 +93,7 @@
 
 .steps li::marker,
 .exercises li::marker {
-  color: var(--accent-primary);
+  color: var(--accent-strong);
   font-weight: var(--font-weight-semibold);
 }
 

@@ -102,7 +102,7 @@
   border: 1px solid var(--accent-primary);
   border-radius: var(--radius-sm);
   background: var(--accent-primary);
-  color: var(--text-on-dark);
+  color: var(--text-on-accent);
   padding: 0.4rem 0.75rem;
   cursor: pointer;
 }

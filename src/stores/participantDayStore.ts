@@ -1,9 +1,11 @@
 import { create } from 'zustand';
 import type { Product } from '@/components/day/ProductSearch';
+import type { ReportLineItem } from '@/components/day/ReportTable';
 import {
   computeLineCalories,
-  type ReportLineItem,
-} from '@/components/day/ReportTable';
+  computeLineMacro,
+  type MealType,
+} from '@/lib/nutritionCalculator';
 import {
   apiToPulseFormItems,
   pulseFormItemsToApi,
@@ -33,7 +35,7 @@ interface ParticipantDayActions {
   selectDay: (day: ParticipantDayData) => void;
   saveReport: (streamId: string, dayNumber: number) => Promise<void>;
   savePulse: (streamId: string, dayNumber: number) => Promise<void>;
-  addProductLine: (product: Product) => void;
+  addProductLine: (product: Product, mealType: MealType) => void;
   updateLine: (index: number, weightGrams: number) => void;
   removeLine: (index: number) => void;
   updateMetric: (field: keyof MetricsState, value: string) => void;
@@ -237,6 +239,7 @@ export const useParticipantDayStore = create<ParticipantDayStore>((set, get) => 
     const payload = {
       lines: lines.map((line) => ({
         productId: line.productId,
+        mealType: line.mealType,
         weightGrams: line.weightGrams,
       })),
       waterLiters:
@@ -415,7 +418,7 @@ export const useParticipantDayStore = create<ParticipantDayStore>((set, get) => 
     }
   },
 
-  addProductLine: (product) => {
+  addProductLine: (product, mealType) => {
     const { lines } = get();
     const exists = lines.some((line) => line.productId === product.id);
     if (exists) {
@@ -427,8 +430,15 @@ export const useParticipantDayStore = create<ParticipantDayStore>((set, get) => 
       productId: product.id,
       name: product.name,
       calories: product.calories,
+      protein: product.protein,
+      fat: product.fat,
+      carbs: product.carbs,
+      mealType,
       weightGrams: 100,
       lineCalories: computeLineCalories(100, product.calories),
+      lineProtein: computeLineMacro(100, product.protein),
+      lineFat: computeLineMacro(100, product.fat),
+      lineCarbs: computeLineMacro(100, product.carbs),
     };
     set({
       lines: [...lines, newLine],
@@ -444,6 +454,9 @@ export const useParticipantDayStore = create<ParticipantDayStore>((set, get) => 
         ...line,
         weightGrams,
         lineCalories: computeLineCalories(weightGrams, line.calories),
+        lineProtein: computeLineMacro(weightGrams, line.protein),
+        lineFat: computeLineMacro(weightGrams, line.fat),
+        lineCarbs: computeLineMacro(weightGrams, line.carbs),
       };
     });
     set({ lines: next });

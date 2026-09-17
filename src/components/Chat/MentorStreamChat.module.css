@@ -100,7 +100,7 @@
 .badge {
   flex-shrink: 0;
   background: var(--accent-primary);
-  color: var(--text-on-dark);
+  color: var(--text-on-accent);
   border-radius: 12px;
   padding: 0.1rem 0.55rem;
   font-size: var(--font-size-xs);
@@ -159,7 +159,7 @@
 .bubbleMine {
   align-self: flex-end;
   background: var(--bg-info);
-  border-color: #bfdbfe;
+  border-color: var(--border-default);
 }
 
 .bubbleTheirs {
@@ -203,7 +203,7 @@
 }
 
 .input:focus {
-  outline: 2px solid var(--accent-primary);
+  outline: 2px solid var(--focus-ring-color);
   outline-offset: 1px;
 }
 
@@ -212,7 +212,7 @@
   border: none;
   border-radius: var(--radius-md);
   background: var(--accent-primary);
-  color: var(--text-on-dark);
+  color: var(--text-on-accent);
   cursor: pointer;
   font-family: inherit;
   font-size: var(--font-size-base);

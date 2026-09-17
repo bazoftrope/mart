@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
-import Link from 'next/link';
 import { Search } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 import { apiFetch } from '@/lib/apiClient';
+import Button from '@/components/ui/Button';
+import { ButtonLink } from '@/components/ui';
 import WorkoutCard from '@/components/workouts/WorkoutCard';
 import cardStyles from '@/components/workouts/WorkoutCard.module.css';
 import type { Workout, WorkoutListResponse } from '@/types/workout';
@@ -171,13 +172,13 @@ export default function WorkoutsPage() {
           </p>
         </div>
         {role ? (
-          <Link href="/workouts/new" className="btn btnPrimary">
+          <ButtonLink href="/workouts/new" variant="primary">
             Добавить тренировку
-          </Link>
+          </ButtonLink>
         ) : (
-          <Link href="/login" className="btn btnPrimary">
+          <ButtonLink href="/login" variant="primary">
             Войти, чтобы добавить
-          </Link>
+          </ButtonLink>
         )}
       </header>
 
@@ -227,12 +228,12 @@ export default function WorkoutsPage() {
             возвращаться к ним с любого устройства.
           </p>
           <div className={styles.noticeActions}>
-            <Link href="/login" className="btn btnPrimary">
+            <ButtonLink href="/login" variant="primary">
               Войти
-            </Link>
-            <Link href="/register" className="btn btnOutline">
+            </ButtonLink>
+            <ButtonLink href="/register" variant="outline">
               Регистрация
-            </Link>
+            </ButtonLink>
           </div>
         </div>
       ) : (
@@ -259,13 +260,13 @@ export default function WorkoutsPage() {
                 <>
                   <p>В книге пока нет тренировок.</p>
                   {role ? (
-                    <Link href="/workouts/new" className="btn btnPrimary">
+                    <ButtonLink href="/workouts/new" variant="primary">
                       Добавить первую тренировку
-                    </Link>
+                    </ButtonLink>
                   ) : (
-                    <Link href="/login" className="btn btnPrimary">
+                    <ButtonLink href="/login" variant="primary">
                       Войти, чтобы добавить тренировку
-                    </Link>
+                    </ButtonLink>
                   )}
                 </>
               )}
@@ -289,27 +290,27 @@ export default function WorkoutsPage() {
 
               {totalPages > 1 && (
                 <div className={styles.pagination}>
-                  <button
+                  <Button
                     type="button"
-                    className="btn"
+                    variant="secondary"
+                    size="sm"
                     disabled={page <= 1}
                     onClick={() => setPage((prev) => Math.max(1, prev - 1))}
                   >
                     Назад
-                  </button>
+                  </Button>
                   <span className={styles.pageInfo}>
                     Страница {page} из {totalPages}
                   </span>
-                  <button
+                  <Button
                     type="button"
-                    className="btn"
+                    variant="secondary"
+                    size="sm"
                     disabled={page >= totalPages}
-                    onClick={() =>
-                      setPage((prev) => Math.min(totalPages, prev + 1))
-                    }
+                    onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
                   >
                     Вперёд
-                  </button>
+                  </Button>
                 </div>
               )}
             </div>

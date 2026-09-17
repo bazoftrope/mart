@@ -1,17 +1,39 @@
 import { useEffect, useRef, useState } from 'react';
 import styles from './ProductSearch.module.css';
 import { apiFetch } from '@/lib/apiClient';
+import Button from '@/components/ui/Button';
+import { KCAL_PER_GRAM } from '@/lib/nutritionCalculator';
 
 export type Product = {
   id: string;
   name: string;
+  /** ккал на 100 г */
   calories: number;
+  /** белки, г на 100 г */
+  protein: number;
+  /** жиры, г на 100 г */
+  fat: number;
+  /** углеводы, г на 100 г */
+  carbs: number;
 };
 
 type ProductSearchProps = {
   onSelect: (product: Product) => void;
   disabled?: boolean;
 };
+
+function parseMacro(value: string): number {
+  const num = Number(value);
+  return Number.isFinite(num) && num >= 0 ? num : 0;
+}
+
+function suggestCalories(protein: string, fat: string, carbs: string): string {
+  const kcal =
+    parseMacro(protein) * KCAL_PER_GRAM.protein +
+    parseMacro(fat) * KCAL_PER_GRAM.fat +
+    parseMacro(carbs) * KCAL_PER_GRAM.carbs;
+  return kcal > 0 ? String(Math.round(kcal)) : '';
+}
 
 export default function ProductSearch({ onSelect, disabled }: ProductSearchProps) {
   const [search, setSearch] = useState('');
@@ -21,6 +43,10 @@ export default function ProductSearch({ onSelect, disabled }: ProductSearchProps
   const [customOpen, setCustomOpen] = useState(false);
   const [customName, setCustomName] = useState('');
   const [customCalories, setCustomCalories] = useState('');
+  const [customProtein, setCustomProtein] = useState('');
+  const [customFat, setCustomFat] = useState('');
+  const [customCarbs, setCustomCarbs] = useState('');
+  const [caloriesTouched, setCaloriesTouched] = useState(false);
   const [adding, setAdding] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -69,6 +95,15 @@ export default function ProductSearch({ onSelect, disabled }: ProductSearchProps
     return () => clearTimeout(timeout);
   }, [search]);
 
+  function resetCustomForm() {
+    setCustomName('');
+    setCustomCalories('');
+    setCustomProtein('');
+    setCustomFat('');
+    setCustomCarbs('');
+    setCaloriesTouched(false);
+  }
+
   function handleSelect(product: Product) {
     onSelect(product);
     setSearch('');
@@ -76,14 +111,46 @@ export default function ProductSearch({ onSelect, disabled }: ProductSearchProps
     setOpen(false);
     setCustomOpen(false);
     setError(null);
+    resetCustomForm();
+  }
+
+  function handleMacroChange(
+    field: 'protein' | 'fat' | 'carbs',
+    value: string
+  ) {
+    const next = {
+      protein: field === 'protein' ? value : customProtein,
+      fat: field === 'fat' ? value : customFat,
+      carbs: field === 'carbs' ? value : customCarbs,
+    };
+    if (field === 'protein') setCustomProtein(value);
+    if (field === 'fat') setCustomFat(value);
+    if (field === 'carbs') setCustomCarbs(value);
+
+    if (!caloriesTouched) {
+      setCustomCalories(suggestCalories(next.protein, next.fat, next.carbs));
+    }
   }
 
   async function handleAddToCatalog(event: React.FormEvent) {
     event.preventDefault();
     const name = customName.trim();
     const calories = Number(customCalories);
+    const protein = Number(customProtein || 0);
+    const fat = Number(customFat || 0);
+    const carbs = Number(customCarbs || 0);
+
+    const macrosValid =
+      [protein, fat, carbs].every(
+        (value) => Number.isFinite(value) && value >= 0 && value <= 100
+      ) && protein + fat + carbs <= 100;
+
     if (!name || !Number.isFinite(calories) || calories <= 0) {
       setError('Укажите название и калорийность больше 0');
+      return;
+    }
+    if (!macrosValid) {
+      setError('БЖУ: числа от 0 до 100, сумма Б+Ж+У не больше 100');
       return;
     }
 
@@ -94,12 +161,16 @@ export default function ProductSearch({ onSelect, disabled }: ProductSearchProps
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, calories }),
+        body: JSON.stringify({ name, calories, protein, fat, carbs }),
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
         const message =
-          json.issues?.name || json.issues?.calories || json.message || json.error;
+          json.issues?.name ||
+          json.issues?.calories ||
+          json.issues?.protein ||
+          json.message ||
+          json.error;
         throw new Error(message || 'Не удалось добавить продукт');
       }
 
@@ -107,9 +178,10 @@ export default function ProductSearch({ onSelect, disabled }: ProductSearchProps
         id: json.data.id,
         name: json.data.name,
         calories: json.data.calories,
+        protein: json.data.protein,
+        fat: json.data.fat,
+        carbs: json.data.carbs,
       });
-      setCustomName('');
-      setCustomCalories('');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Не удалось добавить продукт');
     } finally {
@@ -146,7 +218,8 @@ export default function ProductSearch({ onSelect, disabled }: ProductSearchProps
             >
               {product.name}{' '}
               <span className={styles.calories}>
-                ({product.calories} ккал/100г)
+                ({product.calories} ккал/100г · Б {product.protein} · Ж {product.fat} · У{' '}
+                {product.carbs})
               </span>
             </button>
           ))}
@@ -172,25 +245,62 @@ export default function ProductSearch({ onSelect, disabled }: ProductSearchProps
                 className={styles.input}
                 autoFocus
               />
-              <div className={styles.customRow}>
-                <input
-                  type="number"
-                  min="1"
-                  max="2000"
-                  step="0.1"
-                  value={customCalories}
-                  onChange={(e) => setCustomCalories(e.target.value)}
-                  placeholder="ккал/100г"
-                  className={styles.input}
-                />
-                <button
-                  type="submit"
-                  disabled={adding}
-                  className={styles.addCustomButton}
-                >
-                  {adding ? 'Добавляем...' : 'Добавить'}
-                </button>
+              <div className={styles.customGrid}>
+                <label className={styles.customField}>
+                  <span>ккал/100г</span>
+                  <input
+                    type="number"
+                    min="0.1"
+                    max="2000"
+                    step="0.1"
+                    value={customCalories}
+                    onChange={(e) => {
+                      setCustomCalories(e.target.value);
+                      setCaloriesTouched(true);
+                    }}
+                    className={styles.input}
+                  />
+                </label>
+                <label className={styles.customField}>
+                  <span>Белки, г</span>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.1"
+                    value={customProtein}
+                    onChange={(e) => handleMacroChange('protein', e.target.value)}
+                    className={styles.input}
+                  />
+                </label>
+                <label className={styles.customField}>
+                  <span>Жиры, г</span>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.1"
+                    value={customFat}
+                    onChange={(e) => handleMacroChange('fat', e.target.value)}
+                    className={styles.input}
+                  />
+                </label>
+                <label className={styles.customField}>
+                  <span>Углеводы, г</span>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.1"
+                    value={customCarbs}
+                    onChange={(e) => handleMacroChange('carbs', e.target.value)}
+                    className={styles.input}
+                  />
+                </label>
               </div>
+              <Button type="submit" variant="primary" size="sm" loading={adding}>
+                {adding ? 'Добавляем...' : 'Добавить'}
+              </Button>
             </form>
           )}
 

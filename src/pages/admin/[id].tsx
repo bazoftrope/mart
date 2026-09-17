@@ -157,6 +157,12 @@ export default function AdminReviewTemplatePage() {
                 <h4 className={styles.cardTitle}>
                   День {day.dayNumber}
                   <span className={styles.badgeRow}>
+                    {/* diet_food — всегда первым в ряду иконок */}
+                    {day.isHealthyEatingDay && (
+                      <span className={styles.badgeHealthy} title="День здоровой еды">
+                        <Icon name="diet_food" width={18} height={18} /> здоровая еда
+                      </span>
+                    )}
                     {day.isMeasurementDay && (
                       <span className={styles.measurementBadge} title="День замера">
                         <Icon name="mesure" width={18} height={18} /> замер
@@ -170,11 +176,6 @@ export default function AdminReviewTemplatePage() {
                     {day.isRestDay && (
                       <span className={styles.badgeRest} title="День отдыха">
                         <Icon name="rest" width={18} height={18} /> отдых
-                      </span>
-                    )}
-                    {day.isHealthyEatingDay && (
-                      <span className={styles.badgeHealthy} title="День здоровой еды">
-                        <Icon name="diet_food" width={18} height={18} /> здоровая еда
                       </span>
                     )}
                   </span>

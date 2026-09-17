@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import Button from '@/components/ui/Button';
 import styles from './PulseReadingsForm.module.css';
 
 export type PulseFormItem = {
@@ -202,26 +203,18 @@ export default function PulseReadingsForm({
               />
             </div>
             {!readOnly && readings.length > 1 && (
-              <button
-                type="button"
-                onClick={() => removeReading(index)}
-                className={styles.removeButton}
-              >
+              <Button type="button" variant="ghost" size="sm" onClick={() => removeReading(index)}>
                 Удалить
-              </button>
+              </Button>
             )}
           </div>
         ))
       )}
 
       {!readOnly && (
-        <button
-          type="button"
-          onClick={addReading}
-          className={styles.addButton}
-        >
+        <Button type="button" variant="outline" size="sm" onClick={addReading}>
           + добавить замер
-        </button>
+        </Button>
       )}
     </div>
   );

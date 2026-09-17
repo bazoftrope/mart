@@ -2,6 +2,7 @@ import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { useAuthStore } from '@/stores/authStore';
+import Button from '@/components/ui/Button';
 import type { UserRole } from '@/types/auth';
 
 function getDashboardPath(role: UserRole): string {
@@ -29,7 +30,7 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="containerNarrow">
+    <main className="authPage">
       <h1 className="pageTitle">Вход</h1>
       {error && <p className="error">{error}</p>}
       <form onSubmit={handleSubmit}>
@@ -55,9 +56,9 @@ export default function LoginPage() {
             className="input"
           />
         </div>
-        <button type="submit" disabled={isLoading} className="btn btnPrimary btnBlock">
+        <Button type="submit" variant="primary" block loading={isLoading}>
           {isLoading ? 'Вход...' : 'Войти'}
-        </button>
+        </Button>
       </form>
       <p>
         Нет аккаунта? <Link href="/register">Зарегистрироваться</Link>

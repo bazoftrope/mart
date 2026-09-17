@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
+import { ChevronRight } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 import {
   ResponsiveContainer,
@@ -13,22 +14,19 @@ import {
 } from 'recharts';
 import styles from './ParticipantDetail.module.css';
 import { apiFetch } from '@/lib/apiClient';
+import { MEAL_LABELS, type MealType } from '@/lib/nutritionCalculator';
 
 type ReportLineItem = {
   id: string;
   productId: string;
   name: string;
   calories: number;
+  mealType: MealType;
   weightGrams: number;
   lineCalories: number;
-};
-
-type PulseReadingItem = {
-  id: string;
-  measuredAt: string;
-  pulse: number | null;
-  systolic?: number | null;
-  diastolic?: number | null;
+  lineProtein: number;
+  lineFat: number;
+  lineCarbs: number;
 };
 
 type DayReport = {
@@ -48,7 +46,6 @@ type DayReport = {
   hipCm: number | null;
   legCm: number | null;
   lines: ReportLineItem[];
-  pulseReadings: PulseReadingItem[];
 };
 
 type ParticipantDetailData = {
@@ -75,16 +72,39 @@ type ParticipantDetailData = {
   reports: DayReport[];
 };
 
+type ReportTabValue = 'ration' | 'metrics' | 'charts';
+
+const REPORT_TABS: Array<{ value: ReportTabValue; label: string }> = [
+  { value: 'ration', label: 'Рацион' },
+  { value: 'metrics', label: 'Метрики' },
+  { value: 'charts', label: 'Графики' },
+];
+
 function formatTrainingDone(value: boolean | null): string {
   if (value === null || value === undefined) return '—';
   return value ? '✓ была' : '✗ не была';
 }
 
-function formatTime(value: string): string {
-  return new Date(value).toLocaleTimeString('ru-RU', {
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+/** Русская форма существительного при числительном. */
+function pluralize(
+  count: number,
+  one: string,
+  few: string,
+  many: string
+): string {
+  const mod10 = count % 10;
+  const mod100 = count % 100;
+  if (mod10 === 1 && mod100 !== 11) return one;
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return few;
+  return many;
+}
+
+function mealSummary(lines: ReportLineItem[]): string {
+  const meals: MealType[] = [];
+  for (const line of lines) {
+    if (!meals.includes(line.mealType)) meals.push(line.mealType);
+  }
+  return meals.map((meal) => MEAL_LABELS[meal]).join(', ');
 }
 
 function buildMeasurementsData(
@@ -123,6 +143,8 @@ export default function ParticipantDetailPage() {
   const [data, setData] = useState<ParticipantDetailData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<ReportTabValue>('ration');
+  const [expandedDays, setExpandedDays] = useState<number[]>([]);
 
   useEffect(() => {
     const initAuth = useAuthStore.getState().initAuth;
@@ -159,6 +181,12 @@ export default function ParticipantDetailPage() {
     load();
   }, [id, participantId, router]);
 
+  function toggleDay(day: number) {
+    setExpandedDays((prev) =>
+      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
+    );
+  }
+
   if (loading) {
     return <main className={styles.main}><p>Загрузка...</p></main>;
   }
@@ -190,6 +218,8 @@ export default function ParticipantDetailPage() {
     if (!latest || r.updatedAt > latest) return r.updatedAt;
     return latest;
   }, null);
+
+  const measurementsData = buildMeasurementsData(data.reports);
 
   return (
     <main className={styles.main}>
@@ -237,210 +267,241 @@ export default function ParticipantDetailPage() {
         <p><strong>Статус:</strong> {data.stream.status}</p>
       </div>
 
-      <section className={styles.section}>
-        <h2>Рацион</h2>
-        <div className={styles.tableWrap}>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>День</th>
-                <th>Состав</th>
-                <th className={styles.numCol}>Итого ккал</th>
-              </tr>
-            </thead>
-            <tbody>
-              {allDays.map((day) => {
-                const report = reportByDay.get(day);
-                if (!report || report.lines.length === 0) {
-                  return (
-                    <tr key={day} className={styles.emptyRow}>
-                      <td>{day}</td>
-                      <td>—</td>
-                      <td className={styles.numCol}>—</td>
-                    </tr>
-                  );
-                }
-                return (
-                  <tr key={day}>
-                    <td>{day}</td>
-                    <td>
-                      <ul className={styles.foodList}>
-                        {report.lines.map((line) => (
-                          <li key={line.id}>
-                            {line.name} — {line.weightGrams} г ({line.lineCalories} ккал)
-                          </li>
-                        ))}
-                      </ul>
-                    </td>
-                    <td className={styles.numCol}>{report.totalCalories}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </section>
+      <div className={styles.tabs} role="tablist" aria-label="Разделы отчёта">
+        {REPORT_TABS.map((tab) => {
+          const isActive = activeTab === tab.value;
+          return (
+            <button
+              key={tab.value}
+              type="button"
+              role="tab"
+              id={`report-tab-${tab.value}`}
+              aria-selected={isActive}
+              aria-controls={`report-panel-${tab.value}`}
+              className={`${styles.tab} ${isActive ? styles.tabActive : ''}`}
+              onClick={() => setActiveTab(tab.value)}
+            >
+              {tab.label}
+            </button>
+          );
+        })}
+      </div>
 
-      <section className={styles.section}>
-        <h2>Динамика замеров</h2>
-        {buildMeasurementsData(data.reports).length > 0 ? (
-          <div className={styles.chartCard}>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={buildMeasurementsData(data.reports)}>
-                <XAxis dataKey="day" />
-                <YAxis hide domain={[0, getMaxValue(buildMeasurementsData(data.reports)) + 10]} />
-                <Tooltip />
-                <Legend />
-                <Line
-                  type="monotone"
-                  dataKey="weightKg"
-                  name="Вес, кг"
-                  stroke="#2563eb"
-                  strokeWidth={2}
-                  dot={{ r: 3 }}
-                  connectNulls
-                />
-                <Line
-                  type="monotone"
-                  dataKey="chestCm"
-                  name="ОГ, см"
-                  stroke="#2563eb"
-                  strokeWidth={2}
-                  dot={{ r: 3 }}
-                  connectNulls
-                />
-                <Line
-                  type="monotone"
-                  dataKey="waistCm"
-                  name="ОТ, см"
-                  stroke="#f59e0b"
-                  strokeWidth={2}
-                  dot={{ r: 3 }}
-                  connectNulls
-                />
-                <Line
-                  type="monotone"
-                  dataKey="hipCm"
-                  name="ОБ, см"
-                  stroke="#10b981"
-                  strokeWidth={2}
-                  dot={{ r: 3 }}
-                  connectNulls
-                />
-                <Line
-                  type="monotone"
-                  dataKey="legCm"
-                  name="ОН, см"
-                  stroke="#ef4444"
-                  strokeWidth={2}
-                  dot={{ r: 3 }}
-                  connectNulls
-                />
-              </LineChart>
-            </ResponsiveContainer>
+      {activeTab === 'ration' && (
+        <section
+          className={styles.tabPanel}
+          role="tabpanel"
+          id="report-panel-ration"
+          aria-labelledby="report-tab-ration"
+        >
+          <div className={styles.tableWrap}>
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th>День</th>
+                  <th>Состав</th>
+                  <th className={styles.numCol}>Итого ккал</th>
+                </tr>
+              </thead>
+              <tbody>
+                {allDays.map((day) => {
+                  const report = reportByDay.get(day);
+                  const lines = report?.lines ?? [];
+                  if (!report || lines.length === 0) {
+                    return (
+                      <tr key={day} className={styles.emptyRow}>
+                        <td>{day}</td>
+                        <td>—</td>
+                        <td className={styles.numCol}>—</td>
+                      </tr>
+                    );
+                  }
+
+                  const isOpen = expandedDays.includes(day);
+                  return (
+                    <Fragment key={day}>
+                      <tr
+                        className={`${styles.rationRow} ${isOpen ? styles.rationRowOpen : ''}`}
+                        onClick={() => toggleDay(day)}
+                      >
+                        <td>
+                          <button
+                            type="button"
+                            className={styles.rowToggle}
+                            aria-expanded={isOpen}
+                            aria-label={`День ${day}: ${isOpen ? 'свернуть' : 'развернуть'} состав`}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              toggleDay(day);
+                            }}
+                          >
+                            <ChevronRight
+                              size={16}
+                              aria-hidden="true"
+                              className={`${styles.chevron} ${isOpen ? styles.chevronOpen : ''}`}
+                            />
+                            {day}
+                          </button>
+                        </td>
+                        <td>
+                          {lines.length}{' '}
+                          {pluralize(lines.length, 'позиция', 'позиции', 'позиций')}
+                          {' · '}
+                          {mealSummary(lines)}
+                        </td>
+                        <td className={styles.numCol}>{report.totalCalories}</td>
+                      </tr>
+                      {isOpen && (
+                        <tr className={styles.detailRow}>
+                          <td colSpan={3}>
+                            <ul className={styles.foodList}>
+                              {lines.map((line) => (
+                                <li key={line.id}>
+                                  {MEAL_LABELS[line.mealType]}: {line.name} —{' '}
+                                  {line.weightGrams} г ({line.lineCalories} ккал · Б{' '}
+                                  {line.lineProtein} · Ж {line.lineFat} · У {line.lineCarbs})
+                                </li>
+                              ))}
+                            </ul>
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
-        ) : (
-          <p className={styles.noData}>Нет данных о замерах.</p>
-        )}
-      </section>
+        </section>
+      )}
 
-      <section className={styles.section}>
-        <h2>Метрики</h2>
-        <div className={styles.tableWrap}>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>День</th>
-                <th className={styles.numCol}>Вода (л)</th>
-                <th className={styles.numCol}>Шаги</th>
-                <th className={styles.numCol}>Сон (ч)</th>
-                <th>Тренировка</th>
-                <th className={styles.numCol}>Вес (кг)</th>
-                <th className={styles.numCol}>ОГ (см)</th>
-                <th className={styles.numCol}>ОТ (см)</th>
-                <th className={styles.numCol}>ОБ (см)</th>
-                <th className={styles.numCol}>ОН (см)</th>
-              </tr>
-            </thead>
-            <tbody>
-              {allDays.map((day) => {
-                const report = reportByDay.get(day);
-                const filled = report && (
-                  report.waterLiters !== null ||
-                  report.steps !== null ||
-                  report.sleepHours !== null ||
-                  report.trainingDone !== null ||
-                  report.weightKg !== null ||
-                  report.chestCm !== null ||
-                  report.waistCm !== null ||
-                  report.hipCm !== null ||
-                  report.legCm !== null
-                );
-                return (
-                  <tr key={day} className={filled ? '' : styles.emptyRow}>
-                    <td>{day}</td>
-                    <td className={styles.numCol}>{report?.waterLiters ?? '—'}</td>
-                    <td className={styles.numCol}>{report?.steps ?? '—'}</td>
-                    <td className={styles.numCol}>{report?.sleepHours ?? '—'}</td>
-                    <td>{formatTrainingDone(report?.trainingDone ?? null)}</td>
-                    <td className={styles.numCol}>{report?.weightKg ?? '—'}</td>
-                    <td className={styles.numCol}>{report?.chestCm ?? '—'}</td>
-                    <td className={styles.numCol}>{report?.waistCm ?? '—'}</td>
-                    <td className={styles.numCol}>{report?.hipCm ?? '—'}</td>
-                    <td className={styles.numCol}>{report?.legCm ?? '—'}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section className={styles.section}>
-        <h2>Пульс и давление</h2>
-        <div className={styles.tableWrap}>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>День</th>
-                <th>Время</th>
-                <th className={styles.numCol}>Пульс (уд/мин)</th>
-                <th className={styles.numCol}>Давление (сист/диаст)</th>
-              </tr>
-            </thead>
-            <tbody>
-              {allDays.map((day) => {
-                const report = reportByDay.get(day);
-                const readings = report?.pulseReadings || [];
-                if (readings.length === 0) {
+      {activeTab === 'metrics' && (
+        <section
+          className={styles.tabPanel}
+          role="tabpanel"
+          id="report-panel-metrics"
+          aria-labelledby="report-tab-metrics"
+        >
+          <div className={styles.tableWrap}>
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th>День</th>
+                  <th className={styles.numCol}>Вода (л)</th>
+                  <th className={styles.numCol}>Шаги</th>
+                  <th className={styles.numCol}>Сон (ч)</th>
+                  <th>Тренировка</th>
+                  <th className={styles.numCol}>Вес (кг)</th>
+                  <th className={styles.numCol}>ОГ (см)</th>
+                  <th className={styles.numCol}>ОТ (см)</th>
+                  <th className={styles.numCol}>ОБ (см)</th>
+                  <th className={styles.numCol}>ОН (см)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {allDays.map((day) => {
+                  const report = reportByDay.get(day);
+                  const filled = report && (
+                    report.waterLiters !== null ||
+                    report.steps !== null ||
+                    report.sleepHours !== null ||
+                    report.trainingDone !== null ||
+                    report.weightKg !== null ||
+                    report.chestCm !== null ||
+                    report.waistCm !== null ||
+                    report.hipCm !== null ||
+                    report.legCm !== null
+                  );
                   return (
-                    <tr key={day} className={styles.emptyRow}>
+                    <tr key={day} className={filled ? '' : styles.emptyRow}>
                       <td>{day}</td>
-                      <td>—</td>
-                      <td className={styles.numCol}>—</td>
-                      <td className={styles.numCol}>—</td>
+                      <td className={styles.numCol}>{report?.waterLiters ?? '—'}</td>
+                      <td className={styles.numCol}>{report?.steps ?? '—'}</td>
+                      <td className={styles.numCol}>{report?.sleepHours ?? '—'}</td>
+                      <td>{formatTrainingDone(report?.trainingDone ?? null)}</td>
+                      <td className={styles.numCol}>{report?.weightKg ?? '—'}</td>
+                      <td className={styles.numCol}>{report?.chestCm ?? '—'}</td>
+                      <td className={styles.numCol}>{report?.waistCm ?? '—'}</td>
+                      <td className={styles.numCol}>{report?.hipCm ?? '—'}</td>
+                      <td className={styles.numCol}>{report?.legCm ?? '—'}</td>
                     </tr>
                   );
-                }
-                return readings.map((reading, index) => (
-                  <tr key={reading.id}>
-                    {index === 0 ? (
-                      <td rowSpan={readings.length}>{day}</td>
-                    ) : null}
-                    <td>{formatTime(reading.measuredAt)}</td>
-                    <td className={styles.numCol}>{reading.pulse ?? '—'}</td>
-                    <td className={styles.numCol}>
-                      {reading.systolic && reading.diastolic
-                        ? `${reading.systolic}/${reading.diastolic}`
-                        : '—'}
-                    </td>
-                  </tr>
-                ));
-              })}
-            </tbody>
-          </table>
-        </div>
-      </section>
+                })}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
+      {activeTab === 'charts' && (
+        <section
+          className={styles.tabPanel}
+          role="tabpanel"
+          id="report-panel-charts"
+          aria-labelledby="report-tab-charts"
+        >
+          {measurementsData.length > 0 ? (
+            <div className={styles.chartCard}>
+              <h3>Динамика замеров</h3>
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={measurementsData}>
+                  <XAxis dataKey="day" />
+                  <YAxis hide domain={[0, getMaxValue(measurementsData) + 10]} />
+                  <Tooltip />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="weightKg"
+                    name="Вес, кг"
+                    stroke="#2563eb"
+                    strokeWidth={2}
+                    dot={{ r: 3 }}
+                    connectNulls
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="chestCm"
+                    name="ОГ, см"
+                    stroke="#2563eb"
+                    strokeWidth={2}
+                    dot={{ r: 3 }}
+                    connectNulls
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="waistCm"
+                    name="ОТ, см"
+                    stroke="#f59e0b"
+                    strokeWidth={2}
+                    dot={{ r: 3 }}
+                    connectNulls
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="hipCm"
+                    name="ОБ, см"
+                    stroke="#10b981"
+                    strokeWidth={2}
+                    dot={{ r: 3 }}
+                    connectNulls
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="legCm"
+                    name="ОН, см"
+                    stroke="#ef4444"
+                    strokeWidth={2}
+                    dot={{ r: 3 }}
+                    connectNulls
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <p className={styles.noData}>Нет данных о замерах.</p>
+          )}
+        </section>
+      )}
     </main>
   );
 }

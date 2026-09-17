@@ -1,7 +1,8 @@
 import { useEffect, useState, FormEvent } from 'react';
 import { useRouter } from 'next/router';
-import Link from 'next/link';
 import { useAuthStore } from '@/stores/authStore';
+import Button from '@/components/ui/Button';
+import { ButtonLink } from '@/components/ui';
 import styles from './new.module.css';
 import { apiFetch } from '@/lib/apiClient';
 
@@ -89,12 +90,12 @@ export default function NewTemplatePage() {
           />
         </div>
         <div className={styles.actions}>
-          <button type="submit" disabled={loading} className="btn btnPrimary">
+          <Button type="submit" variant="primary" loading={loading}>
             {loading ? 'Создание...' : 'Далее — предстартовая страница'}
-          </button>
-          <Link href="/mentor/templates">
-            <button type="button" className="btn btnOutline">Отмена</button>
-          </Link>
+          </Button>
+          <ButtonLink href="/mentor/templates" variant="outline">
+            Отмена
+          </ButtonLink>
         </div>
       </form>
     </main>

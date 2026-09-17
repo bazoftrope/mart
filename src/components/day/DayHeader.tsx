@@ -21,6 +21,14 @@ const BADGE_CONFIG: Array<{
   hint: string;
   className: string;
 }> = [
+  // diet_food — всегда первым в ряду иконок
+  {
+    flag: 'isHealthyEatingDay',
+    icon: 'diet_food',
+    label: 'День здоровой еды',
+    hint: 'Фокус на чистом питании',
+    className: styles.badgeHealthy,
+  },
   {
     flag: 'isMeasurementDay',
     icon: 'mesure',
@@ -41,13 +49,6 @@ const BADGE_CONFIG: Array<{
     label: 'День отдыха',
     hint: 'Восстановление без нагрузки',
     className: styles.badgeRest,
-  },
-  {
-    flag: 'isHealthyEatingDay',
-    icon: 'diet_food',
-    label: 'День здоровой еды',
-    hint: 'Фокус на чистом питании',
-    className: styles.badgeHealthy,
   },
 ];
 

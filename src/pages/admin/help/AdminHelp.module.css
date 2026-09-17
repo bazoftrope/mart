@@ -51,7 +51,7 @@
 }
 
 .titleLink:hover {
-  color: var(--accent-primary);
+  color: var(--accent-strong);
   text-decoration: underline;
 }
 
@@ -106,8 +106,8 @@
 }
 
 .actionLink:hover {
-  border-color: var(--accent-primary);
-  color: var(--accent-primary);
+  border-color: var(--accent-strong);
+  color: var(--accent-strong);
 }
 
 .deleteButton {

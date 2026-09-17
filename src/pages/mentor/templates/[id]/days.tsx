@@ -1,11 +1,12 @@
 import { useEffect, useState, FormEvent } from 'react';
 import { useRouter } from 'next/router';
-import Link from 'next/link';
 import { useAuthStore } from '@/stores/authStore';
 import styles from '../../TemplateDays.module.css';
 import { apiFetch } from '@/lib/apiClient';
 import RichTextEditor from '@/components/editor/RichTextEditor';
 import AttachmentsEditor from '@/components/mentor/AttachmentsEditor';
+import Button from '@/components/ui/Button';
+import { ButtonLink } from '@/components/ui';
 import { canEditMarathonTemplate } from '@/lib/templateStatus';
 import type { AttachmentData } from '@/types/attachments';
 import { Icon } from '@/components/icons';
@@ -212,9 +213,9 @@ export default function TemplateDaysPage() {
     return (
       <main className={styles.main}>
         <p className={styles.error}>{error}</p>
-        <Link href="/mentor/templates">
-          <button>Назад к шаблонам</button>
-        </Link>
+        <ButtonLink href="/mentor/templates" variant="outline">
+          Назад к шаблонам
+        </ButtonLink>
       </main>
     );
   }
@@ -244,9 +245,9 @@ export default function TemplateDaysPage() {
         </p>
       )}
 
-      <Link href={`/mentor/templates/${templateId}/intro`}>
-        <button type="button" className="btn btnOutline">← Назад к предстартовой странице</button>
-      </Link>
+      <ButtonLink href={`/mentor/templates/${templateId}/intro`} variant="outline">
+        ← Назад к предстартовой странице
+      </ButtonLink>
 
       {error && <p className={styles.error}>{error}</p>}
 
@@ -255,6 +256,19 @@ export default function TemplateDaysPage() {
           <fieldset key={index} className={styles.fieldset}>
             <legend>День {day.dayNumber}</legend>
             <div className={styles.dayFlags}>
+              {/* diet_food — всегда первым в ряду иконок */}
+              <label className={styles.flagLabel}>
+                <input
+                  type="checkbox"
+                  checked={day.isHealthyEatingDay}
+                  disabled={!isEditable}
+                  onChange={(e) =>
+                    updateDay(index, 'isHealthyEatingDay', e.target.checked)
+                  }
+                />
+                <Icon name="diet_food" width={32} height={32} />
+                <span>День здоровой еды</span>
+              </label>
               <label className={styles.flagLabel}>
                 <input
                   type="checkbox"
@@ -291,18 +305,6 @@ export default function TemplateDaysPage() {
                 <Icon name="rest" width={32} height={32} />
                 <span>День отдыха</span>
               </label>
-              <label className={styles.flagLabel}>
-                <input
-                  type="checkbox"
-                  checked={day.isHealthyEatingDay}
-                  disabled={!isEditable}
-                  onChange={(e) =>
-                    updateDay(index, 'isHealthyEatingDay', e.target.checked)
-                  }
-                />
-                <Icon name="diet_food" width={32} height={32} />
-                <span>День здоровой еды</span>
-              </label>
             </div>
 
             <div className={styles.formGroup}>
@@ -331,23 +333,23 @@ export default function TemplateDaysPage() {
 
         <div className={styles.buttonRow}>
           {isEditable && (
-            <button type="submit" disabled={saving}>
+            <Button type="submit" variant="primary" loading={saving}>
               {saving ? 'Сохранение...' : 'Сохранить дни'}
-            </button>
+            </Button>
           )}
           {template.status === 'draft' && (
-            <button
+            <Button
               type="button"
-              disabled={submitting}
+              variant="success"
+              loading={submitting}
               onClick={handleSubmit}
-              className={styles.submitReviewBtn}
             >
               {submitting ? 'Отправка...' : 'Отправить на проверку'}
-            </button>
+            </Button>
           )}
-          <Link href="/mentor/templates">
-            <button type="button">Назад к шаблонам</button>
-          </Link>
+          <ButtonLink href="/mentor/templates" variant="outline">
+            Назад к шаблонам
+          </ButtonLink>
         </div>
       </form>
     </main>

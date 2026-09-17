@@ -6,6 +6,7 @@ import {
   PrimaryKey,
   Default,
   CreatedAt,
+  UpdatedAt,
 } from 'sequelize-typescript';
 
 
@@ -13,7 +14,6 @@ import {
   tableName: 'products',
   underscored: true,
   timestamps: true,
-  updatedAt: false,
 })
 export class Product extends Model {
   @PrimaryKey
@@ -34,6 +34,33 @@ export class Product extends Model {
   })
   calories!: number;
 
+  /** Белки, г на 100 г. */
+  @Column({
+    type: DataType.DECIMAL(6, 2),
+    allowNull: false,
+    defaultValue: 0,
+  })
+  protein!: number;
+
+  /** Жиры, г на 100 г. */
+  @Column({
+    type: DataType.DECIMAL(6, 2),
+    allowNull: false,
+    defaultValue: 0,
+  })
+  fat!: number;
+
+  /** Углеводы, г на 100 г. */
+  @Column({
+    type: DataType.DECIMAL(6, 2),
+    allowNull: false,
+    defaultValue: 0,
+  })
+  carbs!: number;
+
   @CreatedAt
   createdAt!: Date;
+
+  @UpdatedAt
+  updatedAt!: Date;
 }

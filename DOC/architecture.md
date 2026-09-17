@@ -37,8 +37,8 @@ marathon-platform/
 ├── DB/
 │   ├── db.ts                    # Подключение Sequelize (из DATABASE_URL или DB_* env)
 │   ├── config/config.js         # Конфиг Sequelize CLI (dev/test/prod)
-│   ├── models/                  # 19 моделей (index.ts экспортирует все + `models` map + `AppModels`)
-│   ├── migrations/              # Sequelize CLI миграции (20 файлов)
+│   ├── models/                  # 20 моделей (index.ts экспортирует все + `models` map + `AppModels`)
+│   ├── migrations/              # Sequelize CLI миграции (21 файл)
 │   └── seeders/                 # Seed-данные (продукты, демо-рецепты, демо-тренировки, статьи помощи, dev-аккаунты Ирина/Вова)
 ├── src/
 │   ├── pages/                   # Pages Router
@@ -75,7 +75,13 @@ marathon-platform/
 
 **users/**
 - `GET /api/users/me` — текущий юзер + `profileCompleted`
-- `PATCH /api/users/me` — заполнение профиля (онбординг)
+- `PATCH /api/users/me` — заполнение профиля (онбординг); требует согласие на данные о здоровье
+- `DELETE /api/users/me` — удаление аккаунта и данных (участник/ментор; пароль + слово «удалить»)
+- `GET /api/users/me/deletion-impact` — что будет затронуто при удалении (шаблоны, потоки, участники)
+- `GET /api/users/me/export` — экспорт данных пользователя файлом JSON (152-ФЗ)
+- `GET /api/users/me/consents` — согласия пользователя + версии текстов (152-ФЗ)
+- `POST /api/users/me/consents` — зафиксировать согласие (`type`: `general` / `health`)
+- `DELETE /api/users/me/consents/[type]` — отозвать согласие (`revokedAt`)
 
 **marathons/**
 - `GET/POST /api/marathons` — шаблоны ментора (список/создание)
@@ -106,8 +112,14 @@ marathon-platform/
 **reports/**
 - `PUT /api/reports/[reportId]` — редактировать отчёт (участник)
 
-**products/**
-- `GET /api/products?search=` — поиск продуктов (autocomplete, max 20)
+**products/** — общий каталог продуктов и блюд
+- `GET /api/products?search=` — поиск продуктов (autocomplete, max 20; отдаёт ккал и Б/Ж/У на 100 г)
+- `POST /api/products` — добавить продукт (любая авторизованная роль): название, ккал, Б/Ж/У; при совпадении имени возвращается существующий
+
+**admin/products/** — управление каталогом (админ)
+- `GET /api/admin/products?search=&page=&limit=` — список с поиском и пагинацией
+- `POST /api/admin/products` — создать продукт
+- `GET/PUT/DELETE /api/admin/products/[id]` — продукт: чтение/правка/удаление. Удаление продукта, используемого в `report_lines`, запрещено (409)
 
 **recipes/** — общая книга рецептов (публичное чтение)
 - `GET /api/recipes?search=&favorites=&page=&limit=` — список рецептов (поиск по названию/описанию/ингредиентам/шагам, пагинация; для авторизованных — `isFavorite`, `canEdit`; `favorites=1` требует входа)
@@ -216,13 +228,13 @@ export default apiHandler({ GET: withMentor(getHandler) });
 | Файл | Назначение |
 |------|-----------|
 | `20240724000001-create-users.js` | users |
-| `20240724000002-create-products.js` | products |
+| `20240724000002-create-products.js` | products (name, calories, Б/Ж/У, `created_at`/`updated_at`) |
 | `20240724000003-create-marathon-templates.js` | marathon_templates |
 | `20240724000004-create-template-days.js` | template_days |
 | `20240724000005-create-streams.js` | streams |
 | `20240724000006-create-stream-enrollments.js` | stream_enrollments |
 | `20240724000007-create-daily-reports.js` | daily_reports |
-| `20240724000008-create-report-lines.js` | report_lines |
+| `20240724000008-create-report-lines.js` | report_lines (+ `meal_type`, `line_protein/fat/carbs`) |
 | `20240724000009-create-stream-ratings.js` | stream_ratings |
 | `20240724000010-create-pulse-readings.js` | pulse_readings |
 | `20240815000001-add-body-measurements-to-daily-reports.js` | ОГ/ОТ/ОБ/ОН |
@@ -235,6 +247,7 @@ export default apiHandler({ GET: withMentor(getHandler) });
 | `20260905000004-fix-attachment-filenames-encoding.js` | починка имён файлов (mojibake) |
 | `20260910000002-create-workouts.js` | книга тренировок (`workouts`, `workout_favorites`) |
 | `20260911000001-create-help-articles.js` | раздел «Правила и помощь» (`help_articles`) |
+| `20260917000001-create-user-consents.js` | согласия на обработку ПДн (`user_consents`, 152-ФЗ) |
 
 Команды: `npx sequelize-cli db:migrate` / `db:migrate:undo` / `db:seed:all` / `db:seed:undo:all` (`npm run db:reset` — drop+create+migrate+seed:all).
 
@@ -267,6 +280,12 @@ export default apiHandler({ GET: withMentor(getHandler) });
 > добавления миграция `20260905000001` уже была применена локально и дописать
 > в неё таблицы было нельзя без пересоздания базы. С этого момента новые
 > изменения схемы — только отдельными файлами миграций.
+>
+> **Обновление (13.09.2026, Решение 24).** Для расширения калоризатора (БЖУ, приёмы
+> пищи) снова правим уже существующие миграции (`20240724000002-create-products.js`,
+> `20240724000008-create-report-lines.js`): данные в базе признаны расходными, база
+> пересоздаётся через `npm run db:reset`. Правило «дальше только отдельными файлами»
+> возвращается, как только в базе появятся реальные данные, которые нельзя потерять.
 
 ## Расчёт калорий (`src/lib/calorieCalculator.ts`)
 
@@ -283,6 +302,16 @@ male:   База = (6.25×Рост + 10×Вес − 5×Возраст + 5) × 1.
 | `gain` | 1.15 | профицит 15% |
 
 `calculateTargetCalories` округляет до целого. Заполнение профиля проверяется через `isProfileComplete`.
+
+## Расчёт БЖУ (`src/lib/nutritionCalculator.ts`)
+
+- Продукты хранят Б/Ж/У на 100 г. Строка отчёта денормализует значения с учётом веса:
+  `line_calories = вес × ккал/100`, `line_protein/fat/carbs = вес × макро/100` (округление до 2 знаков).
+- Приёмы пищи — `MealType = breakfast | lunch | dinner | snack` (`report_lines.meal_type`).
+- Пропорции БЖУ считаются по калориям: `Э = Б×4 + Ж×9 + У×4`, доля каждого макроса в `Э`.
+  Возвращаются целые проценты, сумма которых ровно 100 (метод наибольших остатков);
+  если макросов нет — `null`.
+- Формы продуктов авто-подставляют ккал как `4×Б + 9×Ж + 4×У` (поле редактируемое).
 
 ## Расчёт рейтинга (`src/lib/ratingCalculator.ts`)
 
@@ -309,6 +338,8 @@ male:   База = (6.25×Рост + 10×Вес − 5×Возраст + 5) × 1.
 - `recipe.ts` — DTO книги рецептов (`Recipe`, `RecipeListResponse`).
 - `workout.ts` — DTO книги тренировок (`Workout`, `WorkoutListResponse`).
 - `help.ts` — DTO раздела «Правила и помощь» (`HelpArticle`, `HelpArticleListItem`, `HelpListResponse`, `HelpSection`, `HelpAudience`) + мапы подписей.
+- `consent.ts` — DTO согласий (`UserConsentDto`, `ConsentsResponse`).
+- `account.ts` — DTO последствий удаления аккаунта (`DeletionImpact`).
 - `pg.d.ts` — декларация типов для `pg`.
 
 ## Cron в проде
@@ -323,4 +354,6 @@ male:   База = (6.25×Рост + 10×Вес − 5×Возраст + 5) × 1.
 - Книга рецептов: общая, без привязки к марафонам. Модели `Recipe` (служебный `createdBy` в UI не показывается) и `RecipeFavorite`, вложения — `ContentAttachment` (`owner_type = 'recipe'`): изображения (галерея), PDF и видео по ссылке Kinescope. Публичный `GET /api/recipes` через `withOptionalAuth` дополняется `isFavorite`/`canEdit` и вложениями. UI: `src/pages/recipes/*`, компоненты `src/components/recipes/*`, редактор вложений `src/components/attachments/ContentAttachmentManager` (логика списка — общая `src/lib/attachmentEditor.ts`).
 - Книга тренировок: полное зеркало книги рецептов (та же механика — публичное чтение, поиск, пагинация, избранное, права автор/админ, вложения `ContentAttachment` с `owner_type = 'workout'`: изображения, PDF, видео Kinescope). Модели `Workout` (`title`, `description`, `exercises`, `execution`, служебный `createdBy`) и `WorkoutFavorite`; UI: `src/pages/workouts/*`, компоненты `src/components/workouts/*`. Кнопка избранного переиспользуется из книги рецептов (`src/components/recipes/FavoriteButton`).
 - Раздел «Правила и помощь»: модель `HelpArticle` (разделы `rules`/`faq`/`guide`, аудитории `all`/`participant`/`mentor`/`admin`, `slug`, черновики); публичное чтение через `withOptionalAuth`, запись — только `withAdmin`. UI: `src/pages/help/*` (список с поиском и табами, страница статьи), админка `src/pages/admin/help/*` (CRUD с Quill), компоненты `src/components/help/*`. Тексты санируются `sanitizeRichText` при сохранении; слаги формирует `src/lib/helpSlug.ts`, где лежат константы `HELP_SLUG_RULES`/`HELP_SLUG_REPORT_GUIDE` для контекстных ссылок (на странице дня, потоке и регистрации). Стартовый набор статей — сидер `20260911000001-demo-help-articles.js`. Подробнее (историческое ТЗ): `DOC/archive/help-center-plan.md`.
+- Согласия на обработку ПДн (152-ФЗ): модель `UserConsent` (`general` / `health`), серверная логика — `src/lib/consentService.ts`, версии и адреса текстов — `src/lib/consent.ts`, публичная страница — `src/pages/privacy.tsx` (тексты-заглушки до проверки юристом). Согласие фиксируется на сервере при регистрации (`general`) и при сохранении анкеты (`health`, `PATCH /api/users/me`), хранится с версией текста, IP и User-Agent; отзыв проставляет `revokedAt`. Анкета доступна только с 18 лет. Подробнее: `DOC/legal-fz152.md`, Решение 31/32.
+- Права субъекта ПДн: экспорт данных (`GET /api/users/me/export`) и удаление аккаунта (`DELETE /api/users/me`) — `src/lib/userDataService.ts`. Удаление доступно участнику и ментору; у ментора каскад затрагивает потоки и данные участников, поэтому `GET /api/users/me/deletion-impact` отдаёт числа для предупреждения. UI — `src/pages/account.tsx` + `src/components/account/AccountDataSection.tsx` (согласия, отзыв, экспорт, удаление); ссылка «Аккаунт» в шапке для всех ролей. Подробнее: Решение 33.
 - Исторические планы рефакторингов: `DOC/archive/css-refactor-plan.md`, `DOC/archive/participant-day-refactor-plan.md`, `DOC/archive/report-extension-plan.md`.

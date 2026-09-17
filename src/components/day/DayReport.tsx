@@ -1,10 +1,18 @@
+import { useState } from 'react';
 import Link from 'next/link';
 import ProductSearch from './ProductSearch';
 import ReportTable from './ReportTable';
 import CalorieSummary from './CalorieSummary';
-import MetricBlock, { type MetricField } from './MetricBlock';
+import MetricBlock, { type MetricField, type MetricGroup } from './MetricBlock';
+import Button from '@/components/ui/Button';
 import { useParticipantDayStore, hasReportData } from '@/stores/participantDayStore';
 import { isCalorieTargetMissed } from '@/lib/calorieCalculator';
+import {
+  MEAL_LABELS,
+  MEAL_ORDER,
+  defaultMealForNow,
+  type MealType,
+} from '@/lib/nutritionCalculator';
 import { HELP_SLUG_REPORT_GUIDE } from '@/lib/helpSlug';
 import styles from './DayReport.module.css';
 
@@ -30,9 +38,19 @@ export default function DayReport({ streamId, dayNumber, isEditable, onSaved }: 
     saveReport,
   } = useParticipantDayStore();
 
+  const [mealType, setMealType] = useState<MealType>(() => defaultMealForNow());
+
   const canSave = hasReportData(lines, metrics);
 
   const actualCalories = lines.reduce((sum, line) => sum + line.lineCalories, 0);
+  const macros = lines.reduce(
+    (acc, line) => ({
+      protein: acc.protein + line.lineProtein,
+      fat: acc.fat + line.lineFat,
+      carbs: acc.carbs + line.lineCarbs,
+    }),
+    { protein: 0, fat: 0, carbs: 0 }
+  );
   const targetCalories = data?.targetCalories ?? null;
   const goal = data?.goal ?? null;
   const isTargetMissed =
@@ -142,6 +160,32 @@ export default function DayReport({ streamId, dayNumber, isEditable, onSaved }: 
     },
   ];
 
+  // Вес и охваты заполняются только в день замера, поэтому секция появляется
+  // в карточке метрик не всегда, а дневные показатели — каждый день.
+  const metricGroups: MetricGroup[] = [
+    ...(isMeasurementDay
+      ? [{ key: 'body', title: 'Вес и охваты', fields: bodyMetricFields }]
+      : []),
+    {
+      key: 'daily',
+      ...(isMeasurementDay ? { title: 'Вода, шаги, сон, тренировка' } : {}),
+      fields: dailyMetricFields,
+      children: (
+        <label className={styles.trainingField}>
+          <span>Тренировка</span>
+          <input
+            type="checkbox"
+            checked={metrics.trainingDone === true}
+            onChange={(e) => setTrainingDone(e.target.checked)}
+            disabled={metricDisabled}
+            className={styles.trainingCheckbox}
+            aria-label="Тренировка была"
+          />
+        </label>
+      ),
+    },
+  ];
+
   return (
     <section className={styles.section}>
       <div className={styles.titleRow}>
@@ -153,69 +197,77 @@ export default function DayReport({ streamId, dayNumber, isEditable, onSaved }: 
         </Link>
       </div>
 
-      {isEditable && (
-        <div className={styles.searchDiv}>
-          <ProductSearch onSelect={addProductLine} disabled={saving} />
-        </div>
-      )}
-
       <div className={styles.reportLayout}>
-        <CalorieSummary
-          targetCalories={targetCalories}
-          actualCalories={actualCalories}
-          goal={goal}
-          isTargetMissed={isTargetMissed}
-          profileCompleted={Boolean(data?.profileCompleted)}
-        />
-        <div className={styles.tableWrap}>
+        <div className={styles.summaryColumn}>
+          <div className={styles.summaryCell}>
+            <CalorieSummary
+              targetCalories={targetCalories}
+              actualCalories={actualCalories}
+              macros={macros}
+              goal={goal}
+              isTargetMissed={isTargetMissed}
+              profileCompleted={Boolean(data?.profileCompleted)}
+            />
+          </div>
+
+          <div className={styles.metricsCell}>
+            <MetricBlock title="Метрики" groups={metricGroups} />
+          </div>
+        </div>
+
+        <div className={styles.tableCell}>
+          {isEditable && (
+            <div className={styles.searchDiv}>
+              <div
+                className={styles.mealSelector}
+                role="tablist"
+                aria-label="Приём пищи"
+              >
+                {MEAL_ORDER.map((meal) => (
+                  <button
+                    key={meal}
+                    type="button"
+                    role="tab"
+                    aria-selected={mealType === meal}
+                    onClick={() => setMealType(meal)}
+                    disabled={saving}
+                    className={`${styles.mealTab} ${
+                      mealType === meal ? styles.mealTabActive : ''
+                    }`}
+                  >
+                    {MEAL_LABELS[meal]}
+                  </button>
+                ))}
+              </div>
+              <ProductSearch
+                onSelect={(product) => addProductLine(product, mealType)}
+                disabled={saving}
+              />
+
+            </div>
+          )}
+
           <ReportTable
             lines={lines}
             onUpdateLine={updateLine}
             onRemoveLine={removeLine}
             readOnly={!isEditable}
-            headerStatus={
-              targetCalories === null
-                ? undefined
-                : isTargetMissed
-                  ? 'over'
-                  : 'ok'
-            }
           />
-        </div>
-      </div>
-
-      <div className={styles.metricsSection}>
-        <h3 className={styles.metricsTitle}>Метрики</h3>
-        <div className={styles.metricsRow}>
-          {isMeasurementDay && (
-            <MetricBlock title="Вес и охваты" fields={bodyMetricFields} />
-          )}
-
-          <MetricBlock title="Вода, шаги, сон, тренировка" fields={dailyMetricFields}>
-            <label className={styles.trainingField}>
-              <span>Тренировка</span>
-              <input
-                type="checkbox"
-                checked={metrics.trainingDone === true}
-                onChange={(e) => setTrainingDone(e.target.checked)}
-                disabled={metricDisabled}
-                className={styles.trainingCheckbox}
-                aria-label="Тренировка была"
-              />
-            </label>
-          </MetricBlock>
         </div>
       </div>
 
       {isEditable && (
         <div className={styles.saveBtnDiv}>
-          <button
+          <Button
+            variant="primary"
+            size="lg"
+            loading={saving}
+            disabled={!canSave}
             onClick={handleSave}
-            disabled={saving || !canSave}
-            className={styles.saveBtn}
+            aria-label={saving ? 'Сохранение отчёта' : 'Сохранить отчёт'}
           >
             {saving ? 'Сохранение...' : 'Сохранить отчёт'}
-          </button>
+          </Button>
         </div>
       )}
 

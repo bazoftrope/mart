@@ -34,7 +34,7 @@
 
 .sectionBadge {
   background: var(--bg-info);
-  color: var(--accent-primary);
+  color: var(--accent-strong);
 }
 
 .audienceBadge {
@@ -48,7 +48,7 @@
 }
 
 .titleLink:hover .title {
-  color: var(--accent-primary);
+  color: var(--accent-strong);
 }
 
 .title {

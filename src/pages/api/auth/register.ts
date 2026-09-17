@@ -1,9 +1,12 @@
 import '@/lib/db';
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { sequelize } from '@/lib/db';
 import { User } from '@db/models/User';
 import { apiHandler, success } from '@/lib/apiHandler';
 import { Conflict } from '@/lib/errors';
 import { registerSchema } from '@/lib/validate';
+import { recordConsent } from '@/lib/consentService';
+import { extractClientIp, extractUserAgent } from '@/lib/consent';
 import {
   hashPassword,
   setAuthCookies,
@@ -29,13 +32,28 @@ async function post(req: NextApiRequest, res: NextApiResponse) {
   }
 
   const passwordHash = await hashPassword(password);
+  const consentContext = {
+    ip: extractClientIp(req),
+    userAgent: extractUserAgent(req),
+  };
 
-  const user = await User.create({
-    email: email.toLowerCase(),
-    passwordHash,
-    role,
-    name,
-    timezone: 'Europe/Moscow',
+  // Пользователь и фиксация его согласия создаются одной транзакцией:
+  // аккаунт без доказательства согласия недопустим.
+  const user = await sequelize.transaction(async (transaction) => {
+    const created = await User.create(
+      {
+        email: email.toLowerCase(),
+        passwordHash,
+        role,
+        name,
+        timezone: 'Europe/Moscow',
+      },
+      { transaction }
+    );
+
+    await recordConsent(created.id, 'general', consentContext, transaction);
+
+    return created;
   });
 
   const payload = {

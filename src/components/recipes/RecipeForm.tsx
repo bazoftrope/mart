@@ -2,6 +2,7 @@ import { useState, type ChangeEvent, type FormEvent } from 'react';
 import { ApiClientError } from '@/lib/apiClient';
 import type { ContentAttachmentData } from '@/types/attachments';
 import ContentAttachmentManager from '@/components/attachments/ContentAttachmentManager';
+import Button from '@/components/ui/Button';
 import styles from './RecipeForm.module.css';
 
 export type RecipeFormValues = {
@@ -193,17 +194,12 @@ export default function RecipeForm({
       {error && <p className="error">{error}</p>}
 
       <div className={styles.actions}>
-        <button type="submit" className="btn btnPrimary" disabled={saving}>
+        <Button type="submit" variant="primary" loading={saving}>
           {saving ? 'Сохраняем...' : submitLabel}
-        </button>
-        <button
-          type="button"
-          className="btn"
-          onClick={onCancel}
-          disabled={saving}
-        >
+        </Button>
+        <Button type="button" variant="secondary" onClick={onCancel} disabled={saving}>
           Отмена
-        </button>
+        </Button>
       </div>
     </form>
   );

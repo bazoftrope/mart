@@ -20,16 +20,8 @@ import {
 import type { Goal } from '@db/models/StreamEnrollment';
 import { calculateTargetCalories, isProfileComplete } from '@/lib/calorieCalculator';
 import { serializeAttachments } from '@/lib/attachmentUtils';
+import { serializeReportLine } from '@/lib/reportLineUtils';
 import type { AuthenticatedRequest } from '@/types/auth';
-
-type ReportLineItem = {
-  id: string;
-  productId: string;
-  name: string;
-  calories: number;
-  weightGrams: number;
-  lineCalories: number;
-};
 
 type PulseReadingItem = { id: string; measuredAt: Date; pulse: number | null; systolic: number | null; diastolic: number | null };
 
@@ -152,18 +144,10 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
     : [];
   const productMap = new Map(products.map((p) => [p.id, p]));
 
-  const linesByReport = new Map<string, ReportLineItem[]>();
+  const linesByReport = new Map<string, ReturnType<typeof serializeReportLine>[]>();
   for (const line of reportLines) {
     const list = linesByReport.get(line.reportId) ?? [];
-    const product = productMap.get(line.productId);
-    list.push({
-      id: line.id,
-      productId: line.productId,
-      name: product?.name || 'Unknown product',
-      calories: Number(product?.calories || 0),
-      weightGrams: Number(line.weightGrams),
-      lineCalories: Number(line.lineCalories),
-    });
+    list.push(serializeReportLine(line, productMap.get(line.productId)));
     linesByReport.set(line.reportId, list);
   }
 

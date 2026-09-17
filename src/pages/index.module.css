@@ -1,43 +1,115 @@
+/* ---------------------------------------------------------------------------
+   Публичный лендинг.
+   Правило панели: херо — светлая мятная панель, поэтому текст на ней только
+   тёмный (ink). Иерархия набирается весом и размером, а не цветом.
+   --------------------------------------------------------------------------- */
+
 .hero {
-  background: var(--bg-header);
-  color: var(--text-on-dark);
-  border-radius: var(--radius-lg);
-  padding: 2.5rem 2rem 2rem;
+  position: relative;
+  overflow: hidden;
+  padding: 3rem 2.5rem 5.5rem;
+  border-radius: var(--radius-2xl);
+  background: linear-gradient(
+    135deg,
+    var(--bg-panel-hero-start) 0%,
+    var(--bg-panel-hero-end) 100%
+  );
+  color: var(--text-on-sage);
+}
+
+.heroContent {
+  max-width: 42rem;
 }
 
 .heroEyebrow {
-  margin: 0 0 0.75rem;
+  display: inline-block;
+  margin: 0 0 1rem;
+  padding: 0.35rem 0.85rem;
+  border-radius: var(--radius-pill);
+  background: var(--overlay-on-panel);
+  color: var(--text-on-sage);
+  box-shadow: var(--shadow-clay-sm);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-semibold);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #ffd28f;
 }
 
 .heroTitle {
   margin: 0 0 1rem;
   max-width: 42rem;
-  font-size: 2rem;
-  line-height: 1.25;
-  color: var(--text-on-dark);
+  font-size: 2.5rem;
+  line-height: var(--line-height-tight);
+  letter-spacing: var(--letter-spacing-tight);
+  font-weight: var(--font-weight-extrabold);
+  color: var(--text-on-sage);
 }
 
 .heroLead {
   margin: 0;
-  max-width: 40rem;
+  max-width: 38rem;
   font-size: var(--font-size-lg);
   line-height: var(--line-height-normal);
-  color: #e4e4f0;
+  color: var(--text-on-sage);
 }
 
-.hero .actions {
-  margin-top: 1.75rem;
+.heroWave {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: block;
+  width: 100%;
+  height: 90px;
+  fill: var(--bg-body);
 }
 
 .actions {
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
+}
+
+.hero .actions {
+  margin-top: 1.75rem;
+}
+
+/* Кнопки херо самодостаточны: не зависят от глобальных .btn/.btnPrimary,
+   чтобы не воевать со специфичностью CSS Modules. */
+.btnHeroPrimary,
+.btnHeroSecondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.7rem 1.5rem;
+  border-radius: var(--radius-pill);
+  font-size: var(--font-size-regular);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.2;
+  text-decoration: none;
+  text-align: center;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.btnHeroPrimary {
+  border: 1px solid var(--accent-primary);
+  background: var(--accent-primary);
+  color: var(--text-on-accent);
+  box-shadow: var(--shadow-clay-sm);
+}
+
+.btnHeroPrimary:hover {
+  background: var(--accent-primary-hover);
+  border-color: var(--accent-primary-hover);
+}
+
+.btnHeroSecondary {
+  border: 1px solid transparent;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-clay-sm);
+}
+
+.btnHeroSecondary:hover {
+  background: var(--bg-surface-secondary);
 }
 
 .tags {
@@ -51,15 +123,15 @@
 
 .tags li {
   padding: 0.4rem 0.85rem;
-  border: 1px solid rgba(255, 255, 255, 0.28);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--overlay-on-panel-soft);
+  border-radius: var(--radius-pill);
+  background: var(--overlay-on-panel);
   font-size: var(--font-size-sm);
-  color: var(--text-on-dark);
+  color: var(--text-on-sage);
 }
 
 .section {
-  margin-top: 3rem;
+  margin-top: 3.5rem;
 }
 
 .sectionHeader {
@@ -76,20 +148,32 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 1rem;
-  margin-top: 0.25rem;
+  margin-top: 1.25rem;
 }
 
 .feature {
-  border: 1px solid var(--border-card);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   background: var(--bg-surface);
-  padding: 1.25rem;
+  box-shadow: var(--shadow-clay-sm);
+  padding: 1.5rem;
+}
+
+.featureIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin-bottom: 0.85rem;
+  border-radius: var(--radius-pill);
+  background: var(--bg-surface-secondary);
+  color: var(--text-link);
 }
 
 .featureTitle {
   margin: 0 0 0.5rem;
   font-size: var(--font-size-lg);
-  font-weight: var(--font-weight-semibold);
+  font-weight: var(--font-weight-bold);
 }
 
 .featureText {
@@ -102,36 +186,34 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 1rem;
-  margin-top: 0.25rem;
+  margin-top: 1.25rem;
 }
 
 .step {
-  position: relative;
-  border: 1px solid var(--border-card);
-  border-radius: var(--radius-md);
-  background: var(--bg-surface-muted);
-  padding: 1.5rem 1.25rem 1.25rem;
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-clay-sm);
+  padding: 1.5rem;
 }
 
 .stepNumber {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 2rem;
-  height: 2rem;
-  padding: 0 0.5rem;
-  margin-bottom: 0.75rem;
-  border-radius: 999px;
-  background: var(--accent-primary);
-  color: var(--text-on-dark);
+  min-width: 2.25rem;
+  height: 2.25rem;
+  margin-bottom: 0.85rem;
+  border-radius: var(--radius-pill);
+  background: var(--bg-panel-deep);
+  color: var(--text-on-deep);
+  font-size: var(--font-size-body);
   font-weight: var(--font-weight-bold);
-  font-size: var(--font-size-md);
 }
 
 .stepTitle {
   margin: 0 0 0.5rem;
   font-size: var(--font-size-lg);
-  font-weight: var(--font-weight-semibold);
+  font-weight: var(--font-weight-bold);
 }
 
 .stepText {
@@ -142,7 +224,7 @@
 
 .emptyState {
   border: 1px dashed var(--border-default);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   padding: 2rem;
   text-align: center;
   background: var(--bg-surface-muted);
@@ -157,57 +239,94 @@
   margin-bottom: 1.25rem;
 }
 
-.emptyState .btn,
-.emptyState .btnPrimary {
-  display: inline-block;
-}
-
 .ctaSection {
-  margin: 3.5rem 0 1rem;
-  border-radius: var(--radius-lg);
-  background: var(--bg-surface-muted);
-  border: 1px solid var(--border-card);
-  padding: 2rem;
+  margin: 4rem 0 1rem;
+  padding: 3rem 2rem;
+  border-radius: var(--radius-2xl);
+  background: var(--bg-panel-deep);
   text-align: center;
 }
 
 .ctaTitle {
   margin: 0 0 0.75rem;
   font-size: var(--font-size-2xl);
-  font-weight: var(--font-weight-bold);
+  font-weight: var(--font-weight-extrabold);
+  letter-spacing: var(--letter-spacing-tight);
+  color: var(--text-on-deep);
 }
 
 .ctaText {
   margin: 0 auto;
   max-width: 36rem;
-  color: var(--text-secondary);
+  color: var(--text-on-deep);
   line-height: var(--line-height-normal);
 }
 
 .ctaSection .actions {
-  margin-top: 1.5rem;
+  margin-top: 1.75rem;
   justify-content: center;
 }
 
-.ctaSection .actions a {
-  min-width: 160px;
+.btnCtaPrimary,
+.btnCtaSecondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 180px;
+  padding: 0.7rem 1.5rem;
+  border-radius: var(--radius-pill);
+  font-size: var(--font-size-regular);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.2;
+  text-decoration: none;
   text-align: center;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.btnCtaPrimary {
+  border: 1px solid var(--accent-primary);
+  background: var(--accent-primary);
+  color: var(--text-on-accent);
+  box-shadow: var(--shadow-clay-sm);
+}
+
+.btnCtaPrimary:hover {
+  background: var(--accent-primary-hover);
+  border-color: var(--accent-primary-hover);
+}
+
+.btnCtaSecondary {
+  border: 1px solid var(--border-on-dark);
+  background: transparent;
+  color: var(--text-on-deep);
+}
+
+.btnCtaSecondary:hover {
+  background: var(--overlay-hover-dark);
+  border-color: var(--text-on-deep);
 }
 
 @media (max-width: 640px) {
   .hero {
-    padding: 1.75rem 1.25rem 1.5rem;
+    padding: 2rem 1.25rem 4.5rem;
   }
 
   .heroTitle {
-    font-size: 1.5rem;
+    font-size: 1.75rem;
   }
 
   .ctaSection {
-    padding: 1.5rem 1rem;
+    padding: 2rem 1.25rem;
   }
 
-  .ctaSection .actions a {
+  .actions {
+    flex-direction: column;
+  }
+
+  .btnHeroPrimary,
+  .btnHeroSecondary,
+  .btnCtaPrimary,
+  .btnCtaSecondary {
     width: 100%;
   }
 }

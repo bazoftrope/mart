@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
 import { Search } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 import { apiFetch } from '@/lib/apiClient';
+import { ButtonLink } from '@/components/ui';
 import HelpCard from '@/components/help/HelpCard';
 import cardStyles from '@/components/help/HelpCard.module.css';
 import {
@@ -102,9 +102,9 @@ export default function HelpPage() {
           </p>
         </div>
         {isAdmin && (
-          <Link href="/admin/help" className="btn btnOutline">
+          <ButtonLink href="/admin/help" variant="outline">
             Управление разделом
-          </Link>
+          </ButtonLink>
         )}
       </header>
 
@@ -159,9 +159,9 @@ export default function HelpPage() {
             <>
               <p>Материалы пока не опубликованы.</p>
               {isAdmin && (
-                <Link href="/admin/help" className="btn btnPrimary">
+                <ButtonLink href="/admin/help" variant="primary">
                   Добавить первую статью
-                </Link>
+                </ButtonLink>
               )}
             </>
           )}

@@ -1,6 +1,6 @@
 # Сущности и связи
 
-Справочник актуален по состоянию на **11.09.2026** и описывает 19 моделей из `DB/models/` (Sequelize-TS, декораторы, поэтому поля ниже приведены в camelCase — в БД через `underscored: true` они хранятся в snake_case).
+Справочник актуален по состоянию на **17.09.2026** и описывает 20 моделей из `DB/models/` (Sequelize-TS, декораторы, поэтому поля ниже приведены в camelCase — в БД через `underscored: true` они хранятся в snake_case).
 
 Общие соглашения:
 - Первичный ключ всех таблиц — `id` UUID (default `DataTypes.UUIDV4`).
@@ -38,12 +38,18 @@
 |------|-----|-------------|----------|
 | id | UUID | PK | |
 | name | string | unique, not null | Название |
-| calories | decimal(8,2) | not null | `calories_per_100g` в старом названии; фактически колонка `calories` |
-| createdAt | datetime | | `created_at`, `updatedAt` отключён |
+| calories | decimal(8,2) | not null | `calories_per_100g` в старом названии; фактически колонка `calories`, ккал/100 г |
+| protein | decimal(6,2) | not null | `protein`, белки на 100 г |
+| fat | decimal(6,2) | not null | `fat`, жиры на 100 г |
+| carbs | decimal(6,2) | not null | `carbs`, углеводы на 100 г |
+| createdAt | datetime | | `created_at` |
+| updatedAt | datetime | | `updated_at` |
 
 **Ограничения:**
-- Глобальная база, читается админом/сидером. Поиск по `name` (ILIKE) — `GET /api/products?search=`.
-- В MVP участник не добавляет продукты.
+- Глобальная база. Поиск по `name` (ILIKE) — `GET /api/products?search=`.
+- Дополнить каталог может любая авторизованная роль (`POST /api/products`), полный CRUD — админ через `/api/admin/products` и страницу `/admin/products`.
+- Удаление продукта, встречающегося в `report_lines`, запрещено (409) — иначе FK `ON DELETE CASCADE` удалил бы исторические строки.
+- В MVP участник не добавляет продукты через админку, но может дополнить общий каталог из формы отчёта.
 
 ---
 
@@ -186,14 +192,22 @@ pending_review → approved (админ одобряет, POST /api/admin/:id/ap
 | id | UUID | PK | |
 | reportId | UUID | not null | `report_id` → DailyReport.id |
 | productId | UUID | not null | `product_id` → Product.id |
+| mealType | enum | not null | `meal_type`: `breakfast` / `lunch` / `dinner` / `snack` |
 | weightGrams | decimal(8,2) | not null | `weight_grams` |
 | lineCalories | decimal(10,2) | not null | `line_calories` |
+| lineProtein | decimal(10,2) | not null | `line_protein`, белки с учётом веса |
+| lineFat | decimal(10,2) | not null | `line_fat`, жиры с учётом веса |
+| lineCarbs | decimal(10,2) | not null | `line_carbs`, углеводы с учётом веса |
 
-**Расчёт** (`computeLineCalories` в `src/components/day/ReportTable.tsx`):
+**Расчёт** (`buildReportLineRecords` в `src/lib/reportLineUtils.ts`):
 ```
-lineCalories = round(weightGrams × Product.calories / 100)
+lineCalories = round2(weightGrams × Product.calories / 100)
+lineProtein  = round2(weightGrams × Product.protein / 100)
+lineFat      = round2(weightGrams × Product.fat / 100)
+lineCarbs    = round2(weightGrams × Product.carbs / 100)
 DailyReport.totalCalories = SUM(ReportLine.lineCalories)
 ```
+Значения строки денормализованы: правка продукта не меняет проценты БЖУ в прошлых отчётах.
 
 ---
 
@@ -404,6 +418,36 @@ DailyReport.totalCalories = SUM(ReportLine.lineCalories)
 
 ---
 
+## 19. UserConsent (Согласие на обработку ПДн) — `user_consents`
+
+| Поле | Тип | Ограничение | Описание |
+|------|-----|-------------|----------|
+| id | UUID | PK | |
+| userId | UUID | not null | `user_id` → User.id, `ON DELETE CASCADE` |
+| type | enum | not null | `general` / `health` |
+| documentVersion | string | not null | `document_version` — версия текста согласия |
+| grantedAt | datetime | not null, default NOW | `granted_at` — момент предоставления |
+| revokedAt | datetime | nullable | `revoked_at`; NULL — согласие действует |
+| ip | string(64) | nullable | IP на момент согласия (доказательство) |
+| userAgent | string(512) | nullable | User-Agent на момент согласия |
+| createdAt | datetime | | `created_at` |
+| updatedAt | datetime | | `updated_at` |
+
+**Назначение:** фиксация согласия на обработку персональных данных (152-ФЗ). Для
+специальной категории (данные о здоровье) согласие отдельное — `type = 'health'`.
+
+**Ограничения и особенности:**
+- Уникальность `user_id + type` — одна актуальная запись на вид согласия.
+- Повторное согласие тем же текстом идемпотентно; при смене версии текста или
+  после отзыва запись переоформляется (`granted_at` обновляется, `revoked_at` сбрасывается).
+- Отзыв не удаляет строку — проставляется `revoked_at` (нужна история).
+- Версии и адреса текстов — `src/lib/consent.ts`; серверная логика — `src/lib/consentService.ts`.
+- Согласие `general` фиксируется при регистрации, `health` — при сохранении анкеты
+  (`PATCH /api/users/me`), до этого ввод веса/роста/возраста отклоняется.
+- Возраст в анкете — от 18 лет (валидация `profileSchema`).
+
+---
+
 ## Диаграмма связей (текстовая)
 
 ```
@@ -428,6 +472,8 @@ Recipe (1) ───< (N) ContentAttachment
 Workout (1) ───< (N) ContentAttachment
 
 User (0..1) ───< (N) HelpArticle
+
+User (1) ───< (N) UserConsent
 ```
 
 ## Индексы и уникальность
@@ -448,5 +494,6 @@ User (0..1) ───< (N) HelpArticle
 | WorkoutFavorite | workout_id, user_id unique | Одна тренировка в избранном один раз |
 | ContentAttachment | owner_type+owner_id+position; owner_id; pair_id | Вложения рецепта/тренировки |
 | HelpArticle | slug unique; section+audience; is_published+position | Адрес статьи и выборка раздела |
+| UserConsent | user_id+type unique | Одна актуальная запись согласия на вид |
 
 > Примечание: фактический список индексов лучше сверять с миграциями в `DB/migrations/` — в коде моделей (Sequelize-TS) индексы описываются не всегда, часть задана прямо в миграциях.

@@ -52,7 +52,7 @@
 }
 
 .searchInput:focus {
-  outline: 2px solid var(--accent-primary);
+  outline: 2px solid var(--focus-ring-color);
   outline-offset: 1px;
 }
 

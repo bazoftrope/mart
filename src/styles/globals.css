@@ -1,3 +1,9 @@
+/* ============================================================================
+   Дизайн-система: токены + сброс + утилиты
+   Концепция, палитра с контрастами и правила — в DOC/style-guide.md
+   Цвета в компонентах задаём ТОЛЬКО через токены, литеральные hex не хардкодим.
+   ============================================================================ */
+
 * {
   box-sizing: border-box;
   padding: 0;
@@ -12,65 +18,134 @@ body {
 }
 
 :root {
-  /* Background */
-  --bg-body: #ffffff;
-  --bg-header: #1a1a2e;
+  /* ==========================================================================
+     ЦВЕТ: молочные нейтрали + графит + один мятный акцент (клейморфизм).
+     Мята светлая, поэтому она держит только тёмный текст (--text-on-accent);
+     белый текст остаётся для тёмных заливок (--bg-panel-deep, --text-danger).
+     ========================================================================== */
+
+  /* Поверхности */
+  --bg-body: #f4f4f0; /* молочный фон страницы, не белый */
+  --bg-header: #ffffff; /* шапка — светлая «плашка» над молочным фоном */
   --bg-surface: #ffffff;
-  --bg-surface-muted: #f8f9fa;
-  --bg-surface-secondary: #f5f5f5;
-  --bg-surface-tertiary: #f9fafb;
-  --bg-surface-disabled: #e9ecef;
-  --bg-warning: #fff3cd;
-  --bg-info: #f0f7ff;
-  --bg-danger: #fee2e2;
+  --bg-surface-muted: #eeeeea;
+  --bg-surface-secondary: #e5e5df;
+  --bg-surface-tertiary: #f4f4f0;
+  --bg-surface-disabled: #e5e5df;
+  --bg-surface-hover: #d9d9d2; /* hover для нейтральных кнопок/ссылок */
 
-  --bg-fon: white;
-  --bg-fon1:#fff5eb;
+  /* Легаси-дубли: оставлены рабочими, в новом коде не использовать */
+  --bg-fon: #ffffff;
+  --bg-fon1: #f4f4f0;
 
-  /* Semantic surfaces */
-  --bg-success: #d4edda;
-  --bg-role-admin: #fee2e2;
-  --bg-role-mentor: #dbeafe;
-  --bg-role-participant: #dcfce7;
-  --bg-role-default: #f3f4f6;
+  /* Полупрозрачные заливки поверх цветных панелей (херо, CTA) */
+  --overlay-on-panel: rgba(255, 255, 255, 0.6);
+  --overlay-on-panel-soft: rgba(255, 255, 255, 0.4);
+  --overlay-on-panel-strong: rgba(255, 255, 255, 0.85);
+  --overlay-hover-dark: rgba(255, 255, 255, 0.12);
 
-  /* Text */
-  --text-primary: #1a1a2e;
-  --text-secondary: #555555;
-  --text-muted: #666666;
-  --text-muted-extra: #777777;
-  --text-placeholder: #6c757d;
+  /* Семантические поверхности */
+  --bg-success: #e3f4ec; /* мягкая мята */
+  --bg-warning: #faf0ce; /* пастельно-жёлтый */
+  --bg-info: #e6f0ed; /* приглушённая бирюза */
+  --bg-danger: #f7e4e2; /* пастельно-розовый */
+
+  /* Панели-блоки (херо, CTA) */
+  --bg-panel-hero-start: #d9f2e5;
+  --bg-panel-hero-end: #b7e7d1;
+  --bg-panel-deep: #2b3a34; /* графит с зелёным подтоном */
+
+  /* Бейджи ролей */
+  --bg-role-admin: #f7e4e2;
+  --bg-role-mentor: #e3f4ec;
+  --bg-role-participant: #eceae0;
+  --bg-role-default: #eeeeea;
+
+  /* Текст */
+  --text-primary: #3b3b38; /* графит: 10.2:1 на молочном */
+  --text-secondary: #5c5c57; /* 6.1:1 на молочном */
+  --text-muted: #5c5c57;
+  --text-muted-extra: #67675f; /* только ≥14px: 4.9:1 на серой подложке */
+  --text-placeholder: #6a6a62;
   --text-on-dark: #ffffff;
-  --text-success: #155724;
-  --text-warning: #856404;
-  --text-danger: #c0392b;
-  --text-error: red;
-  --text-role-admin: #991b1b;
-  --text-role-mentor: #1e40af;
-  --text-role-participant: #166534;
-  --text-role-default: #374151;
-  --text-label: #6b7280;
-  --text-value: #111827;
+  --text-on-accent: #2e342e; /* ТОЛЬКО на мятной заливке: 9.9:1 */
+  --text-on-sage: #2e342e; /* на светлых мятных панелях только тёмный текст */
+  --text-on-deep: #f4f4f0; /* на графитовых панелях */
+  --text-link: #1a6b57; /* 5.8:1 на молочном */
+  --text-success: #1f6b4a;
+  --text-warning: #7a5a0f;
+  --text-danger: #a83a2c;
+  --text-error: #a83a2c;
+  --text-role-admin: #96342c;
+  --text-role-mentor: #1f6b4a;
+  --text-role-participant: #5c5c57;
+  --text-role-default: #5c5c57;
+  --text-label: #67675f;
+  --text-value: #3b3b38;
 
-  /* Borders */
-  --border-default: #ffe3c7;
-  --border-light: #dddddd;
-  --border-lighter: #eeeeee;
-  --border-lightest: #f0f0f0;
-  --border-card: #e5e7eb;
-  --border-on-dark: #ffffff;
+  /* Границы */
+  --border-default: #dcdcd4;
+  --border-light: #e2e2da;
+  --border-lighter: #e9e9e2;
+  --border-lightest: #efefe9;
+  --border-card: #e9e9e2;
+  --border-on-dark: rgba(255, 255, 255, 0.4);
+  --border-focus: #1f7a63;
 
-  /* Accents */
-  --accent-primary: orange;
-  --accent-success: #27ae60;
-  --accent-success-alt: #16a34a;
-  --accent-neutral: #9ca3af;
+  /* Акценты */
+  --accent-primary: #b7e7d1; /* мятная заливка: 9.9:1 с --text-on-accent */
+  --accent-primary-hover: #8cf0d6; /* свечение при наведении */
+  --accent-decor: #6fdcc0; /* насыщенная мята — только графика, не фон под текст */
+  --accent-strong: #1a6b57; /* «сильный» акцент для текста, ссылок, иконок */
+  --accent-success: #2f6b4f;
+  --accent-success-alt: #3f7a5f;
+  --accent-neutral: #c9c9c1;
 
-  /* Shadows */
-  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
-  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.1);
+  /* Совместимость: эти имена использовались в модулях с литеральными фолбэками
+     (navy #1a3a6e, синий #2e6fdb). Теперь берут значения из палитры. */
+  --color-primary: #1a6b57;
+  --color-accent: #1a6b57;
+  --color-accent-hover: #14584a;
+  --bg-muted: #eeeeea;
+  --bg-muted-hover: #e5e5df;
+  --border-soft: #efefe9;
+  --accent-danger: #a83a2c;
 
-  /* Spacing */
+  /* Цвета графиков (recharts): семантика состояния + БЖУ.
+     Используем var(--chart-*) прямо в пропсах stroke/fill. */
+  --chart-grid: #e2e2da;
+  --chart-pulse: #c2564a;
+  --chart-systolic: #4a7f9c;
+  --chart-diastolic: #3f7a5f;
+  --chart-protein: #4a7f9c;
+  --chart-fat: #b07a3a;
+  --chart-carbs: #3f7a5f;
+
+  /* Тени: мягкие и диффузные, «клэй» — светлая кромка сверху + тень снизу.
+     Шкала Elevation 1–5 из концепта; в компонентах берём var(--elevation-N). */
+  --elevation-1: 0 1px 2px rgba(59, 59, 56, 0.05);
+  --elevation-2: 0 2px 6px rgba(59, 59, 56, 0.07), 0 1px 2px rgba(59, 59, 56, 0.04);
+  --elevation-3: 0 6px 16px rgba(59, 59, 56, 0.09), 0 2px 5px rgba(59, 59, 56, 0.05);
+  --elevation-4: 0 12px 28px rgba(59, 59, 56, 0.12), 0 4px 10px rgba(59, 59, 56, 0.06);
+  --elevation-5: 0 20px 44px rgba(59, 59, 56, 0.16), 0 8px 18px rgba(59, 59, 56, 0.08);
+
+  --shadow-sm: var(--elevation-2);
+  --shadow-md: var(--elevation-3);
+  --shadow-float: var(--elevation-4);
+
+  /* Поднятый «клэй»-элемент: тонкая светлая кромка + внешняя тень */
+  --shadow-clay-sm: inset 0 1px 0 rgba(255, 255, 255, 0.85), var(--elevation-2);
+  --shadow-clay: inset 0 1px 0 rgba(255, 255, 255, 0.9), var(--elevation-3);
+  /* Вдавленные поля и нажатое состояние */
+  --shadow-inset: inset 0 2px 4px rgba(59, 59, 56, 0.07), inset 0 0 0 1px rgba(59, 59, 56, 0.06);
+
+  /* Фокус и переходы */
+  --focus-ring-color: #1f7a63;
+  --focus-ring: 0 0 0 4px rgba(140, 240, 214, 0.55); /* мятное свечение */
+  --transition-fast: 140ms ease;
+  --transition-base: 220ms ease;
+
+  /* Отступы (шаг 4px) */
   --space-0: 0;
   --space-1: 0.25rem;
   --space-2: 0.5rem;
@@ -82,13 +157,18 @@ body {
   --space-10: 2.5rem;
   --space-16: 4rem;
 
-  /* Border radius */
-  --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
+  /* Радиусы: мелкие контролы 6–8px, карточки 14–20px, панели 24–32px,
+     кнопки, поля и чипы — пилюля (как в концепте) */
+  --radius-xs: 6px;
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 24px;
+  --radius-2xl: 32px;
+  --radius-pill: 999px;
 
-  /* Typography */
-  --font-family-base: Arial, Helvetica, sans-serif;
+  /* Типографика */
+  --font-family-base: var(--font-golos), 'Golos Text', Arial, Helvetica, sans-serif;
   --font-size-xs: 0.75rem;
   --font-size-sm: 0.8rem;
   --font-size-md: 0.85rem;
@@ -98,28 +178,54 @@ body {
   --font-size-lg: 1.1rem;
   --font-size-xl: 1.25rem;
   --font-size-2xl: 1.4rem;
+  --font-weight-normal: 400;
   --font-weight-medium: 500;
   --font-weight-semibold: 600;
-  --font-weight-bold: bold;
+  --font-weight-bold: 700;
+  --font-weight-extrabold: 800;
+  --line-height-tight: 1.25;
   --line-height-normal: 1.6;
   --line-height-relaxed: 1.7;
   --line-height-loose: 1.8;
+  --letter-spacing-tight: -0.01em;
 
-  /* Containers */
+  /* Контейнеры */
   --container-sm: 400px;
   --container-md: 600px;
   --container-lg: 700px;
   --container-xl: 800px;
   --container-2xl: 1200px;
   --container-width: 1200px;
-  --header-min-height: 56px;
+  --header-min-height: 64px;
   --calendar-day-min-height: 64px;
 }
 
 body {
   font-family: var(--font-family-base);
+  font-weight: var(--font-weight-normal);
+  background: var(--bg-body);
+  color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  color: var(--text-primary);
+  letter-spacing: var(--letter-spacing-tight);
+}
+
+a {
+  color: var(--text-link);
+}
+
+/* Единое видимое кольцо фокуса для клавиатуры */
+:focus-visible {
+  outline: 3px solid var(--focus-ring-color);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
 }
 
 /* Utility classes */
@@ -130,28 +236,41 @@ body {
   padding: 0 1rem;
 }
 
-.containerNarrow {
+/* Страницы входа и регистрации: сама страница является карточкой */
+.authPage {
+  width: calc(100% - 2rem);
   max-width: var(--container-sm);
   margin: 4rem auto;
-  padding: 0 1rem;
+  padding: 2rem 1.75rem;
+  background: var(--bg-surface);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-clay);
+}
+
+.authPage .pageTitle {
+  margin-bottom: 1.5rem;
 }
 
 .pageTitle {
   font-size: var(--font-size-2xl);
-  font-weight: var(--font-weight-bold);
+  font-weight: var(--font-weight-extrabold);
+  letter-spacing: var(--letter-spacing-tight);
   margin-bottom: 1rem;
 }
 
 .pageSubtitle {
   font-size: var(--font-size-xl);
-  font-weight: var(--font-weight-semibold);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: var(--letter-spacing-tight);
   margin-bottom: 0.75rem;
 }
 
 .card {
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-md);
-  padding: 1rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-lightest);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-clay-sm);
+  padding: 1.5rem;
   margin-bottom: 1rem;
 }
 
@@ -186,50 +305,95 @@ body {
   margin-bottom: 1rem;
 }
 
-.input {
-  width: 100%;
-  padding: 0.5rem;
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-md);
-  font-size: var(--font-size-base);
-  font-family: inherit;
+.formGroup label {
+  display: block;
+  margin-bottom: 0.4rem;
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-secondary);
 }
 
-.input:focus {
-  outline: 2px solid var(--accent-primary);
-  outline-offset: 1px;
+/* Поля ввода «вдавлены» в поверхность: без рамки, тень внутрь */
+.input {
+  width: 100%;
+  padding: 0.65rem 1.1rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font-size: var(--font-size-regular);
+  font-family: inherit;
+  box-shadow: var(--shadow-inset);
+}
+
+.input::placeholder {
+  color: var(--text-placeholder);
+}
+
+.input:focus-visible {
+  outline: 3px solid var(--focus-ring-color);
+  outline-offset: 2px;
+  box-shadow: var(--shadow-inset), var(--focus-ring);
 }
 
 .btn {
   display: inline-block;
-  padding: 0.75rem 1.5rem;
+  padding: 0.7rem 1.5rem;
   font-size: var(--font-size-regular);
   font-family: inherit;
+  font-weight: var(--font-weight-medium);
   line-height: 1.2;
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-md);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-pill);
   background: var(--bg-surface);
   color: var(--text-primary);
+  box-shadow: var(--shadow-clay-sm);
   cursor: pointer;
   text-decoration: none;
   text-align: center;
+  transition: background var(--transition-fast), border-color var(--transition-fast),
+    color var(--transition-fast), box-shadow var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+.btn:hover:not(:disabled) {
+  background: var(--bg-surface-hover);
+  border-color: var(--accent-neutral);
+}
+
+.btn:active:not(:disabled) {
+  box-shadow: var(--shadow-inset);
+  transform: translateY(1px);
 }
 
 .btn:disabled {
-  opacity: 0.7;
+  background: var(--bg-surface-disabled);
+  border-color: transparent;
+  color: var(--text-secondary);
+  box-shadow: none;
   cursor: not-allowed;
 }
 
 .btnPrimary {
   background: var(--accent-primary);
   border-color: var(--accent-primary);
-  color: var(--text-on-dark);
+  color: var(--text-on-accent);
+}
+
+.btnPrimary:hover:not(:disabled) {
+  background: var(--accent-primary-hover);
+  border-color: var(--accent-primary-hover);
 }
 
 .btnOutline {
   background: transparent;
-  border-color: var(--accent-primary);
-  color: var(--accent-primary);
+  border-color: var(--accent-neutral);
+  color: var(--text-link);
+}
+
+.btnOutline:hover:not(:disabled) {
+  background: var(--bg-surface-muted);
+  border-color: var(--text-link);
 }
 
 .btnBlock {
@@ -242,10 +406,20 @@ body {
   color: var(--text-on-dark);
 }
 
+.btnSuccess:hover:not(:disabled) {
+  background: var(--text-success);
+  border-color: var(--text-success);
+}
+
 .btnDanger {
   background: var(--text-danger);
   border-color: var(--text-danger);
   color: var(--text-on-dark);
+}
+
+.btnDanger:hover:not(:disabled) {
+  background: var(--text-role-admin);
+  border-color: var(--text-role-admin);
 }
 
 .containerMd {
@@ -330,6 +504,37 @@ body {
   color: var(--text-muted);
 }
 
+/* Галочки согласий (152-ФЗ): регистрация и анкета участника */
+.checkboxGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-normal);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.checkboxLabel input[type='checkbox'] {
+  flex: 0 0 auto;
+  width: 1.1rem;
+  height: 1.1rem;
+  margin: 0.15rem 0 0;
+  accent-color: var(--accent-strong);
+  cursor: pointer;
+}
+
+.checkboxLabel a {
+  color: var(--text-link);
+}
+
 .textCenter {
   text-align: center;
 }
@@ -337,7 +542,7 @@ body {
 .roleBadge {
   display: inline-block;
   padding: 0.25rem 0.75rem;
-  border-radius: 12px;
+  border-radius: var(--radius-pill);
   font-size: var(--font-size-md);
   font-weight: var(--font-weight-medium);
 }
@@ -374,8 +579,13 @@ body {
   text-align: left;
 }
 
+.table th {
+  color: var(--text-secondary);
+  font-weight: var(--font-weight-semibold);
+}
+
 .table thead tr {
-  border-bottom: 2px solid var(--border-light);
+  border-bottom: 1px solid var(--border-default);
 }
 
 .table tbody tr {
@@ -383,7 +593,7 @@ body {
 }
 
 .table tbody tr.highlight {
-  background: var(--bg-info);
+  background: var(--bg-surface-secondary);
   font-weight: var(--font-weight-semibold);
 }
 

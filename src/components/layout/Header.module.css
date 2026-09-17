@@ -1,8 +1,8 @@
 .header {
   background-color: var(--bg-header);
-  color: var(--text-on-dark);
+  color: var(--text-primary);
+  box-shadow: var(--elevation-1);
   padding: 0 var(--space-4);
-  box-shadow: var(--shadow-sm);
 }
 
 .container {
@@ -11,44 +11,170 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: var(--space-4);
   min-height: var(--header-min-height);
 }
 
 .logo {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-3);
-  color: var(--text-on-dark);
+  color: var(--text-primary);
   font-size: var(--font-size-xl);
-  font-weight: var(--font-weight-bold);
+  font-weight: var(--font-weight-extrabold);
+  letter-spacing: var(--letter-spacing-tight);
   text-decoration: none;
   white-space: nowrap;
-}
-
-.logoImage {
-  flex-shrink: 0;
-  width: auto;
-  height: 34px;
 }
 
 .nav {
   display: flex;
   align-items: center;
-  gap: var(--space-5);
+  gap: var(--space-1);
 }
 
 .link {
-  color: var(--text-on-dark);
-  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.4rem 0.75rem;
+  border-radius: var(--radius-pill);
+  color: var(--text-secondary);
   font-size: var(--font-size-body);
+  font-weight: var(--font-weight-medium);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.link:hover,
+.linkActive {
+  background: var(--bg-surface-secondary);
+  color: var(--text-primary);
+}
+
+.linkCta {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.4rem 1rem;
+  border: 1px solid var(--accent-primary);
+  border-radius: var(--radius-pill);
+  background: var(--accent-primary);
+  color: var(--text-on-accent);
+  box-shadow: var(--shadow-clay-sm);
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-medium);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.linkCta:hover {
+  background: var(--accent-primary-hover);
+  border-color: var(--accent-primary-hover);
 }
 
 .button {
-  background: transparent;
-  border: 1px solid var(--border-on-dark);
-  color: var(--text-on-dark);
-  padding: var(--space-1) var(--space-3);
-  border-radius: var(--radius-sm);
-  cursor: pointer;
+  padding: 0.4rem 1rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
+  background: var(--bg-surface-secondary);
+  color: var(--text-primary);
+  font-family: inherit;
   font-size: var(--font-size-body);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.button:hover {
+  background: var(--bg-surface-hover);
+}
+
+/* Бургер и панель меню показываются только на узких экранах */
+.burger {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-pill);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-clay-sm);
+  cursor: pointer;
+}
+
+.burger:hover {
+  background: var(--bg-surface-muted);
+}
+
+.mobilePanel {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .nav {
+    display: none;
+  }
+
+  .burger {
+    display: inline-flex;
+  }
+
+  .mobilePanel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    width: 100%;
+    max-width: var(--container-width);
+    margin: 0 auto;
+    padding: var(--space-2) 0 var(--space-4);
+    border-top: 1px solid var(--border-light);
+  }
+
+  .mobileLink {
+    display: block;
+    padding: 0.75rem 0.9rem;
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    font-size: var(--font-size-regular);
+    font-weight: var(--font-weight-medium);
+    text-decoration: none;
+  }
+
+  .mobileLink:hover {
+    background: var(--bg-surface-secondary);
+  }
+
+  .mobileCta {
+    display: block;
+    margin-top: var(--space-1);
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius-pill);
+    background: var(--accent-primary);
+    color: var(--text-on-accent);
+    box-shadow: var(--shadow-clay-sm);
+    font-size: var(--font-size-regular);
+    font-weight: var(--font-weight-medium);
+    text-align: center;
+    text-decoration: none;
+  }
+
+  .mobileButton {
+    margin-top: var(--space-1);
+    padding: 0.75rem 1rem;
+    border: 1px solid transparent;
+    border-radius: var(--radius-pill);
+    background: var(--bg-surface-secondary);
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: var(--font-size-regular);
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+  }
+
+  .mobileButton:hover {
+    background: var(--bg-surface-hover);
+  }
 }

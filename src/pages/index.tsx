@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { ChartLine, ClipboardList, Salad } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 import { apiFetch } from '@/lib/apiClient';
+import { ButtonLink } from '@/components/ui';
 import StreamCard from '@/components/stream/StreamCard';
 import cardStyles from '@/components/stream/StreamCard.module.css';
 import styles from './index.module.css';
@@ -45,14 +47,17 @@ const STEPS = [
 
 const FEATURES = [
   {
+    icon: Salad,
     title: 'Дневник питания',
     text: 'Продукты с калорийностью из базы и дневная норма под вашу цель.',
   },
   {
+    icon: ClipboardList,
     title: 'Программа от ментора',
     text: 'Марафон разбит на дни с материалами и понятными заданиями.',
   },
   {
+    icon: ChartLine,
     title: 'Рейтинг и дисциплина',
     text: 'Заполняйте дни, чтобы видеть свой прогресс и не терять мотивацию.',
   },
@@ -95,47 +100,66 @@ export default function Home() {
   return (
     <main className="container">
       <section className={styles.hero}>
-        <p className={styles.heroEyebrow}>Марафоны здорового питания</p>
-        <h1 className={styles.heroTitle}>
-          Полезные привычки с поддержкой ментора и понятным планом
-        </h1>
-        <p className={styles.heroLead}>
-          Выбирайте марафон, ведите дневник питания и следите за прогрессом.
-          Менторы составляют программу, а рейтинг помогает дойти до конца.
-        </p>
+        <div className={styles.heroContent}>
+          <p className={styles.heroEyebrow}>Марафоны здорового питания</p>
+          <h1 className={styles.heroTitle}>
+            Полезные привычки с поддержкой ментора и понятным планом
+          </h1>
+          <p className={styles.heroLead}>
+            Выбирайте марафон, ведите дневник питания и следите за прогрессом.
+            Менторы составляют программу, а рейтинг помогает дойти до конца.
+          </p>
 
-        <div className={styles.actions}>
-          <a href="#streams" className="btn btnPrimary">
-            Выбрать поток
-          </a>
-          {role ? (
-            <Link href={getCabinetHref()} className="btn btnOutline">
-              В личный кабинет
-            </Link>
-          ) : (
-            <Link href="/register" className="btn btnOutline">
-              Зарегистрироваться
-            </Link>
-          )}
+          <div className={styles.actions}>
+            <a href="#streams" className={styles.btnHeroPrimary}>
+              Выбрать поток
+            </a>
+            {role ? (
+              <Link href={getCabinetHref()} className={styles.btnHeroSecondary}>
+                В личный кабинет
+              </Link>
+            ) : (
+              <Link href="/register" className={styles.btnHeroSecondary}>
+                Зарегистрироваться
+              </Link>
+            )}
+          </div>
+
+          <ul className={styles.tags}>
+            <li>Дневник питания</li>
+            <li>Калорийность</li>
+            <li>Рейтинг потока</li>
+            <li>Программа от ментора</li>
+          </ul>
         </div>
 
-        <ul className={styles.tags}>
-          <li>Дневник питания</li>
-          <li>Калорийность</li>
-          <li>Рейтинг потока</li>
-          <li>Программа от ментора</li>
-        </ul>
+        {/* Органический переход от sage-панели к кремовому фону страницы */}
+        <svg
+          className={styles.heroWave}
+          viewBox="0 0 1200 90"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+          focusable="false"
+        >
+          <path d="M0 58 C 150 8 330 0 480 20 C 640 42 780 76 930 70 C 1040 66 1130 46 1200 24 L1200 90 L0 90 Z" />
+        </svg>
       </section>
 
       <section className={styles.section} id="features">
         <h2 className="pageSubtitle">Что даёт платформа</h2>
         <div className={styles.features}>
-          {FEATURES.map((feature) => (
-            <article key={feature.title} className={styles.feature}>
-              <h3 className={styles.featureTitle}>{feature.title}</h3>
-              <p className={styles.featureText}>{feature.text}</p>
-            </article>
-          ))}
+          {FEATURES.map((feature) => {
+            const Icon = feature.icon;
+            return (
+              <article key={feature.title} className={styles.feature}>
+                <span className={styles.featureIcon} aria-hidden="true">
+                  <Icon size={22} strokeWidth={1.5} />
+                </span>
+                <h3 className={styles.featureTitle}>{feature.title}</h3>
+                <p className={styles.featureText}>{feature.text}</p>
+              </article>
+            );
+          })}
         </div>
       </section>
 
@@ -170,9 +194,9 @@ export default function Home() {
               Новые марафоны появятся после модерации. Зарегистрируйтесь, чтобы не
               пропустить старт.
             </p>
-            <Link href="/register" className="btn btnPrimary">
+            <ButtonLink href="/register" variant="primary">
               Зарегистрироваться
-            </Link>
+            </ButtonLink>
           </div>
         )}
         {!loading && !error && streams.length > 0 && (
@@ -204,15 +228,15 @@ export default function Home() {
         </p>
         <div className={styles.actions}>
           {role ? (
-            <Link href={getCabinetHref()} className="btn btnPrimary">
+            <Link href={getCabinetHref()} className={styles.btnCtaPrimary}>
               Перейти в личный кабинет
             </Link>
           ) : (
             <>
-              <Link href="/register" className="btn btnPrimary">
+              <Link href="/register" className={styles.btnCtaPrimary}>
                 Создать аккаунт
               </Link>
-              <Link href="/login" className="btn btnOutline">
+              <Link href="/login" className={styles.btnCtaSecondary}>
                 Войти
               </Link>
             </>

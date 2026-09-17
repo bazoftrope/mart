@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { useParticipantDayStore, hasPulseData } from '@/stores/participantDayStore';
+import Button from '@/components/ui/Button';
 import PulseReadingsForm from './PulseReadingsForm';
 import {
   ResponsiveContainer,
@@ -164,14 +165,15 @@ export default function DayPulse({ streamId, dayNumber, isEditable, onSaved }: D
 
         {isEditable && (
           <div className={styles.saveRow}>
-            <button
-              type="button"
+            <Button
+              variant="primary"
+              size="lg"
+              loading={savingPulse}
+              disabled={!canSave}
               onClick={handleSave}
-              disabled={savingPulse || !canSave}
-              className={styles.saveBtn}
             >
               {savingPulse ? 'Сохранение…' : 'Сохранить замеры'}
-            </button>
+            </Button>
             {!canSave && <span className={styles.hint}>Добавьте время и пульс или давление (сист./диаст.), чтобы сохранить</span>}
           </div>
         )}
@@ -225,7 +227,7 @@ export default function DayPulse({ streamId, dayNumber, isEditable, onSaved }: D
           <div className={styles.chartWrap}>
             <ResponsiveContainer width="100%" height={280}>
               <LineChart data={chartData} margin={{ left: 8, right: 16, top: 8, bottom: 8 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
                 <XAxis
                   dataKey="day"
                   tick={{ fontSize: 12 }}
@@ -248,9 +250,9 @@ export default function DayPulse({ streamId, dayNumber, isEditable, onSaved }: D
                   type="monotone"
                   dataKey="pulse"
                   name="Пульс"
-                  stroke="#dc2626"
+                  stroke="var(--chart-pulse)"
                   strokeWidth={2.2}
-                  dot={{ r: 3, fill: '#dc2626' }}
+                  dot={{ r: 3, fill: 'var(--chart-pulse)' }}
                   activeDot={{ r: 5 }}
                   connectNulls={false}
                   isAnimationActive={false}
@@ -259,9 +261,9 @@ export default function DayPulse({ streamId, dayNumber, isEditable, onSaved }: D
                   type="monotone"
                   dataKey="systolic"
                   name="Сист."
-                  stroke="#2563eb"
+                  stroke="var(--chart-systolic)"
                   strokeWidth={1.8}
-                  dot={{ r: 2.5, fill: '#2563eb' }}
+                  dot={{ r: 2.5, fill: 'var(--chart-systolic)' }}
                   connectNulls={false}
                   isAnimationActive={false}
                 />
@@ -269,9 +271,9 @@ export default function DayPulse({ streamId, dayNumber, isEditable, onSaved }: D
                   type="monotone"
                   dataKey="diastolic"
                   name="Диаст."
-                  stroke="#16a34a"
+                  stroke="var(--chart-diastolic)"
                   strokeWidth={1.8}
-                  dot={{ r: 2.5, fill: '#16a34a' }}
+                  dot={{ r: 2.5, fill: 'var(--chart-diastolic)' }}
                   connectNulls={false}
                   isAnimationActive={false}
                 />

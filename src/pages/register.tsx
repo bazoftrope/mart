@@ -2,6 +2,7 @@ import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { useAuthStore } from '@/stores/authStore';
+import Button from '@/components/ui/Button';
 import { HELP_SLUG_RULES } from '@/lib/helpSlug';
 import type { UserRole } from '@/types/auth';
 
@@ -17,14 +18,26 @@ export default function RegisterPage() {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [role, setRole] = useState<'participant' | 'mentor'>('participant');
+  const [acceptedPolicy, setAcceptedPolicy] = useState(false);
+  const [acceptedConsent, setAcceptedConsent] = useState(false);
   const register = useAuthStore((s) => s.register);
   const isLoading = useAuthStore((s) => s.isLoading);
   const error = useAuthStore((s) => s.error);
 
+  const canSubmit = acceptedPolicy && acceptedConsent;
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    if (!canSubmit) return;
     try {
-      const user = await register({ email, password, name, role });
+      const user = await register({
+        email,
+        password,
+        name,
+        role,
+        acceptPolicy: true,
+        acceptGeneralConsent: true,
+      });
       router.push(user.role === 'participant' ? '/onboarding' : getDashboardPath(user.role));
     } catch {
       // Error is already handled and stored by authStore.
@@ -32,7 +45,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <main className="containerNarrow">
+    <main className="authPage">
       <h1 className="pageTitle">Регистрация</h1>
       {error && <p className="error">{error}</p>}
       <form onSubmit={handleSubmit}>
@@ -82,13 +95,45 @@ export default function RegisterPage() {
             <option value="mentor">Ментор</option>
           </select>
         </div>
-        <button type="submit" disabled={isLoading} className="btn btnPrimary btnBlock">
+        <div className="checkboxGroup">
+          <label className="checkboxLabel">
+            <input
+              type="checkbox"
+              checked={acceptedPolicy}
+              onChange={(e) => setAcceptedPolicy(e.target.checked)}
+              required
+            />
+            <span>
+              Я ознакомлен(а) с{' '}
+              <Link href="/privacy#policy">
+                политикой обработки персональных данных
+              </Link>
+            </span>
+          </label>
+          <label className="checkboxLabel">
+            <input
+              type="checkbox"
+              checked={acceptedConsent}
+              onChange={(e) => setAcceptedConsent(e.target.checked)}
+              required
+            />
+            <span>
+              Я даю{' '}
+              <Link href="/privacy#consent">
+                согласие на обработку персональных данных
+              </Link>{' '}
+              (имя, эл. почта, часовой пояс)
+            </span>
+          </label>
+        </div>
+        <Button type="submit" variant="primary" block loading={isLoading} disabled={!canSubmit}>
           {isLoading ? 'Регистрация...' : 'Зарегистрироваться'}
-        </button>
+        </Button>
       </form>
       <p className="textMuted">
-        Регистрируясь, вы соглашаетесь с{' '}
-        <Link href={`/help/${HELP_SLUG_RULES}`}>правилами марафона</Link>.
+        Регистрируясь, вы также соглашаетесь с{' '}
+        <Link href={`/help/${HELP_SLUG_RULES}`}>правилами марафона</Link>. Сервис
+        доступен только лицам старше 18 лет.
       </p>
       <p>
         Уже есть аккаунт? <Link href="/login">Войти</Link>

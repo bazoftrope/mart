@@ -19,8 +19,10 @@
 .pressureInput {
   padding: 0.4rem 0.5rem;
   font-size: 0.95rem;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-inset);
 }
 
 .timeInput {
@@ -38,10 +40,10 @@
 .removeButton {
   padding: 0.35rem 0.6rem;
   font-size: 0.85rem;
-  color: #721c24;
-  background-color: #f8d7da;
-  border: 1px solid #f5c6cb;
-  border-radius: 4px;
+  color: var(--text-danger);
+  background-color: var(--bg-danger);
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
   cursor: pointer;
 }
 
@@ -58,19 +60,19 @@
 }
 
 .emptyText {
-  color: #666;
+  color: var(--text-muted-extra);
   font-size: 0.9rem;
 }
 
 .hint {
   font-size: 0.82rem;
-  color: #6b7280;
+  color: var(--text-muted-extra);
   margin: 0 0 0.75rem;
   line-height: 1.4;
 }
 
 .hintMuted {
-  color: #9ca3af;
+  color: var(--text-muted-extra);
   font-weight: 400;
 }
 
@@ -81,6 +83,6 @@
 }
 
 .slash {
-  color: #9ca3af;
+  color: var(--text-muted-extra);
   font-weight: 600;
 }

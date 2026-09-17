@@ -13,7 +13,7 @@
 }
 
 .rulesLink {
-  color: var(--accent-primary);
+  color: var(--accent-strong);
   font-size: var(--font-size-sm);
   text-decoration: none;
 }
@@ -70,9 +70,9 @@
 .enrollBox {
   margin-top: 0.5rem;
   padding: 1rem;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  background: #fafafa;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface-muted);
 }
 
 .enrollTitle {
@@ -92,14 +92,15 @@
   align-items: center;
   gap: 0.35rem;
   padding: 0.5rem 0.75rem;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  background: #fff;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-pill);
+  background: var(--bg-surface);
   cursor: pointer;
 }
 
+/* Выбранный вариант — мятная пилюля, как «Selected»-чип в концепте */
 .goalOption:has(input:checked) {
-  border-color: var(--color-primary, #2e6fdb);
-  background: #eef4ff;
+  border-color: var(--accent-strong);
+  background: var(--accent-primary);
 }
 

@@ -48,8 +48,40 @@
   line-height: 1.8;
 }
 
-.section {
-  margin-top: 2rem;
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-top: var(--space-6);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.tab {
+  appearance: none;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  padding: var(--space-3) var(--space-4);
+  font: inherit;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.tab:hover {
+  color: var(--text-primary);
+  border-bottom-color: var(--border-default);
+}
+
+.tabActive {
+  color: var(--text-primary);
+  border-bottom-color: var(--accent-strong);
+  font-weight: var(--font-weight-semibold);
+}
+
+.tabPanel {
+  margin-top: var(--space-6);
 }
 
 .chartCard {
@@ -101,6 +133,42 @@
 
 .emptyRow td {
   color: #999;
+}
+
+.rationRow {
+  cursor: pointer;
+}
+
+.rationRow:hover td,
+.rationRowOpen td {
+  background: var(--bg-surface-muted);
+}
+
+.rowToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.chevron {
+  flex: none;
+  color: var(--text-secondary);
+  transition: transform var(--transition-fast);
+}
+
+.chevronOpen {
+  transform: rotate(90deg);
+}
+
+.detailRow td {
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg-surface-muted);
 }
 
 .foodList {

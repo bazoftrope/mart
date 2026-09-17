@@ -1,10 +1,11 @@
 import { useEffect, useState, FormEvent } from 'react';
 import { useRouter } from 'next/router';
-import Link from 'next/link';
 import { useAuthStore } from '@/stores/authStore';
 import { apiFetch } from '@/lib/apiClient';
 import RichTextEditor from '@/components/editor/RichTextEditor';
 import AttachmentsEditor from '@/components/mentor/AttachmentsEditor';
+import Button from '@/components/ui/Button';
+import { ButtonLink } from '@/components/ui';
 import type { AttachmentData } from '@/types/attachments';
 import styles from './edit.module.css';
 import { canEditMarathonTemplate } from '@/lib/templateStatus';
@@ -126,9 +127,9 @@ export default function TemplateIntroPage() {
     return (
       <main className="containerMd">
         <p className="error">{error || 'Шаблон не найден.'}</p>
-        <Link href="/mentor/templates">
-          <button className="btn btnOutline">Назад к шаблонам</button>
-        </Link>
+        <ButtonLink href="/mentor/templates" variant="outline">
+          Назад к шаблонам
+        </ButtonLink>
       </main>
     );
   }
@@ -179,22 +180,20 @@ export default function TemplateIntroPage() {
 
         <div className={styles.actions}>
           {isEditable && (
-            <button type="submit" disabled={saving} className="btn btnPrimary">
+            <Button type="submit" variant="primary" loading={saving}>
               {saving
                 ? 'Сохранение...'
                 : template.status === 'draft'
                   ? 'Сохранить и перейти к дням'
                   : 'Сохранить изменения'}
-            </button>
+            </Button>
           )}
-          <Link href={`/mentor/templates/${templateId}/days`}>
-            <button type="button" className="btn btnOutline">
-              {template.status === 'draft' ? 'Пропустить' : 'К дням'}
-            </button>
-          </Link>
-          <Link href="/mentor/templates">
-            <button type="button" className="btn btnOutline">Назад к шаблонам</button>
-          </Link>
+          <ButtonLink href={`/mentor/templates/${templateId}/days`} variant="outline">
+            {template.status === 'draft' ? 'Пропустить' : 'К дням'}
+          </ButtonLink>
+          <ButtonLink href="/mentor/templates" variant="outline">
+            Назад к шаблонам
+          </ButtonLink>
         </div>
       </form>
     </main>

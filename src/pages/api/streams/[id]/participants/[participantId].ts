@@ -14,6 +14,7 @@ import {
   Product,
   User,
 } from '@db/models';
+import { serializeReportLine } from '@/lib/reportLineUtils';
 import type { AuthenticatedRequest } from '@/types/auth';
 
 function single(value: string | string[] | undefined): string | undefined {
@@ -86,19 +87,10 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
     : [];
   const productMap = new Map(products.map((p) => [p.id, p]));
 
-  const linesByReport = new Map<string, Array<unknown>>();
+  const linesByReport = new Map<string, ReturnType<typeof serializeReportLine>[]>();
   for (const line of reportLines) {
-    const product = productMap.get(line.productId);
-    const item = {
-      id: line.id,
-      productId: line.productId,
-      name: product?.name || 'Unknown product',
-      calories: Number(product?.calories || 0),
-      weightGrams: Number(line.weightGrams),
-      lineCalories: Number(line.lineCalories),
-    };
     const list = linesByReport.get(line.reportId) || [];
-    list.push(item);
+    list.push(serializeReportLine(line, productMap.get(line.productId)));
     linesByReport.set(line.reportId, list);
   }
 

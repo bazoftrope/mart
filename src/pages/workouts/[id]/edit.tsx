@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { useAuthStore } from '@/stores/authStore';
 import { apiClient, apiFetch } from '@/lib/apiClient';
+import { ButtonLink } from '@/components/ui';
 import WorkoutForm, {
   type WorkoutFormValues,
 } from '@/components/workouts/WorkoutForm';
@@ -85,9 +86,9 @@ export default function EditWorkoutPage() {
             Редактировать тренировку может только её автор или администратор.
           </p>
           {!role && (
-            <Link href="/login" className="btn btnPrimary">
+            <ButtonLink href="/login" variant="primary">
               Войти
-            </Link>
+            </ButtonLink>
           )}
         </div>
       )}

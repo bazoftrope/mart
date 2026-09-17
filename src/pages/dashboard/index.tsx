@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
-import Link from 'next/link';
 import { useAuthStore } from '@/stores/authStore';
+import { ButtonLink } from '@/components/ui';
 import { apiFetch } from '@/lib/apiClient';
 import StreamCard from '@/components/stream/StreamCard';
 import cardStyles from '@/components/stream/StreamCard.module.css';
@@ -78,11 +78,9 @@ export default function DashboardPage() {
       {!loading && !error && enrollments.length === 0 && (
         <div className="mt-1">
           <p>Вы ещё не записаны ни на один марафон.</p>
-          <Link href="/">
-            <button className="btn btnPrimary mt-1">
-              Посмотреть открытые потоки
-            </button>
-          </Link>
+          <ButtonLink href="/" variant="primary" className="mt-1">
+            Посмотреть открытые потоки
+          </ButtonLink>
         </div>
       )}
       {!loading && !error && enrollments.length > 0 && (

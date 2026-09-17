@@ -27,9 +27,20 @@ export type MetricActivityField = {
 
 export type MetricField = MetricNumberField | MetricActivityField;
 
-type MetricBlockProps = {
+/** Секция внутри карточки метрик: подпись + свои поля. */
+export type MetricGroup = {
+  key: string;
   title?: string;
   fields?: MetricField[];
+  children?: ReactNode;
+};
+
+type MetricBlockProps = {
+  title?: string;
+  /** Плоский список полей — когда секции не нужны. */
+  fields?: MetricField[];
+  /** Секции с подписями и разделителями; при наличии имеет приоритет над `fields`. */
+  groups?: MetricGroup[];
   children?: ReactNode;
 };
 
@@ -101,41 +112,57 @@ function ActivityMetricField({
   );
 }
 
+function renderField(field: MetricField) {
+  return field.kind === 'activity' ? (
+    <ActivityMetricField
+      key={field.key}
+      label={field.label}
+      hoursValue={field.hoursValue}
+      minutesValue={field.minutesValue}
+      onHoursChange={field.onHoursChange}
+      onMinutesChange={field.onMinutesChange}
+      disabled={field.disabled}
+    />
+  ) : (
+    <NumberMetricField
+      key={field.key}
+      label={field.label}
+      value={field.value}
+      onChange={field.onChange}
+      min={field.min}
+      max={field.max}
+      step={field.step}
+      disabled={field.disabled}
+      placeholder={field.placeholder}
+    />
+  );
+}
+
 export default function MetricBlock({
   title,
   fields = [],
+  groups,
   children,
 }: MetricBlockProps) {
   return (
     <div className={styles.block}>
       {title && <h4 className={styles.title}>{title}</h4>}
-      {fields.length > 0 ? (
+      {groups ? (
+        groups.map((group, index) => (
+          <section
+            key={group.key}
+            className={`${styles.group} ${index > 0 ? styles.groupDivided : ''}`}
+          >
+            {group.title && <h5 className={styles.groupTitle}>{group.title}</h5>}
+            <div className={styles.fields}>
+              {(group.fields ?? []).map(renderField)}
+              {group.children}
+            </div>
+          </section>
+        ))
+      ) : fields.length > 0 ? (
         <div className={styles.fields}>
-          {fields.map((field) =>
-            field.kind === 'activity' ? (
-              <ActivityMetricField
-                key={field.key}
-                label={field.label}
-                hoursValue={field.hoursValue}
-                minutesValue={field.minutesValue}
-                onHoursChange={field.onHoursChange}
-                onMinutesChange={field.onMinutesChange}
-                disabled={field.disabled}
-              />
-            ) : (
-              <NumberMetricField
-                key={field.key}
-                label={field.label}
-                value={field.value}
-                onChange={field.onChange}
-                min={field.min}
-                max={field.max}
-                step={field.step}
-                disabled={field.disabled}
-                placeholder={field.placeholder}
-              />
-            )
-          )}
+          {fields.map(renderField)}
           {children}
         </div>
       ) : (

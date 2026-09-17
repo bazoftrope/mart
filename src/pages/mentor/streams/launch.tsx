@@ -2,6 +2,7 @@ import { useEffect, useState, FormEvent } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { useAuthStore } from '@/stores/authStore';
+import Button from '@/components/ui/Button';
 import styles from './LaunchStream.module.css';
 import { apiFetch } from '@/lib/apiClient';
 
@@ -122,9 +123,9 @@ export default function LaunchStreamPage() {
             />
           </div>
 
-          <button type="submit" disabled={submitting} className={styles.submitBtn}>
+          <Button type="submit" variant="primary" loading={submitting}>
             {submitting ? 'Запуск...' : 'Запустить поток'}
-          </button>
+          </Button>
         </form>
       )}
     </main>

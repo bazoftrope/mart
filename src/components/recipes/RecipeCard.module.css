@@ -32,7 +32,7 @@
 }
 
 .titleLink:hover .title {
-  color: var(--accent-primary);
+  color: var(--accent-strong);
 }
 
 .title {
@@ -85,7 +85,7 @@
   content: '•';
   position: absolute;
   left: 0;
-  color: var(--accent-primary);
+  color: var(--accent-strong);
 }
 
 .ingredientsMore {
@@ -108,7 +108,7 @@
 .openLink {
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
-  color: var(--accent-primary);
+  color: var(--accent-strong);
   text-decoration: none;
 }
 

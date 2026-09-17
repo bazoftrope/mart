@@ -18,7 +18,27 @@ module.exports = {
         type: Sequelize.DECIMAL(8, 2),
         allowNull: false,
       },
+      protein: {
+        type: Sequelize.DECIMAL(6, 2),
+        allowNull: false,
+        defaultValue: 0,
+      },
+      fat: {
+        type: Sequelize.DECIMAL(6, 2),
+        allowNull: false,
+        defaultValue: 0,
+      },
+      carbs: {
+        type: Sequelize.DECIMAL(6, 2),
+        allowNull: false,
+        defaultValue: 0,
+      },
       created_at: {
+        type: Sequelize.DATE,
+        allowNull: false,
+        defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
+      },
+      updated_at: {
         type: Sequelize.DATE,
         allowNull: false,
         defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
