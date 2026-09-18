@@ -20,7 +20,6 @@ const BOOK_LINKS: NavItem[] = [
   { href: "/recipes", label: "Книга рецептов" },
   { href: "/workouts", label: "Книга тренировок" },
   { href: "/help", label: "Правила и помощь" },
-  { href: "/privacy", label: "Персональные данные" },
 ];
 
 function getNavConfig(

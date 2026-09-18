@@ -9,17 +9,6 @@
   line-height: var(--line-height-normal);
 }
 
-.draft {
-  margin: 0;
-  padding: 0.85rem 1rem;
-  border-left: 3px solid var(--accent-strong);
-  border-radius: var(--radius-sm);
-  background: var(--bg-info);
-  color: var(--text-secondary);
-  font-size: var(--font-size-body);
-  line-height: var(--line-height-normal);
-}
-
 .toc {
   display: flex;
   flex-wrap: wrap;
@@ -29,61 +18,5 @@
 
 .toc a {
   color: var(--text-link);
-  font-size: var(--font-size-body);
-}
-
-.doc {
-  margin-bottom: 1.5rem;
-  padding: 1.5rem 1.75rem;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-lightest);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-clay-sm);
-  scroll-margin-top: calc(var(--header-min-height) + 1rem);
-}
-
-.doc h2 {
-  margin: 0 0 1rem;
-  font-size: var(--font-size-xl);
-  font-weight: var(--font-weight-bold);
-  letter-spacing: var(--letter-spacing-tight);
-}
-
-.doc h3 {
-  margin: 1.5rem 0 0.5rem;
-  font-size: var(--font-size-lg);
-  font-weight: var(--font-weight-semibold);
-}
-
-.doc p,
-.doc li {
-  color: var(--text-secondary);
-  line-height: var(--line-height-normal);
-}
-
-.doc ul {
-  margin: 0.5rem 0;
-  padding-left: 1.25rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-}
-
-.doc strong {
-  color: var(--text-primary);
-}
-
-.placeholder {
-  padding: 0.75rem 1rem;
-  border: 1px dashed var(--border-default);
-  border-radius: var(--radius-sm);
-  background: var(--bg-surface-muted);
-}
-
-.note {
-  margin-top: 1rem;
-  padding: 0.75rem 1rem;
-  border-radius: var(--radius-sm);
-  background: var(--bg-warning);
   font-size: var(--font-size-body);
 }

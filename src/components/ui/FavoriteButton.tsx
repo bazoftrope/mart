@@ -1,13 +1,18 @@
-import { Heart } from 'lucide-react';
 import styles from './FavoriteButton.module.css';
 
 type FavoriteButtonProps = {
   active: boolean;
   busy?: boolean;
+  /** Компактный вариант для карточек; крупнее — на страницах рецепта и тренировки. */
   withLabel?: boolean;
   onToggle: () => void;
 };
 
+/**
+ * Кнопка «Лайк». Раньше это было сердечко-иконка, но иконка не совпадала
+ * с общим текстовым языком карточек, поэтому лайк — обычная надпись в рамке:
+ * не в избранном — контурная, в избранном — с мятной заливкой.
+ */
 export default function FavoriteButton({
   active,
   busy = false,
@@ -31,12 +36,7 @@ export default function FavoriteButton({
       aria-pressed={active}
       title={active ? 'Убрать из избранного' : 'Добавить в избранное'}
     >
-      <Heart
-        size={withLabel ? 18 : 16}
-        className={styles.icon}
-        fill={active ? 'currentColor' : 'none'}
-      />
-      {withLabel && <span>{active ? 'В избранном' : 'В избранное'}</span>}
+      {active ? 'В избранном' : 'Лайк'}
     </button>
   );
 }

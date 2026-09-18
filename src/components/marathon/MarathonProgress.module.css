@@ -68,12 +68,12 @@
 }
 
 .diffDown {
-  color: #16a34a;
+  color: var(--text-success);
   font-weight: 600;
 }
 
 .diffUp {
-  color: #dc2626;
+  color: var(--text-danger);
   font-weight: 600;
 }
 
@@ -90,9 +90,29 @@
   gap: 1.5rem;
 }
 
+.chartsRow {
+  display: flex;
+  align-items: stretch;
+  gap: 1.25rem;
+}
+
+.chartBlock {
+  min-width: 0;
+}
+
+.chartBlockWeight {
+  flex: 0 0 25%;
+}
+
+.chartBlockCalories {
+  flex: 1 1 auto;
+}
+
 .chartBlock + .chartBlock {
-  border-top: 1px solid #f1f5f9;
-  padding-top: 1.25rem;
+  border-top: none;
+  padding-top: 0;
+  border-left: 1px solid #f1f5f9;
+  padding-left: 1.25rem;
 }
 
 .chartTitle {
@@ -131,6 +151,24 @@
 @media (max-width: 640px) {
   .body {
     padding: 0.75rem;
+  }
+
+  .chartsRow {
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .chartBlockWeight,
+  .chartBlockCalories {
+    flex: none;
+    width: 100%;
+  }
+
+  .chartBlock + .chartBlock {
+    border-top: 1px solid #f1f5f9;
+    border-left: none;
+    padding-left: 0;
+    padding-top: 1.25rem;
   }
 
   .chartWrap {

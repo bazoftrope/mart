@@ -8,7 +8,11 @@
     "start": "next start",
     "lint": "next lint",
     "cron": "tsx src/cron-worker.ts",
-    "db:reset": "node scripts/reset-db.cjs"
+    "db:reset": "node scripts/reset-db.cjs",
+    "db:backup": "bash scripts/db-backup.sh backup",
+    "db:restore": "bash scripts/db-backup.sh restore",
+    "db:backups": "bash scripts/db-backup.sh list",
+    "db:backup:install-cron": "bash scripts/db-backup.sh install-cron"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",

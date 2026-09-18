@@ -6,7 +6,7 @@ import { apiFetch } from '@/lib/apiClient';
 import Button from '@/components/ui/Button';
 import { ButtonLink } from '@/components/ui';
 import WorkoutCard from '@/components/workouts/WorkoutCard';
-import cardStyles from '@/components/workouts/WorkoutCard.module.css';
+import cardStyles from '@/components/ui/ContentCard.module.css';
 import type { Workout, WorkoutListResponse } from '@/types/workout';
 import styles from './index.module.css';
 

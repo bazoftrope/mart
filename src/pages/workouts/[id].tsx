@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { Pencil, Trash2 } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 import { apiFetch } from '@/lib/apiClient';
-import FavoriteButton from '@/components/recipes/FavoriteButton';
+import FavoriteButton from '@/components/ui/FavoriteButton';
 import AttachmentPlayers from '@/components/attachments/AttachmentPlayers';
 import type { Workout } from '@/types/workout';
 import styles from './[id].module.css';

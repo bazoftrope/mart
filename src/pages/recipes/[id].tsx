@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { Pencil, Trash2 } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 import { apiFetch } from '@/lib/apiClient';
-import FavoriteButton from '@/components/recipes/FavoriteButton';
+import FavoriteButton from '@/components/ui/FavoriteButton';
 import AttachmentPlayers from '@/components/attachments/AttachmentPlayers';
 import type { Recipe } from '@/types/recipe';
 import styles from './[id].module.css';
@@ -177,31 +177,33 @@ export default function RecipeDetailPage() {
 
           {actionError && <p className="error">{actionError}</p>}
 
-          <section className={styles.section}>
-            <h2 className={styles.sectionTitle}>Ингредиенты</h2>
-            {ingredients.length > 0 ? (
-              <ul className={styles.ingredients}>
-                {ingredients.map((line, index) => (
-                  <li key={index}>{line}</li>
-                ))}
-              </ul>
-            ) : (
-              <p className="textMuted">Ингредиенты не указаны.</p>
-            )}
-          </section>
+          <div className={styles.blocks}>
+            <section className={styles.section}>
+              <h2 className={styles.sectionTitle}>Ингредиенты</h2>
+              {ingredients.length > 0 ? (
+                <ul className={styles.ingredients}>
+                  {ingredients.map((line, index) => (
+                    <li key={index}>{line}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="textMuted">Ингредиенты не указаны.</p>
+              )}
+            </section>
 
-          <section className={styles.section}>
-            <h2 className={styles.sectionTitle}>Приготовление</h2>
-            {steps.length > 0 ? (
-              <ol className={styles.steps}>
-                {steps.map((line, index) => (
-                  <li key={index}>{line}</li>
-                ))}
-              </ol>
-            ) : (
-              <p className="textMuted">Шаги приготовления не указаны.</p>
-            )}
-          </section>
+            <section className={styles.section}>
+              <h2 className={styles.sectionTitle}>Приготовление</h2>
+              {steps.length > 0 ? (
+                <ol className={styles.steps}>
+                  {steps.map((line, index) => (
+                    <li key={index}>{line}</li>
+                  ))}
+                </ol>
+              ) : (
+                <p className="textMuted">Шаги приготовления не указаны.</p>
+              )}
+            </section>
+          </div>
 
           {(recipe.attachments?.length ?? 0) > 0 && (
             <section className={styles.section}>

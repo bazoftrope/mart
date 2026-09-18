@@ -4,6 +4,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { apiFetch } from '@/lib/apiClient';
 import { ButtonLink } from '@/components/ui';
 import HelpCard from '@/components/help/HelpCard';
+import PrivacyDocuments from '@/components/legal/PrivacyDocuments';
 import cardStyles from '@/components/help/HelpCard.module.css';
 import {
   HELP_SECTION_LABELS,
@@ -14,7 +15,7 @@ import {
 } from '@/types/help';
 import styles from './index.module.css';
 
-type Tab = 'all' | HelpSection;
+type Tab = 'all' | HelpSection | 'privacy';
 
 function pluralizeArticles(count: number): string {
   const mod10 = count % 10;
@@ -43,12 +44,20 @@ export default function HelpPage() {
 
   // Поиск с задержкой, чтобы не дёргать API на каждый символ.
   useEffect(() => {
+    if (tab === 'privacy') return;
     const trimmed = searchInput.trim();
     const timer = setTimeout(() => setSearch(trimmed), 350);
     return () => clearTimeout(timer);
-  }, [searchInput]);
+  }, [searchInput, tab]);
 
   useEffect(() => {
+    // «Персональные данные» — статичная вкладка без статей CMS.
+    if (tab === 'privacy') {
+      setLoading(false);
+      setError(null);
+      return;
+    }
+
     let cancelled = false;
 
     async function load() {
@@ -89,6 +98,7 @@ export default function HelpPage() {
   }, [search, tab, role]);
 
   const isAdmin = role === 'admin';
+  const isPrivacyTab = tab === 'privacy';
 
   return (
     <main className="container">
@@ -109,17 +119,6 @@ export default function HelpPage() {
       </header>
 
       <div className={styles.toolbar}>
-        <div className={styles.searchBox}>
-          <Search size={18} className={styles.searchIcon} aria-hidden="true" />
-          <input
-            className={styles.searchInput}
-            value={searchInput}
-            onChange={(event) => setSearchInput(event.target.value)}
-            placeholder="Поиск по правилам и помощи..."
-            aria-label="Поиск по правилам и помощи"
-          />
-        </div>
-
         <div className={styles.tabs} role="tablist" aria-label="Разделы помощи">
           <button
             type="button"
@@ -142,16 +141,40 @@ export default function HelpPage() {
               {HELP_SECTION_LABELS[section]}
             </button>
           ))}
+          <button
+            type="button"
+            role="tab"
+            aria-selected={isPrivacyTab}
+            className={isPrivacyTab ? styles.tabActive : styles.tab}
+            onClick={() => setTab('privacy')}
+          >
+            Персональные данные
+          </button>
         </div>
+
+        {!isPrivacyTab && (
+          <div className={styles.searchBox}>
+            <Search size={18} className={styles.searchIcon} aria-hidden="true" />
+            <input
+              className={styles.searchInput}
+              value={searchInput}
+              onChange={(event) => setSearchInput(event.target.value)}
+              placeholder="Поиск по правилам и помощи..."
+              aria-label="Поиск по правилам и помощи"
+            />
+          </div>
+        )}
       </div>
 
-      {error && <p className="error">{error}</p>}
+      {isPrivacyTab && <PrivacyDocuments />}
 
-      {!error && loading && articles.length === 0 && (
+      {!isPrivacyTab && error && <p className="error">{error}</p>}
+
+      {!isPrivacyTab && !error && loading && articles.length === 0 && (
         <div className="mutedBox">Загружаем раздел...</div>
       )}
 
-      {!error && !loading && articles.length === 0 && (
+      {!isPrivacyTab && !error && !loading && articles.length === 0 && (
         <div className={styles.empty}>
           {search ? (
             <p>По вашему запросу ничего не найдено. Попробуйте изменить запрос.</p>
@@ -168,7 +191,7 @@ export default function HelpPage() {
         </div>
       )}
 
-      {!error && articles.length > 0 && (
+      {!isPrivacyTab && !error && articles.length > 0 && (
         <div className={loading ? styles.dimmed : undefined}>
           <p className={styles.count}>{pluralizeArticles(total)}</p>
           <ul className={cardStyles.grid}>

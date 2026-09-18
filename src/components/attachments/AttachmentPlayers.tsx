@@ -122,9 +122,6 @@ export default function AttachmentPlayers({
                     className={styles.image}
                     loading="lazy"
                   />
-                  {attachment.fileName && (
-                    <span className={styles.imageName}>{attachment.fileName}</span>
-                  )}
                 </a>
               ))}
             </div>

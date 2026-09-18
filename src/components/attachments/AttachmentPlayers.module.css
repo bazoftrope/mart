@@ -148,12 +148,3 @@
   display: block;
   background: var(--bg-surface-muted);
 }
-
-.imageName {
-  font-size: var(--font-size-sm);
-  color: var(--text-secondary);
-  padding: 0 0.5rem 0.5rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}

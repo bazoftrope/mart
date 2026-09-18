@@ -6,7 +6,7 @@ import { apiFetch } from '@/lib/apiClient';
 import Button from '@/components/ui/Button';
 import { ButtonLink } from '@/components/ui';
 import RecipeCard from '@/components/recipes/RecipeCard';
-import cardStyles from '@/components/recipes/RecipeCard.module.css';
+import cardStyles from '@/components/ui/ContentCard.module.css';
 import type { Recipe, RecipeListResponse } from '@/types/recipe';
 import styles from './index.module.css';
 

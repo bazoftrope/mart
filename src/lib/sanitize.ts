@@ -4,7 +4,7 @@ const COLOR_PATTERN =
   /^(#[0-9a-f]{3,8}|rgb\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*\)|rgba\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*[\d.]+\s*\)|(?:[a-zA-Z]+))$/i;
 
 const FONT_PATTERN =
-  /^(?:[a-zA-Z0-9\s'"-]{1,80}|(?:Arial|Helvetica|Georgia|Tahoma|Times New Roman|Verdana|Courier New|system-ui|sans-serif|serif|monospace))$/i;
+  /^(?:Onest|Golos Text|Arial|Helvetica|Verdana|Tahoma|system-ui|sans-serif)$/i;
 
 export function sanitizeRichText(html: string): string {
   return sanitizeHtml(html, {

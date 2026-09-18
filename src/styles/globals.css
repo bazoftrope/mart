@@ -167,8 +167,10 @@ body {
   --radius-2xl: 32px;
   --radius-pill: 999px;
 
-  /* Типографика */
-  --font-family-base: var(--font-golos), 'Golos Text', Arial, Helvetica, sans-serif;
+  /* Типографика. Fallback внутри var() обязателен: без него отсутствие
+     --font-onest делает всё объявление font-family невалидным и браузер
+     откатывается на дефолтный serif (Times), а не на Arial. */
+  --font-family-base: var(--font-onest, 'Onest', Arial, Helvetica, sans-serif);
   --font-size-xs: 0.75rem;
   --font-size-sm: 0.8rem;
   --font-size-md: 0.85rem;
@@ -633,4 +635,20 @@ a {
 .description {
   margin: 0.25rem 0;
   color: var(--text-secondary);
+}
+
+/* ============================================================================
+   Quill: единый базовый шрифт
+   Стили quill.snow.css объявляют .ql-font-serif (Georgia, Times New Roman) и
+   .ql-font-monospace. Легаси-контент из старого редактора с этими классами
+   нейтрализуем — рендерится базовым шрифтом, а не Times New Roman.
+   ============================================================================ */
+
+.ql-font-serif,
+.ql-font-monospace {
+  font-family: var(--font-family-base) !important;
+}
+
+.ql-editor {
+  font-family: var(--font-family-base);
 }

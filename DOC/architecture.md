@@ -287,6 +287,60 @@ export default apiHandler({ GET: withMentor(getHandler) });
 > пересоздаётся через `npm run db:reset`. Правило «дальше только отдельными файлами»
 > возвращается, как только в базе появятся реальные данные, которые нельзя потерять.
 
+### Резервное копирование БД
+
+Скрипт `scripts/db-backup.sh` (bash, без новых зависимостей) — дамп, восстановление,
+ротация и установка cron. Способ подключения определяется автоматически:
+`docker compose exec db` (прод) → `docker exec marathon-postgres` → локальный
+`pg_dump`/`psql` + `DATABASE_URL` (разработка). Поэтому один и тот же скрипт работает
+и на сервере, и локально.
+
+| Команда | Действие |
+|---------|----------|
+| `npm run db:backup` | Сделать дамп (gzip) и применить ротацию |
+| `npm run db:backups` | Показать имеющиеся дампы |
+| `npm run db:restore` | Восстановить из самого свежего дампа (`-- --yes` — без подтверждения) |
+| `npm run db:backup:install-cron` | Добавить ежедневный бэкап в crontab (по умолчанию 03:00) |
+| `bash scripts/db-backup.sh help` | Справка: `backup` / `restore` / `list` / `install-cron` / `uninstall-cron` |
+
+Устройство и гарантии:
+
+- Дамп пишется во **временный файл**, проверяется (не пустой, `gzip -t`, наличие маркера
+  `PostgreSQL database dump complete`) и **только затем** атомарно занимает место в каталоге.
+  Если дамп не удался — предыдущая копия остаётся нетронутой.
+- Каталог бэкапов — **вне docker-тома `postgres_data`** и вне репозитория (по умолчанию
+  `$HOME/marathon-backups`); права `700`, файлы и лог — `600`.
+- Ротация по числу файлов: `BACKUP_KEEP` (по умолчанию `1` — одна перезаписываемая копия).
+  Имя файла: `marathon_platform_YYYY-MM-DD_HHMMSS.sql.gz`.
+- От перекрывающихся запусков защищает lock-каталог `BACKUP_DIR/.lock` (протухший снимается).
+- Лог — `BACKUP_DIR/backup.log`, автоматически обрезается при росте.
+- Восстановление идёт одной транзакцией (`--single-transaction` + `ON_ERROR_STOP`) и требует
+  подтверждения (`--yes` для неинтерактивного запуска).
+
+Настройка через `.env.local` / `.env` (см. `.env.example`): `BACKUP_DIR`, `BACKUP_KEEP`,
+`BACKUP_CRON`.
+
+Прод (на сервере, из каталога репозитория):
+
+```bash
+./scripts/db-backup.sh backup            # разовый бэкап
+./scripts/db-backup.sh install-cron      # ежедневный бэкап в 03:00 (задача в crontab хоста)
+./scripts/db-backup.sh list              # что лежит в каталоге
+```
+
+Восстановление — **при остановленном приложении**:
+
+```bash
+docker compose stop app
+./scripts/db-backup.sh restore --yes     # по умолчанию — самый свежий дамп
+docker compose start app
+```
+
+> Дампы содержат ПДн, включая специальную категорию — данные о здоровье (152-ФЗ). Каталог
+> бэкапов не коммитится и ограничен по доступу. Копия хранится только на том же сервере:
+> это защищает от порчи/сбоя БД, но не от полной потери сервера. Шифрование и выгрузка в
+> объектное хранилище в РФ — осознанно отложенный следующий шаг (см. `DOC/legal-fz152.md`).
+
 ## Расчёт калорий (`src/lib/calorieCalculator.ts`)
 
 Формула Миффлина-Сан Жеора с фиксированным коэффициентом активности **1.2**:
@@ -346,6 +400,11 @@ male:   База = (6.25×Рост + 10×Вес − 5×Возраст + 5) × 1.
 
 Локально — `node-cron` (`npm run cron`). В проде схема может отличаться (внешний cron или отдельный процесс): при добавлении задач учитывать это.
 
+Cron хоста уже используется для pull-деплоя (`scripts/auto-deploy.sh`) и для бэкапа БД:
+`scripts/db-backup.sh install-cron` ставит в crontab пользователя ежедневную задачу
+(по умолчанию `0 3 * * *`). Отдельного node-процесса для бэкапа не требуется — cron вызывает
+bash-скрипт, который работает через `docker compose exec`.
+
 ## Key design & рефакторинги
 
 - Структура дня участника вынесена в компоненты `src/components/day/*` (`DayHeader`, `DayMaterials`, `DayReport`, `DayTabs`, `KinescopePlayer`) и `src/components/marathon/*` (`MarathonWindow`, `DayView`, `DayNavbar`, `MarathonHeader`).
@@ -354,6 +413,6 @@ male:   База = (6.25×Рост + 10×Вес − 5×Возраст + 5) × 1.
 - Книга рецептов: общая, без привязки к марафонам. Модели `Recipe` (служебный `createdBy` в UI не показывается) и `RecipeFavorite`, вложения — `ContentAttachment` (`owner_type = 'recipe'`): изображения (галерея), PDF и видео по ссылке Kinescope. Публичный `GET /api/recipes` через `withOptionalAuth` дополняется `isFavorite`/`canEdit` и вложениями. UI: `src/pages/recipes/*`, компоненты `src/components/recipes/*`, редактор вложений `src/components/attachments/ContentAttachmentManager` (логика списка — общая `src/lib/attachmentEditor.ts`).
 - Книга тренировок: полное зеркало книги рецептов (та же механика — публичное чтение, поиск, пагинация, избранное, права автор/админ, вложения `ContentAttachment` с `owner_type = 'workout'`: изображения, PDF, видео Kinescope). Модели `Workout` (`title`, `description`, `exercises`, `execution`, служебный `createdBy`) и `WorkoutFavorite`; UI: `src/pages/workouts/*`, компоненты `src/components/workouts/*`. Кнопка избранного переиспользуется из книги рецептов (`src/components/recipes/FavoriteButton`).
 - Раздел «Правила и помощь»: модель `HelpArticle` (разделы `rules`/`faq`/`guide`, аудитории `all`/`participant`/`mentor`/`admin`, `slug`, черновики); публичное чтение через `withOptionalAuth`, запись — только `withAdmin`. UI: `src/pages/help/*` (список с поиском и табами, страница статьи), админка `src/pages/admin/help/*` (CRUD с Quill), компоненты `src/components/help/*`. Тексты санируются `sanitizeRichText` при сохранении; слаги формирует `src/lib/helpSlug.ts`, где лежат константы `HELP_SLUG_RULES`/`HELP_SLUG_REPORT_GUIDE` для контекстных ссылок (на странице дня, потоке и регистрации). Стартовый набор статей — сидер `20260911000001-demo-help-articles.js`. Подробнее (историческое ТЗ): `DOC/archive/help-center-plan.md`.
-- Согласия на обработку ПДн (152-ФЗ): модель `UserConsent` (`general` / `health`), серверная логика — `src/lib/consentService.ts`, версии и адреса текстов — `src/lib/consent.ts`, публичная страница — `src/pages/privacy.tsx` (тексты-заглушки до проверки юристом). Согласие фиксируется на сервере при регистрации (`general`) и при сохранении анкеты (`health`, `PATCH /api/users/me`), хранится с версией текста, IP и User-Agent; отзыв проставляет `revokedAt`. Анкета доступна только с 18 лет. Подробнее: `DOC/legal-fz152.md`, Решение 31/32.
+- Согласия на обработку ПДн (152-ФЗ): модель `UserConsent` (`general` / `health`), серверная логика — `src/lib/consentService.ts`, версии и адреса текстов — `src/lib/consent.ts`, публичная страница — `src/pages/privacy.tsx`, тексты — общий статичный компонент `src/components/legal/PrivacyDocuments.tsx` (его же рендерит вкладка «Персональные данные» в `/help`; якори `#policy`/`#consent`/`#consent-health` работают в обоих местах; тексты-заглушки до проверки юристом). Согласие фиксируется на сервере при регистрации (`general`) и при сохранении анкеты (`health`, `PATCH /api/users/me`), хранится с версией текста, IP и User-Agent; отзыв проставляет `revokedAt`. Анкета доступна только с 18 лет. Подробнее: `DOC/legal-fz152.md`, Решение 31/32.
 - Права субъекта ПДн: экспорт данных (`GET /api/users/me/export`) и удаление аккаунта (`DELETE /api/users/me`) — `src/lib/userDataService.ts`. Удаление доступно участнику и ментору; у ментора каскад затрагивает потоки и данные участников, поэтому `GET /api/users/me/deletion-impact` отдаёт числа для предупреждения. UI — `src/pages/account.tsx` + `src/components/account/AccountDataSection.tsx` (согласия, отзыв, экспорт, удаление); ссылка «Аккаунт» в шапке для всех ролей. Подробнее: Решение 33.
 - Исторические планы рефакторингов: `DOC/archive/css-refactor-plan.md`, `DOC/archive/participant-day-refactor-plan.md`, `DOC/archive/report-extension-plan.md`.
