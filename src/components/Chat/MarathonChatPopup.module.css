@@ -41,21 +41,20 @@
   text-align: center;
 }
 
+/* Чат держится правого края экрана и занимает всю высоту вьюпорта */
 .popup {
-  position: absolute;
-  top: calc(100% + 8px);
+  position: fixed;
+  top: 0;
   right: 0;
-  width: 380px;
-  max-width: calc(100vw - 2rem);
-  height: 480px;
-  max-height: calc(100vh - 120px);
+  bottom: 0;
+  width: 420px;
   display: flex;
   flex-direction: column;
   background: var(--bg-surface);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-lg);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
-  z-index: 30;
+  border-left: 1px solid var(--border-default);
+  border-radius: var(--radius-lg) 0 0 var(--radius-lg);
+  box-shadow: var(--shadow-float);
+  z-index: 60;
   overflow: hidden;
 }
 
@@ -149,7 +148,7 @@
 }
 
 .bubble {
-  max-width: 80%;
+  max-width: 85%;
   padding: 0.5rem 0.75rem;
   border-radius: var(--radius-md);
   border: 1px solid var(--border-light);
@@ -234,4 +233,14 @@
   color: var(--text-error);
   margin: 0 1rem 0.5rem;
   font-size: var(--font-size-sm);
+}
+
+/* На узких экранах чат занимает весь экран; кнопка-лаунчер остаётся точкой входа
+   в закрытом состоянии и перекрывается панелью в открытом (z-index) */
+@media (max-width: 900px) {
+  .popup {
+    width: 100%;
+    border-left: none;
+    border-radius: 0;
+  }
 }

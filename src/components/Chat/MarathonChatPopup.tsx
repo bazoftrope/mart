@@ -220,6 +220,25 @@ export default function MarathonChatPopup({ streamId, streamStatus }: MarathonCh
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages.length]);
 
+  // Полноэкранный чат на узких экранах: фон не скроллится
+  useEffect(() => {
+    if (!open || !window.matchMedia('(max-width: 900px)').matches) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [open]);
+
   async function handleSend() {
     const trimmed = text.trim();
     if (!trimmed || !activeConversationId || sending) return;
