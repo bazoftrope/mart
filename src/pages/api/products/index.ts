@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { Op } from 'sequelize';
+import { Op, type WhereOptions } from 'sequelize';
 import '@/lib/db';
 import { sequelize } from '@db/db';
 import { apiHandler, success } from '@/lib/apiHandler';
@@ -9,21 +9,54 @@ import { serializeProduct } from '@/lib/productUtils';
 import { createProductSchema } from '@/lib/validation';
 
 const MAX_RESULTS = 20;
+const MAX_SEARCH_LENGTH = 100;
 
 async function getHandler(req: NextApiRequest, res: NextApiResponse) {
-  const search = typeof req.query.search === 'string' ? req.query.search.trim() : '';
+  const search =
+    typeof req.query.search === 'string'
+      ? req.query.search.trim().slice(0, MAX_SEARCH_LENGTH)
+      : '';
 
-  const where = search
-    ? { name: { [Op.iLike]: `%${search}%` } }
-    : {};
+  if (!search) {
+    const products = await Product.findAll({
+      order: [['name', 'ASC']],
+      limit: MAX_RESULTS,
+    });
+    return success(res, products.map(serializeProduct));
+  }
 
-  const products = await Product.findAll({
-    where,
+  // Релевантность: сначала совпадения с начала названия, затем — вхождения
+  // в середину. Иначе при большом каталоге популярное («Сыр» на запрос «сыр»)
+  // могло не попасть в первые 20 строк, отсортированных по алфавиту.
+  const startsWith: WhereOptions = { name: { [Op.iLike]: `${search}%` } };
+
+  const prefixMatches = await Product.findAll({
+    where: startsWith,
     order: [['name', 'ASC']],
     limit: MAX_RESULTS,
   });
 
-  return success(res, products.map(serializeProduct));
+  if (prefixMatches.length >= MAX_RESULTS) {
+    return success(res, prefixMatches.map(serializeProduct));
+  }
+
+  const containsOnly: WhereOptions = {
+    name: {
+      [Op.iLike]: `%${search}%`,
+      [Op.notILike]: `${search}%`,
+    },
+  };
+
+  const restMatches = await Product.findAll({
+    where: containsOnly,
+    order: [['name', 'ASC']],
+    limit: MAX_RESULTS - prefixMatches.length,
+  });
+
+  return success(
+    res,
+    [...prefixMatches, ...restMatches].map(serializeProduct)
+  );
 }
 
 async function postHandler(req: NextApiRequest, res: NextApiResponse) {

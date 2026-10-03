@@ -9,6 +9,7 @@
     "lint": "next lint",
     "cron": "tsx src/cron-worker.ts",
     "db:reset": "node scripts/reset-db.cjs",
+    "db:import-products": "node scripts/import-products.cjs",
     "db:backup": "bash scripts/db-backup.sh backup",
     "db:restore": "bash scripts/db-backup.sh restore",
     "db:backups": "bash scripts/db-backup.sh list",
