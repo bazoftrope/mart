@@ -440,13 +440,33 @@ export const createConversationSchema = z
     path: ['root'],
   });
 
-export const sendMessageSchema = z.object({
-  text: z
+export const messageAttachmentSchema = z.object({
+  url: z
     .string()
-    .trim()
-    .min(1, 'Сообщение не может быть пустым')
-    .max(5000, 'Сообщение слишком длинное'),
+    .min(1)
+    .max(2048)
+    .regex(
+      /^\/api\/uploads\/image\//,
+      'Некорректная ссылка на изображение'
+    ),
+  fileName: z.string().max(255).default(''),
+  mimeType: z.string().max(255).default(''),
+  sizeBytes: z.number().int().nonnegative().default(0),
 });
+
+export const sendMessageSchema = z
+  .object({
+    text: z
+      .string()
+      .trim()
+      .max(5000, 'Сообщение слишком длинное')
+      .default(''),
+    attachments: z.array(messageAttachmentSchema).max(5).optional(),
+  })
+  .refine((data) => data.text.length > 0 || (data.attachments?.length ?? 0) > 0, {
+    message: 'Сообщение не может быть пустым',
+    path: ['text'],
+  });
 
 export type CreateConversationInput = z.infer<typeof createConversationSchema>;
 export type SendMessageInput = z.infer<typeof sendMessageSchema>;

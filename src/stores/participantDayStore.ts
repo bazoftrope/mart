@@ -420,11 +420,6 @@ export const useParticipantDayStore = create<ParticipantDayStore>((set, get) => 
 
   addProductLine: (product, mealType) => {
     const { lines } = get();
-    const exists = lines.some((line) => line.productId === product.id);
-    if (exists) {
-      set({ saveError: 'Этот продукт уже добавлен в отчёт' });
-      return;
-    }
 
     const newLine: ReportLineItem = {
       productId: product.id,

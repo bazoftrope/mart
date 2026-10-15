@@ -8,6 +8,13 @@ import {
   CreatedAt,
 } from 'sequelize-typescript';
 
+export type MessageAttachment = {
+  url: string;
+  fileName: string;
+  mimeType: string;
+  sizeBytes: number;
+};
+
 @Table({
   tableName: 'messages',
   underscored: true,
@@ -36,6 +43,12 @@ export class Message extends Model {
     allowNull: false,
   })
   text!: string;
+
+  @Column({
+    type: DataType.JSONB,
+    allowNull: true,
+  })
+  attachments!: MessageAttachment[] | null;
 
   @CreatedAt
   createdAt!: Date;

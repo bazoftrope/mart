@@ -63,6 +63,7 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
     messages: messages.map((msg) => ({
       id: msg.id,
       text: msg.text,
+      attachments: msg.attachments ?? [],
       senderId: msg.senderId,
       sender: senderMap.get(msg.senderId)
         ? serializeConversationParticipant(senderMap.get(msg.senderId)!)
@@ -95,7 +96,8 @@ async function postHandler(req: NextApiRequest, res: NextApiResponse) {
   const message = await sendMessage(
     conversation,
     user.userId,
-    parsed.data.text
+    parsed.data.text,
+    parsed.data.attachments
   );
 
   return success(
@@ -103,6 +105,7 @@ async function postHandler(req: NextApiRequest, res: NextApiResponse) {
     {
       id: message.id,
       text: message.text,
+      attachments: message.attachments ?? [],
       senderId: message.senderId,
       createdAt: message.createdAt.toISOString(),
     },

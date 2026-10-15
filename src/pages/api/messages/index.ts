@@ -11,6 +11,7 @@ import {
   MarathonTemplate,
   StreamEnrollment,
   User,
+  type MessageAttachment,
 } from '@db/models';
 import { createConversationSchema } from '@/lib/validation';
 import { Forbidden, NotFound } from '@/lib/errors';
@@ -230,13 +231,20 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
   });
   const lastMessageByConversation = new Map<
     string,
-    { id: string; text: string; senderId: string; createdAt: string }
+    {
+      id: string;
+      text: string;
+      attachments: MessageAttachment[];
+      senderId: string;
+      createdAt: string;
+    }
   >();
   for (const msg of lastMessages) {
     if (!lastMessageByConversation.has(msg.conversationId)) {
       lastMessageByConversation.set(msg.conversationId, {
         id: msg.id,
         text: msg.text,
+        attachments: msg.attachments ?? [],
         senderId: msg.senderId,
         createdAt: msg.createdAt.toISOString(),
       });

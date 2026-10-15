@@ -1,12 +1,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ImagePlus } from 'lucide-react';
 import styles from './MentorStreamChat.module.css';
 import { apiFetch } from '@/lib/apiClient';
 import { useAuthStore } from '@/stores/authStore';
 import type { ChatParticipant, ConversationSummary } from './Chat';
+import EmojiPicker, { insertEmojiAtCursor } from './EmojiPicker';
+import { PhotoPreviews, MessageImages } from './ChatAttachments';
+import { useChatPhotos, CHAT_IMAGE_ACCEPT } from '@/hooks/useChatPhotos';
+import type { ChatAttachment } from '@/types/chat';
 
 type MessageData = {
   id: string;
   text: string;
+  attachments: ChatAttachment[];
   senderId: string;
   sender: ChatParticipant | null;
   createdAt: string;
@@ -54,7 +60,18 @@ export default function MentorStreamChat({
   const [error, setError] = useState<string | null>(null);
 
   const bottomRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const initialOpenedRef = useRef(false);
+  const {
+    photos,
+    uploading,
+    error: photoError,
+    addFiles,
+    remove: removePhoto,
+    reset: resetPhotos,
+    toAttachments,
+  } = useChatPhotos();
 
   const streamConversations = useMemo(() => conversations.filter((c) => c.streamId === streamId), [conversations, streamId]);
   const groupConversation = useMemo(() => streamConversations.find((c) => c.type === 'group') ?? null, [streamConversations]);
@@ -256,9 +273,13 @@ export default function MentorStreamChat({
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages.length]);
 
+  useEffect(() => {
+    resetPhotos();
+  }, [activeConversationId, resetPhotos]);
+
   async function handleSend() {
     const trimmed = text.trim();
-    if (!trimmed || !activeConversationId || sending || isFinished) return;
+    if ((!trimmed && photos.length === 0) || !activeConversationId || sending || isFinished) return;
     setSending(true);
     setError(null);
     try {
@@ -266,7 +287,7 @@ export default function MentorStreamChat({
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: trimmed }),
+        body: JSON.stringify({ text: trimmed, attachments: toAttachments() }),
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -275,6 +296,7 @@ export default function MentorStreamChat({
       const message = json.data as MessageData;
       setMessages((prev) => [...prev, message]);
       setText('');
+      resetPhotos();
       void refreshConversations();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Что-то пошло не так');
@@ -309,7 +331,12 @@ export default function MentorStreamChat({
               <span className={styles.convSubtitle}>
                 {groupConversation?.stream?.template?.title || 'Все участники + ментор'}
               </span>
-              {groupConversation?.lastMessage && <span className={styles.convLast}>{groupConversation.lastMessage.text}</span>}
+              {groupConversation?.lastMessage && (
+                <span className={styles.convLast}>
+                  {groupConversation.lastMessage.text ||
+                    (groupConversation.lastMessage.attachments?.length ? 'Фото' : '')}
+                </span>
+              )}
             </button>
           </li>
           {enrollments
@@ -332,7 +359,10 @@ export default function MentorStreamChat({
                     </div>
                     <span className={styles.convSubtitle}>{p.email}</span>
                     {conv?.lastMessage ? (
-                      <span className={styles.convLast}>{conv.lastMessage.text}</span>
+                      <span className={styles.convLast}>
+                        {conv.lastMessage.text ||
+                          (conv.lastMessage.attachments?.length ? 'Фото' : '')}
+                      </span>
                     ) : (
                       <span className={styles.convLastMuted}>Нет сообщений — нажмите чтобы начать</span>
                     )}
@@ -368,7 +398,8 @@ export default function MentorStreamChat({
                 return (
                   <div key={message.id} className={mine ? `${styles.bubble} ${styles.bubbleMine}` : `${styles.bubble} ${styles.bubbleTheirs}`}>
                     {!mine && <div className={styles.bubbleSender}>{message.sender?.name || 'Неизвестно'}</div>}
-                    <div className={styles.bubbleText}>{message.text}</div>
+                    <MessageImages attachments={message.attachments || []} />
+                    {message.text && <div className={styles.bubbleText}>{message.text}</div>}
                     <div className={styles.bubbleTime}>{formatTime(message.createdAt)}</div>
                   </div>
                 );
@@ -376,6 +407,7 @@ export default function MentorStreamChat({
               <div ref={bottomRef} />
             </div>
             {error && <p className={styles.error}>{error}</p>}
+            {photoError && <p className={styles.error}>{photoError}</p>}
             {isFinished ? (
               <div className={styles.composer}>
                 <p className={styles.muted}>Чат потока закрыт</p>
@@ -388,17 +420,62 @@ export default function MentorStreamChat({
                   void handleSend();
                 }}
               >
-                <input
-                  className={styles.input}
-                  type="text"
-                  value={text}
-                  placeholder="Написать сообщение..."
-                  onChange={(e) => setText(e.target.value)}
-                  disabled={sending || !!creating}
+                <PhotoPreviews
+                  photos={photos}
+                  onRemove={removePhoto}
+                  disabled={sending || uploading}
                 />
-                <button className={styles.sendBtn} type="submit" disabled={sending || !!creating || !text.trim()}>
-                  Отправить
-                </button>
+                <div className={styles.composerRow}>
+                  <input
+                    ref={inputRef}
+                    className={styles.input}
+                    type="text"
+                    value={text}
+                    placeholder="Написать сообщение..."
+                    onChange={(e) => setText(e.target.value)}
+                    disabled={sending || !!creating}
+                  />
+                  <EmojiPicker
+                    onSelect={(emoji) =>
+                      insertEmojiAtCursor(inputRef.current, text, emoji, setText)
+                    }
+                    disabled={sending || !!creating}
+                  />
+                  <button
+                    className={styles.attachBtn}
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={sending || uploading || !!creating}
+                    title="Прикрепить фото"
+                    aria-label="Прикрепить фото"
+                  >
+                    <ImagePlus size={18} />
+                  </button>
+                  <button
+                    className={styles.sendBtn}
+                    type="submit"
+                    disabled={
+                      sending ||
+                      uploading ||
+                      !!creating ||
+                      (!text.trim() && photos.length === 0)
+                    }
+                  >
+                    Отправить
+                  </button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept={CHAT_IMAGE_ACCEPT}
+                    multiple
+                    hidden
+                    onChange={(e) => {
+                      void addFiles(e.target.files);
+                      e.target.value = '';
+                    }}
+                  />
+                </div>
+                {uploading && <span className={styles.muted}>Загрузка фото...</span>}
               </form>
             )}
           </>

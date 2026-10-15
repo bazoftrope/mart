@@ -5,6 +5,7 @@ import {
   Stream,
   MarathonTemplate,
   User,
+  type MessageAttachment,
 } from '@db/models';
 import { Forbidden, NotFound } from '@/lib/errors';
 import { Op } from 'sequelize';
@@ -109,12 +110,14 @@ export async function getConversationAccess(
 export async function sendMessage(
   conversation: Conversation,
   senderId: string,
-  text: string
+  text: string,
+  attachments?: MessageAttachment[] | null
 ): Promise<Message> {
   const message = await Message.create({
     conversationId: conversation.id,
     senderId,
     text,
+    attachments: attachments && attachments.length > 0 ? attachments : null,
   });
 
   await ConversationMember.increment('unreadCount', {

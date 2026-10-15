@@ -1,15 +1,20 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { MessageCircle, X } from 'lucide-react';
+import { ImagePlus, MessageCircle, X } from 'lucide-react';
 import styles from './MarathonChatPopup.module.css';
 import { apiFetch } from '@/lib/apiClient';
 import { useAuthStore } from '@/stores/authStore';
 import type { ChatParticipant, ConversationSummary } from './Chat';
+import EmojiPicker, { insertEmojiAtCursor } from './EmojiPicker';
+import { PhotoPreviews, MessageImages } from './ChatAttachments';
+import { useChatPhotos, CHAT_IMAGE_ACCEPT } from '@/hooks/useChatPhotos';
+import type { ChatAttachment } from '@/types/chat';
 
 type Tab = 'group' | 'mentor';
 
 type MessageData = {
   id: string;
   text: string;
+  attachments: ChatAttachment[];
   senderId: string;
   sender: ChatParticipant | null;
   createdAt: string;
@@ -50,6 +55,17 @@ export default function MarathonChatPopup({ streamId, streamStatus }: MarathonCh
   const [error, setError] = useState<string | null>(null);
 
   const bottomRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const {
+    photos,
+    uploading,
+    error: photoError,
+    addFiles,
+    remove: removePhoto,
+    reset: resetPhotos,
+    toAttachments,
+  } = useChatPhotos();
 
   const streamConversations = conversations.filter((c) => c.streamId === streamId);
   const groupConversation = streamConversations.find((c) => c.type === 'group') ?? null;
@@ -220,6 +236,10 @@ export default function MarathonChatPopup({ streamId, streamStatus }: MarathonCh
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages.length]);
 
+  useEffect(() => {
+    resetPhotos();
+  }, [activeConversationId, resetPhotos]);
+
   // Полноэкранный чат на узких экранах: фон не скроллится
   useEffect(() => {
     if (!open || !window.matchMedia('(max-width: 900px)').matches) return;
@@ -241,7 +261,7 @@ export default function MarathonChatPopup({ streamId, streamStatus }: MarathonCh
 
   async function handleSend() {
     const trimmed = text.trim();
-    if (!trimmed || !activeConversationId || sending) return;
+    if ((!trimmed && photos.length === 0) || !activeConversationId || sending) return;
     setSending(true);
     setError(null);
     try {
@@ -249,7 +269,7 @@ export default function MarathonChatPopup({ streamId, streamStatus }: MarathonCh
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: trimmed }),
+        body: JSON.stringify({ text: trimmed, attachments: toAttachments() }),
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -258,6 +278,7 @@ export default function MarathonChatPopup({ streamId, streamStatus }: MarathonCh
       const message = json.data as MessageData;
       setMessages((prev) => [...prev, message]);
       setText('');
+      resetPhotos();
       void refreshConversations();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Что-то пошло не так');
@@ -373,7 +394,10 @@ export default function MarathonChatPopup({ streamId, streamStatus }: MarathonCh
                       {message.sender?.name || 'Неизвестно'}
                     </div>
                   )}
-                  <div className={styles.bubbleText}>{message.text}</div>
+                  <MessageImages attachments={message.attachments || []} />
+                  {message.text && (
+                    <div className={styles.bubbleText}>{message.text}</div>
+                  )}
                   <div className={styles.bubbleTime}>
                     {formatTime(message.createdAt)}
                   </div>
@@ -384,6 +408,7 @@ export default function MarathonChatPopup({ streamId, streamStatus }: MarathonCh
           </div>
 
           {error && <p className={styles.error}>{error}</p>}
+          {photoError && <p className={styles.error}>{photoError}</p>}
           {isFinished && <p className={styles.muted}>Чат потока закрыт</p>}
 
           <form
@@ -393,21 +418,63 @@ export default function MarathonChatPopup({ streamId, streamStatus }: MarathonCh
               void handleSend();
             }}
           >
-            <input
-              className={styles.input}
-              type="text"
-              value={text}
-              placeholder={isFinished ? 'Чат закрыт' : 'Написать сообщение...'}
-              onChange={(e) => setText(e.target.value)}
-              disabled={sending || creating === activeTab || isFinished}
+            <PhotoPreviews
+              photos={photos}
+              onRemove={removePhoto}
+              disabled={sending || uploading || isFinished}
             />
-            <button
-              className={styles.sendBtn}
-              type="submit"
-              disabled={sending || creating === activeTab || isFinished || !text.trim()}
-            >
-              Отправить
-            </button>
+            <div className={styles.composerRow}>
+              <input
+                ref={inputRef}
+                className={styles.input}
+                type="text"
+                value={text}
+                placeholder={isFinished ? 'Чат закрыт' : 'Написать сообщение...'}
+                onChange={(e) => setText(e.target.value)}
+                disabled={sending || creating === activeTab || isFinished}
+              />
+              <EmojiPicker
+                onSelect={(emoji) =>
+                  insertEmojiAtCursor(inputRef.current, text, emoji, setText)
+                }
+                disabled={sending || creating === activeTab || isFinished}
+              />
+              <button
+                className={styles.attachBtn}
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={sending || uploading || creating === activeTab || isFinished}
+                title="Прикрепить фото"
+                aria-label="Прикрепить фото"
+              >
+                <ImagePlus size={18} />
+              </button>
+              <button
+                className={styles.sendBtn}
+                type="submit"
+                disabled={
+                  sending ||
+                  uploading ||
+                  creating === activeTab ||
+                  isFinished ||
+                  (!text.trim() && photos.length === 0)
+                }
+              >
+                Отправить
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept={CHAT_IMAGE_ACCEPT}
+                multiple
+                hidden
+                onChange={(e) => {
+                  void addFiles(e.target.files);
+                  e.target.value = '';
+                }}
+              />
+            </div>
+            {uploading && <span className={styles.muted}>Загрузка фото...</span>}
           </form>
         </div>
       )}

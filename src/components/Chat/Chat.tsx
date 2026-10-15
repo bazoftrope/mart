@@ -1,6 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { ImagePlus } from 'lucide-react';
 import styles from './Chat.module.css';
 import { apiFetch } from '@/lib/apiClient';
+import EmojiPicker, { insertEmojiAtCursor } from './EmojiPicker';
+import { PhotoPreviews, MessageImages } from './ChatAttachments';
+import {
+  useChatPhotos,
+  CHAT_IMAGE_ACCEPT,
+} from '@/hooks/useChatPhotos';
+import type { ChatAttachment } from '@/types/chat';
 
 export type ChatParticipant = {
   id: string;
@@ -23,7 +31,13 @@ export type ConversationSummary = {
   stream: ChatStreamInfo | null;
   members: ChatParticipant[];
   otherMember: ChatParticipant | null;
-  lastMessage: { id: string; text: string; senderId: string; createdAt: string } | null;
+  lastMessage: {
+    id: string;
+    text: string;
+    attachments: ChatAttachment[];
+    senderId: string;
+    createdAt: string;
+  } | null;
   unreadCount: number;
   updatedAt: string;
 };
@@ -31,6 +45,7 @@ export type ConversationSummary = {
 type MessageData = {
   id: string;
   text: string;
+  attachments: ChatAttachment[];
   senderId: string;
   sender: ChatParticipant | null;
   createdAt: string;
@@ -71,8 +86,19 @@ export default function Chat({ myUserId, autoOpen, onCreatedConversation }: Chat
   const [text, setText] = useState('');
   const [error, setError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const openingRef = useRef<Set<string>>(new Set());
   const processedAutoOpenKey = useRef<string | null>(null);
+  const {
+    photos,
+    uploading,
+    error: photoError,
+    addFiles,
+    remove: removePhoto,
+    reset: resetPhotos,
+    toAttachments,
+  } = useChatPhotos();
 
   const loadConversations = useCallback(async () => {
     try {
@@ -234,9 +260,13 @@ export default function Chat({ myUserId, autoOpen, onCreatedConversation }: Chat
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages.length]);
 
+  useEffect(() => {
+    resetPhotos();
+  }, [activeId, resetPhotos]);
+
   async function handleSend() {
     const trimmed = text.trim();
-    if (!trimmed || !activeId) return;
+    if ((!trimmed && photos.length === 0) || !activeId) return;
     setSending(true);
     setError(null);
     try {
@@ -244,7 +274,7 @@ export default function Chat({ myUserId, autoOpen, onCreatedConversation }: Chat
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: trimmed }),
+        body: JSON.stringify({ text: trimmed, attachments: toAttachments() }),
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -253,6 +283,7 @@ export default function Chat({ myUserId, autoOpen, onCreatedConversation }: Chat
       const message = json.data as MessageData;
       setMessages((prev) => [...prev, message]);
       setText('');
+      resetPhotos();
       await loadConversations();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Что-то пошло не так');
@@ -304,7 +335,10 @@ export default function Chat({ myUserId, autoOpen, onCreatedConversation }: Chat
                   )}
                   {conversation.lastMessage && (
                     <span className={styles.convLast}>
-                      {conversation.lastMessage.text}
+                      {conversation.lastMessage.text ||
+                        (conversation.lastMessage.attachments?.length
+                          ? 'Фото'
+                          : '')}
                     </span>
                   )}
                 </button>
@@ -355,7 +389,10 @@ export default function Chat({ myUserId, autoOpen, onCreatedConversation }: Chat
                         {message.sender?.name || 'Неизвестно'}
                       </div>
                     )}
-                    <div className={styles.bubbleText}>{message.text}</div>
+                    <MessageImages attachments={message.attachments || []} />
+                    {message.text && (
+                      <div className={styles.bubbleText}>{message.text}</div>
+                    )}
                     <div className={styles.bubbleTime}>
                       {formatTime(message.createdAt)}
                     </div>
@@ -366,6 +403,7 @@ export default function Chat({ myUserId, autoOpen, onCreatedConversation }: Chat
             </div>
 
             {error && <p className={styles.error}>{error}</p>}
+            {photoError && <p className={styles.error}>{photoError}</p>}
 
             <form
               className={styles.composer}
@@ -374,21 +412,61 @@ export default function Chat({ myUserId, autoOpen, onCreatedConversation }: Chat
                 handleSend();
               }}
             >
-              <input
-                className={styles.input}
-                type="text"
-                value={text}
-                placeholder="Написать сообщение..."
-                onChange={(e) => setText(e.target.value)}
-                disabled={sending}
+              <PhotoPreviews
+                photos={photos}
+                onRemove={removePhoto}
+                disabled={sending || uploading}
               />
-              <button
-                className={styles.sendBtn}
-                type="submit"
-                disabled={sending || !text.trim()}
-              >
-                Отправить
-              </button>
+              <div className={styles.composerRow}>
+                <input
+                  ref={inputRef}
+                  className={styles.input}
+                  type="text"
+                  value={text}
+                  placeholder="Написать сообщение..."
+                  onChange={(e) => setText(e.target.value)}
+                  disabled={sending}
+                />
+                <EmojiPicker
+                  onSelect={(emoji) =>
+                    insertEmojiAtCursor(inputRef.current, text, emoji, setText)
+                  }
+                  disabled={sending}
+                />
+                <button
+                  className={styles.attachBtn}
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={sending || uploading}
+                  title="Прикрепить фото"
+                  aria-label="Прикрепить фото"
+                >
+                  <ImagePlus size={18} />
+                </button>
+                <button
+                  className={styles.sendBtn}
+                  type="submit"
+                  disabled={
+                    sending ||
+                    uploading ||
+                    (!text.trim() && photos.length === 0)
+                  }
+                >
+                  Отправить
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept={CHAT_IMAGE_ACCEPT}
+                  multiple
+                  hidden
+                  onChange={(e) => {
+                    void addFiles(e.target.files);
+                    e.target.value = '';
+                  }}
+                />
+              </div>
+              {uploading && <span className={styles.muted}>Загрузка фото...</span>}
             </form>
           </>
         )}

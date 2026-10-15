@@ -1,0 +1,123 @@
+.wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+  font-size: 1.15rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.trigger:hover:not(:disabled) {
+  background: var(--bg-surface-muted);
+}
+
+.trigger:focus-visible {
+  outline: 2px solid var(--focus-ring-color);
+  outline-offset: 1px;
+}
+
+.trigger:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.popover {
+  position: absolute;
+  bottom: calc(100% + 0.5rem);
+  right: 0;
+  z-index: 20;
+  width: 320px;
+  max-width: calc(100vw - 2rem);
+  padding: 0.5rem;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+  box-shadow: var(--elevation-4);
+}
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  padding-bottom: 0.5rem;
+  margin-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border-lighter);
+}
+
+.tab {
+  padding: 0.25rem 0.5rem;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.tab:hover {
+  background: var(--bg-surface-muted);
+}
+
+.tabActive {
+  background: var(--accent-primary);
+  color: var(--text-on-accent);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 0.125rem;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.emojiBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  aspect-ratio: 1;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+.emojiBtn:hover {
+  background: var(--bg-surface-muted);
+}
+
+.emojiBtn:focus-visible {
+  outline: 2px solid var(--focus-ring-color);
+  outline-offset: -2px;
+}
+
+@media (max-width: 640px) {
+  .popover {
+    width: 280px;
+  }
+
+  .grid {
+    grid-template-columns: repeat(7, 1fr);
+  }
+}

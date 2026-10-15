@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Icon } from '@/components/icons';
 import Button from '@/components/ui/Button';
 import styles from './ReportTable.module.css';
@@ -48,10 +49,10 @@ export default function ReportTable({
   onRemoveLine,
   readOnly,
 }: ReportTableProps) {
-  function updateWeight(index: number, value: string) {
-    const weight = parseFloat(value);
-    if (Number.isNaN(weight) || weight <= 0) return;
+  // Черновики значений веса: позволяют стереть поле полностью, пока идёт ввод.
+  const [weightDrafts, setWeightDrafts] = useState<Record<number, string>>({});
 
+  function commitWeight(index: number, weight: number) {
     if (onUpdateLine) {
       onUpdateLine(index, weight);
       return;
@@ -71,7 +72,26 @@ export default function ReportTable({
     onChange?.(next);
   }
 
+  function updateWeight(index: number, value: string) {
+    setWeightDrafts((prev) => ({ ...prev, [index]: value }));
+
+    const weight = parseFloat(value);
+    if (Number.isNaN(weight) || weight <= 0) return;
+
+    commitWeight(index, weight);
+  }
+
+  function resetWeightDraft(index: number) {
+    setWeightDrafts((prev) => {
+      if (!(index in prev)) return prev;
+      const next = { ...prev };
+      delete next[index];
+      return next;
+    });
+  }
+
   function removeLine(index: number) {
+    setWeightDrafts({});
     if (onRemoveLine) {
       onRemoveLine(index);
       return;
@@ -139,10 +159,12 @@ export default function ReportTable({
                         ) : (
                           <input
                             type="number"
-                            min="0.1"
-                            step="0.1"
-                            value={line.weightGrams}
+                            min="0"
+                            step="10"
+                            inputMode="decimal"
+                            value={weightDrafts[index] ?? String(line.weightGrams)}
                             onChange={(e) => updateWeight(index, e.target.value)}
+                            onBlur={() => resetWeightDraft(index)}
                             className={styles.input}
                           />
                         )}
