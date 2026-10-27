@@ -12,14 +12,40 @@ import type { AttachmentData, AttachmentKind } from '@/types/attachments';
  * до сохранения), а не индексом в массиве.
  */
 
-let fallbackCounter = 0;
+/**
+ * Генерирует UUID v4 в правильном формате.
+ * `crypto.randomUUID()` доступен только в secure context (HTTPS/localhost),
+ * поэтому на стенде по HTTP используем `getRandomValues` или Math.random.
+ * Формат обязателен: `pairId` уходит в UUID-колонку PostgreSQL и в zod-валидацию.
+ */
+function randomUuidV4(): string {
+  const bytes = new Uint8Array(16);
+  const cryptoObj = typeof globalThis !== 'undefined' ? globalThis.crypto : undefined;
+
+  if (cryptoObj && typeof cryptoObj.getRandomValues === 'function') {
+    cryptoObj.getRandomValues(bytes);
+  } else {
+    for (let i = 0; i < bytes.length; i += 1) {
+      bytes[i] = Math.floor(Math.random() * 256);
+    }
+  }
+
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+
+  const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
 
 export function newAttachmentKey(): string {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-    return crypto.randomUUID();
+  try {
+    if (typeof globalThis.crypto?.randomUUID === 'function') {
+      return globalThis.crypto.randomUUID();
+    }
+  } catch {
+    // В не-secure context randomUUID может быть недоступен — используем fallback.
   }
-  fallbackCounter += 1;
-  return `local-${Date.now()}-${fallbackCounter}`;
+  return randomUuidV4();
 }
 
 /** Стабильный ключ строки: id с сервера, иначе локальный clientKey. */
@@ -57,13 +83,13 @@ export function visibleForKind(
   return attachments.filter((attachment) => attachment.kind === kind && !attachment.pairId);
 }
 
-/** PDF, привязанный к медиа (строка file с тем же pairId). */
-export function pairPdfFor(
+/** PDF-документы, привязанные к медиа (строки file с тем же pairId). */
+export function pairPdfsFor(
   attachments: AttachmentData[],
   media: AttachmentData
-): AttachmentData | undefined {
-  if (!media.pairId) return undefined;
-  return attachments.find(
+): AttachmentData[] {
+  if (!media.pairId) return [];
+  return attachments.filter(
     (attachment) => attachment.kind === 'file' && attachment.pairId === media.pairId
   );
 }
@@ -113,7 +139,7 @@ export function addVideo(attachments: AttachmentData[], videoId: string): Attach
 
 /**
  * Удаляет строку по ключу.
- * Если это медиа с парным PDF — удаляет и PDF (они живут как одно целое).
+ * Если это медиа с парными PDF — удаляет и все PDF (они живут как одно целое).
  */
 export function removeAttachment(attachments: AttachmentData[], key: string): AttachmentData[] {
   const target = findByKey(attachments, key);
@@ -121,8 +147,7 @@ export function removeAttachment(attachments: AttachmentData[], key: string): At
 
   const removedKeys = new Set<string>([key]);
   if (isMediaKind(target.kind)) {
-    const pdf = pairPdfFor(attachments, target);
-    if (pdf) removedKeys.add(attachmentKey(pdf));
+    pairPdfsFor(attachments, target).forEach((pdf) => removedKeys.add(attachmentKey(pdf)));
   }
 
   return reindexPositions(
@@ -143,8 +168,8 @@ export function setDescription(
 }
 
 /**
- * Привязывает PDF к медиа: у обеих строк одинаковый pairId.
- * Если у медиа уже был PDF — он заменяется новым.
+ * Привязывает ещё один PDF к медиа: у всех строк одинаковый pairId.
+ * Уже привязанные PDF сохраняются.
  */
 export function attachPdf(
   attachments: AttachmentData[],
@@ -154,14 +179,9 @@ export function attachPdf(
   const media = findByKey(attachments, mediaKey);
   if (!media) return attachments;
 
-  const previousPdf = pairPdfFor(attachments, media);
   const pairId = media.pairId ?? newAttachmentKey();
 
-  const withoutPrevious = previousPdf
-    ? attachments.filter((attachment) => attachmentKey(attachment) !== attachmentKey(previousPdf))
-    : attachments;
-
-  const withPairId = withoutPrevious.map((attachment) =>
+  const withPairId = attachments.map((attachment) =>
     attachmentKey(attachment) === mediaKey ? { ...attachment, pairId } : attachment
   );
 
@@ -176,19 +196,28 @@ export function attachPdf(
   return reindexPositions([...withPairId, pdfRow]);
 }
 
-/** Отвязывает PDF от медиа и удаляет строку PDF. */
-export function detachPdf(attachments: AttachmentData[], mediaKey: string): AttachmentData[] {
+/**
+ * Отвязывает один PDF от медиа и удаляет его строку.
+ * Остальные PDF комплекта остаются; pairId снимается только когда их больше нет.
+ */
+export function detachPdf(
+  attachments: AttachmentData[],
+  mediaKey: string,
+  pdfKey: string
+): AttachmentData[] {
   const media = findByKey(attachments, mediaKey);
   if (!media) return attachments;
 
-  const pdf = pairPdfFor(attachments, media);
-  const pdfKey = pdf ? attachmentKey(pdf) : null;
+  const remaining = attachments.filter(
+    (attachment) => attachmentKey(attachment) !== pdfKey
+  );
+  const hasRemainingPdfs = pairPdfsFor(remaining, media).length > 0;
 
   return reindexPositions(
-    attachments
-      .filter((attachment) => (pdfKey ? attachmentKey(attachment) !== pdfKey : true))
-      .map((attachment) =>
-        attachmentKey(attachment) === mediaKey ? { ...attachment, pairId: null } : attachment
-      )
+    remaining.map((attachment) =>
+      attachmentKey(attachment) === mediaKey
+        ? { ...attachment, pairId: hasRemainingPdfs ? media.pairId ?? null : null }
+        : attachment
+    )
   );
 }

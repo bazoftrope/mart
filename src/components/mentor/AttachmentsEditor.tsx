@@ -12,7 +12,7 @@ import {
   detachPdf,
   ensureClientKeys,
   isMediaKind,
-  pairPdfFor,
+  pairPdfsFor,
   removeAttachment,
   setDescription,
   visibleForKind,
@@ -22,8 +22,8 @@ import styles from './AttachmentsEditor.module.css';
 const SECTION_LABELS: Record<AttachmentKind, string> = {
   image: 'Изображения (галерея)',
   file: 'Документы (PDF) — независимые',
-  audio: 'Аудио (с описанием и PDF опционально)',
-  video: 'Видео (с описанием и PDF опционально)',
+  audio: 'Аудио (с описанием и PDF — можно несколько)',
+  video: 'Видео (с описанием и PDF — можно несколько)',
 };
 
 const ACCEPT: Record<AttachmentKind, string> = {
@@ -150,8 +150,8 @@ export default function AttachmentsEditor({
   }
 
   async function handleAttachPdf(mediaKey: string, kind: AttachmentKind, input: HTMLInputElement) {
-    const file = input.files?.[0];
-    if (!file || disabled) return;
+    const files = input.files ? Array.from(input.files) : [];
+    if (files.length === 0 || disabled) return;
 
     setUploading(`pdf:${mediaKey}`);
     setError(null);
@@ -159,7 +159,7 @@ export default function AttachmentsEditor({
     try {
       const form = new FormData();
       form.append('templateId', templateId);
-      form.append('files', file);
+      files.forEach((file) => form.append('files', file));
 
       const res = await apiFetch('/api/uploads/file', {
         method: 'POST',
@@ -172,20 +172,24 @@ export default function AttachmentsEditor({
         throw new Error(json.message || json.error || 'Не удалось загрузить PDF');
       }
 
-      const uploaded = json.data?.files?.[0] as UploadedMeta | undefined;
-      if (!uploaded) throw new Error('Файл не загружен');
+      const uploadedFiles = (json.data?.files || []) as UploadedMeta[];
+      if (uploadedFiles.length === 0) throw new Error('Файл не загружен');
 
-      const pdf: AttachmentData = {
-        kind: 'file',
-        url: uploaded.url,
-        fileName: uploaded.fileName,
-        mimeType: uploaded.mimeType,
-        sizeBytes: uploaded.sizeBytes,
-        description: null,
-        pairId: null,
-      };
+      let next = rows;
+      uploadedFiles.forEach((uploaded) => {
+        const pdf: AttachmentData = {
+          kind: 'file',
+          url: uploaded.url,
+          fileName: uploaded.fileName,
+          mimeType: uploaded.mimeType,
+          sizeBytes: uploaded.sizeBytes,
+          description: null,
+          pairId: null,
+        };
+        next = attachPdf(next, mediaKey, pdf);
+      });
 
-      onChange(attachPdf(rows, mediaKey, pdf));
+      onChange(next);
     } catch (err) {
       setError({
         kind,
@@ -197,9 +201,9 @@ export default function AttachmentsEditor({
     }
   }
 
-  function handleDetachPdf(mediaKey: string) {
+  function handleDetachPdf(mediaKey: string, pdfKey: string) {
     if (disabled) return;
-    onChange(detachPdf(rows, mediaKey));
+    onChange(detachPdf(rows, mediaKey, pdfKey));
   }
 
   return (
@@ -220,7 +224,7 @@ export default function AttachmentsEditor({
 
             {items.map((attachment) => {
               const key = attachmentKey(attachment);
-              const pdf = isMedia ? pairPdfFor(rows, attachment) : undefined;
+              const pdfs = isMedia ? pairPdfsFor(rows, attachment) : [];
 
               return (
                 <div key={key} className={isMedia ? styles.mediaCard : styles.item}>
@@ -297,8 +301,11 @@ export default function AttachmentsEditor({
                       </label>
 
                       <div className={styles.pdfRow}>
-                        {pdf ? (
-                          <>
+                        {pdfs.map((pdf, index) => (
+                          <div
+                            key={pdf.id || `${pdf.url}-${index}`}
+                            className={styles.pdfItem}
+                          >
                             <a
                               href={pdf.url}
                               target="_blank"
@@ -312,31 +319,32 @@ export default function AttachmentsEditor({
                                 type="button"
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => handleDetachPdf(key)}
+                                onClick={() => handleDetachPdf(key, attachmentKey(pdf))}
                               >
                                 Удалить PDF
                               </Button>
                             )}
-                          </>
-                        ) : (
-                          <>
+                          </div>
+                        ))}
+
+                        {!disabled && (
+                          <div className={styles.pdfAddRow}>
                             <label className={styles.pdfLabel} htmlFor={`pdf-input-${key}`}>
-                              PDF (необязательно)
+                              {pdfs.length > 0 ? 'Добавить ещё PDF' : 'PDF (необязательно)'}
                             </label>
-                            {!disabled && (
-                              <input
-                                id={`pdf-input-${key}`}
-                                type="file"
-                                accept="application/pdf"
-                                disabled={uploading === `pdf:${key}`}
-                                onChange={(e) => void handleAttachPdf(key, kind, e.target)}
-                                className={styles.fileInput}
-                              />
-                            )}
+                            <input
+                              id={`pdf-input-${key}`}
+                              type="file"
+                              accept="application/pdf"
+                              multiple
+                              disabled={uploading === `pdf:${key}`}
+                              onChange={(e) => void handleAttachPdf(key, kind, e.target)}
+                              className={styles.fileInput}
+                            />
                             {uploading === `pdf:${key}` && (
                               <span className={styles.hint}>Загрузка PDF...</span>
                             )}
-                          </>
+                          </div>
                         )}
                       </div>
                     </div>

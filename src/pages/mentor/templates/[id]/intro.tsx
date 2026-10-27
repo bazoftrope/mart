@@ -117,7 +117,7 @@ export default function TemplateIntroPage() {
 
   if (loading) {
     return (
-      <main className="containerMd">
+      <main className="container2xl">
         <p>Загрузка...</p>
       </main>
     );
@@ -125,7 +125,7 @@ export default function TemplateIntroPage() {
 
   if (!template) {
     return (
-      <main className="containerMd">
+      <main className="container2xl">
         <p className="error">{error || 'Шаблон не найден.'}</p>
         <ButtonLink href="/mentor/templates" variant="outline">
           Назад к шаблонам
@@ -137,7 +137,7 @@ export default function TemplateIntroPage() {
   const isEditable = canEditMarathonTemplate(template.status);
 
   return (
-    <main className="containerMd">
+    <main className="container2xl">
       <h1 className="pageTitle">Шаг 2 из 3. Предстартовая страница</h1>
       <p className="textMuted">
         Приветственный текст и материалы, которые участники увидят до старта потока.

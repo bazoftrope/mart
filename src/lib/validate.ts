@@ -63,7 +63,18 @@ export const enrollSchema = z.object({
 
 export const idSchema = z.coerce.number().int().positive('Неверный id');
 
-export const uuidSchema = z.string().uuid('Неверный uuid');
+/**
+ * UUID, который принимает PostgreSQL в колонках типа UUID.
+ * В отличие от `z.string().uuid()`, не требует RFC-версии (1-5) и варианта (8/9/a/b):
+ * в БД могут лежать валидные для PostgreSQL, но «неканонические» UUID — например,
+ * фиксированные id из сидеров (`50000000-0000-0000-0000-000000000001`).
+ */
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export const uuidField = (message: string) => z.string().regex(UUID_PATTERN, message);
+
+export const uuidSchema = uuidField('Неверный uuid');
 
 export const loginSchema = z.object({
   email: emailSchema,
@@ -102,7 +113,7 @@ export const templateAttachmentSchema = z
     mimeType: z.string().max(255, 'MIME-тип слишком длинный').nullable().optional(),
     sizeBytes: z.number().int().nonnegative('Некорректный размер файла').nullable().optional(),
     position: z.number().int().nonnegative('Некорректная позиция').optional(),
-    pairId: z.string().uuid('Неверный идентификатор комплекта').nullable().optional(),
+    pairId: uuidField('Неверный идентификатор комплекта').nullable().optional(),
     description: z.string().max(5000, 'Описание слишком длинное').nullable().optional(),
   })
   .refine(
@@ -154,7 +165,7 @@ export type MarathonTemplateInput = z.infer<typeof marathonTemplateSchema>;
 export type TemplateDayInput = z.infer<typeof templateDaySchema>;
 export type TemplateAttachmentInput = z.infer<typeof templateAttachmentSchema>;
 export const createStreamSchema = z.object({
-  templateId: z.string().uuid('Неверный id шаблона'),
+  templateId: uuidField('Неверный id шаблона'),
   startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Дата начала должна быть в формате ГГГГ-ММ-ДД'),
 });
 
@@ -166,7 +177,7 @@ export const contentAttachmentSchema = z
     mimeType: z.string().max(255, 'MIME-тип слишком длинный').nullable().optional(),
     sizeBytes: z.number().int().nonnegative('Некорректный размер файла').nullable().optional(),
     position: z.number().int().nonnegative('Некорректная позиция').optional(),
-    pairId: z.string().uuid('Неверный идентификатор комплекта').nullable().optional(),
+    pairId: uuidField('Неверный идентификатор комплекта').nullable().optional(),
     description: z.string().max(5000, 'Описание слишком длинное').nullable().optional(),
   })
   .refine(
@@ -304,7 +315,7 @@ export const mealTypeSchema = z.enum([
 ]);
 
 export const reportLineSchema = z.object({
-  productId: z.string().uuid('Неверный id продукта'),
+  productId: uuidField('Неверный id продукта'),
   mealType: mealTypeSchema,
   weightGrams: z
     .number()
@@ -432,8 +443,8 @@ export const updateUserRoleSchema = z.object({
 export const createConversationSchema = z
   .object({
     type: z.enum(['mentor_pair', 'group']),
-    streamId: z.string().uuid('Неверный id потока').optional(),
-    participantId: z.string().uuid('Неверный id участника').optional(),
+    streamId: uuidField('Неверный id потока').optional(),
+    participantId: uuidField('Неверный id участника').optional(),
   })
   .refine((data) => !!data.streamId, {
     message: 'Необходимо указать streamId',

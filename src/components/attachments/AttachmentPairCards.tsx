@@ -8,6 +8,26 @@ type AttachmentPairCardsProps = {
   attachments: AttachmentData[];
 };
 
+function PdfLinks({ pdfs }: { pdfs: AttachmentData[] }) {
+  if (pdfs.length === 0) return null;
+
+  return (
+    <div className={styles.pdfList}>
+      {pdfs.map((pdf, index) => (
+        <a
+          key={pdf.id || `${pdf.url}-${index}`}
+          className={styles.pdfLink}
+          href={pdf.url}
+          target="_blank"
+          rel="noreferrer"
+        >
+          {pdf.fileName || 'Открыть PDF'}
+        </a>
+      ))}
+    </div>
+  );
+}
+
 export default function AttachmentPairCards({ attachments }: AttachmentPairCardsProps) {
   const pairs = groupMediaAttachments(attachments);
 
@@ -21,6 +41,7 @@ export default function AttachmentPairCards({ attachments }: AttachmentPairCards
         const media: AttachmentData | undefined = pair.audio || pair.video;
         const isVideo = Boolean(pair.video);
         const description = media?.description || null;
+        const hasPdfs = pair.pdfs.length > 0;
         return (
           <div key={pair.pairId} className={styles.card}>
             {pair.audio && (
@@ -44,14 +65,10 @@ export default function AttachmentPairCards({ attachments }: AttachmentPairCards
                   volumeMute: 'Выключить звук',
                 }}
                 footer={
-                  pair.pdf || description ? (
+                  hasPdfs || description ? (
                     <div className={styles.footer}>
                       {description && <div className={styles.description}>{description}</div>}
-                      {pair.pdf && (
-                        <a className={styles.pdfLink} href={pair.pdf.url} target="_blank" rel="noreferrer">
-                          {pair.pdf.fileName || 'Открыть PDF'}
-                        </a>
-                      )}
+                      <PdfLinks pdfs={pair.pdfs} />
                     </div>
                   ) : undefined
                 }
@@ -62,24 +79,16 @@ export default function AttachmentPairCards({ attachments }: AttachmentPairCards
             {pair.video && !pair.audio && (
               <>
                 <KinescopePlayer videoId={pair.video.url} title={pair.video.fileName || 'Видеоурок'} />
-                {(description || pair.pdf) && (
+                {(description || hasPdfs) && (
                   <div className={styles.mediaMeta}>
                     {description && <div className={styles.description}>{description}</div>}
-                    {pair.pdf && (
-                      <a className={styles.pdfLink} href={pair.pdf.url} target="_blank" rel="noreferrer">
-                        {pair.pdf.fileName || 'Открыть PDF'}
-                      </a>
-                    )}
+                    <PdfLinks pdfs={pair.pdfs} />
                   </div>
                 )}
               </>
             )}
-            {!media && pair.pdf && (
-              <a className={styles.fileLink} href={pair.pdf.url} target="_blank" rel="noreferrer">
-                {pair.pdf.fileName || 'Открыть PDF'}
-              </a>
-            )}
-            {!media && !pair.pdf && <p className={styles.missing}>Материал отсутствует.</p>}
+            {!media && hasPdfs && <PdfLinks pdfs={pair.pdfs} />}
+            {!media && !hasPdfs && <p className={styles.missing}>Материал отсутствует.</p>}
             {isVideo && pair.audio && (
               // На случай если вдруг оба media в одной паре (не должно быть) — покажем оба
               <KinescopePlayer videoId={pair.video!.url} title={pair.video!.fileName || 'Видеоурок'} />

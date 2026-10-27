@@ -70,11 +70,16 @@ export function apiHandler(
       }
 
       if (error instanceof ZodError) {
+        const issues = formatZodError(error);
+        const details = Object.entries(issues)
+          .map(([path, message]) => (path === 'root' ? message : `${path}: ${message}`))
+          .join('; ');
+
         return res.status(400).json({
           success: false,
           error: 'VALIDATION_ERROR',
-          message: 'Validation error',
-          issues: formatZodError(error),
+          message: details ? `Ошибка валидации: ${details}` : 'Ошибка валидации',
+          issues,
         });
       }
 

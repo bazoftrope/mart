@@ -7,25 +7,25 @@ const PASSWORD_HASH = bcrypt.hashSync(PASSWORD, 10);
 
 const ACCOUNTS = [
   {
-    id: '50000000-0000-0000-0000-000000000001',
+    id: '50000000-0000-4000-8000-000000000001',
     email: 'irina.mentor@test.ru',
     role: 'mentor',
     name: 'Ирина (ментор)',
   },
   {
-    id: '50000000-0000-0000-0000-000000000002',
+    id: '50000000-0000-4000-8000-000000000002',
     email: 'irina@test.ru',
     role: 'participant',
     name: 'Ирина',
   },
   {
-    id: '50000000-0000-0000-0000-000000000003',
+    id: '50000000-0000-4000-8000-000000000003',
     email: 'vova.mentor@test.ru',
     role: 'mentor',
     name: 'Вова (ментор)',
   },
   {
-    id: '50000000-0000-0000-0000-000000000004',
+    id: '50000000-0000-4000-8000-000000000004',
     email: 'vova@test.ru',
     role: 'participant',
     name: 'Вова',

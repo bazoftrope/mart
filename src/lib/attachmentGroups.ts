@@ -2,7 +2,8 @@ import type { AttachmentData } from '@/types/attachments';
 
 export type AttachmentPairGroup = {
   pairId: string;
-  pdf?: AttachmentData;
+  /** Все PDF, привязанные к медиа (может быть несколько). */
+  pdfs: AttachmentData[];
   audio?: AttachmentData;
   video?: AttachmentData;
 };
@@ -27,7 +28,9 @@ export function groupMediaAttachments(
   Array.from(rowsByPairId.entries()).forEach(([pairId, rows]) => {
     groups.push({
       pairId,
-      pdf: rows.find((row) => row.kind === 'file'),
+      pdfs: rows
+        .filter((row) => row.kind === 'file')
+        .sort((a, b) => (a.position ?? 0) - (b.position ?? 0)),
       audio: rows.find((row) => row.kind === 'audio'),
       video: rows.find((row) => row.kind === 'video'),
     });
@@ -36,9 +39,9 @@ export function groupMediaAttachments(
   groups.sort((a, b) => {
     const positionOf = (group: AttachmentPairGroup) =>
       Math.min(
-        group.pdf?.position ?? Number.MAX_SAFE_INTEGER,
         group.audio?.position ?? Number.MAX_SAFE_INTEGER,
         group.video?.position ?? Number.MAX_SAFE_INTEGER,
+        ...group.pdfs.map((pdf) => pdf.position ?? Number.MAX_SAFE_INTEGER),
       );
     return positionOf(a) - positionOf(b);
   });
