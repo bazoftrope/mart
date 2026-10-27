@@ -1,0 +1,19 @@
+.footer {
+  border-top: 1px solid var(--border-light);
+  background: var(--bg-header);
+  padding: var(--space-3) var(--space-4);
+}
+
+.container {
+  max-width: var(--container-width);
+  margin: 0 auto;
+  display: flex;
+  justify-content: center;
+}
+
+.text {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
+  text-align: center;
+}
