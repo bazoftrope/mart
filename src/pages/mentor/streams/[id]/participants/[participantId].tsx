@@ -45,6 +45,7 @@ type DayReport = {
   waistCm: number | null;
   hipCm: number | null;
   legCm: number | null;
+  comment: string | null;
   lines: ReportLineItem[];
 };
 
@@ -309,11 +310,23 @@ export default function ParticipantDetailPage() {
                   const lines = report?.lines ?? [];
                   if (!report || lines.length === 0) {
                     return (
-                      <tr key={day} className={styles.emptyRow}>
-                        <td>{day}</td>
-                        <td>—</td>
-                        <td className={styles.numCol}>—</td>
-                      </tr>
+                      <Fragment key={day}>
+                        <tr className={styles.emptyRow}>
+                          <td>{day}</td>
+                          <td>{report?.comment ? 'Есть комментарий' : '—'}</td>
+                          <td className={styles.numCol}>—</td>
+                        </tr>
+                        {report?.comment && (
+                          <tr className={styles.detailRow}>
+                            <td colSpan={3}>
+                              <p className={styles.commentLabel}>
+                                Комментарий участника
+                              </p>
+                              <p className={styles.commentText}>{report.comment}</p>
+                            </td>
+                          </tr>
+                        )}
+                      </Fragment>
                     );
                   }
 
@@ -348,6 +361,11 @@ export default function ParticipantDetailPage() {
                           {pluralize(lines.length, 'позиция', 'позиции', 'позиций')}
                           {' · '}
                           {mealSummary(lines)}
+                          {report.comment && (
+                            <span className={styles.commentBadge}>
+                              {' · '}есть комментарий
+                            </span>
+                          )}
                         </td>
                         <td className={styles.numCol}>{report.totalCalories}</td>
                       </tr>
@@ -363,6 +381,16 @@ export default function ParticipantDetailPage() {
                                 </li>
                               ))}
                             </ul>
+                            {report.comment && (
+                              <div className={styles.commentBlock}>
+                                <p className={styles.commentLabel}>
+                                  Комментарий участника
+                                </p>
+                                <p className={styles.commentText}>
+                                  {report.comment}
+                                </p>
+                              </div>
+                            )}
                           </td>
                         </tr>
                       )}

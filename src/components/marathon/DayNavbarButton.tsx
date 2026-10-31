@@ -3,8 +3,8 @@ import styles from './Marathon.module.css';
 
 type DayNavbarButtonProps = {
   dayNumber: number;
-  weekday: string;
-  dateLabel: string;
+  weekday?: string;
+  dateLabel?: string;
   isAccessible: boolean;
   isActive: boolean;
   isCurrent: boolean;
@@ -63,7 +63,9 @@ export default function DayNavbarButton({
 
   const content = (
     <>
-      <span className={styles.dayDate}>{weekday} · {dateLabel}</span>
+      {weekday && dateLabel && (
+        <span className={styles.dayDate}>{weekday} · {dateLabel}</span>
+      )}
       <span className={styles.dayNumber}>{dayNumber}</span>
       <span className={styles.dayFlagsBar}>
         {flags.map((flag) => (

@@ -32,6 +32,7 @@ export type DayReportData = {
   waistCm: number | null;
   hipCm: number | null;
   legCm: number | null;
+  comment: string | null;
   pulseReadings: PulseReadingItem[];
   lines: ReportLineItem[];
 };

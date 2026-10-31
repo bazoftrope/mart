@@ -180,3 +180,31 @@
 .foodList li {
   margin: 0.1rem 0;
 }
+
+.commentBadge {
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.commentBlock {
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-light);
+}
+
+.commentLabel {
+  margin: 0 0 var(--space-1);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.commentText {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: var(--text-primary);
+  line-height: 1.5;
+}

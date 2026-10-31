@@ -2,31 +2,12 @@ import AudioPlayer from 'react-h5-audio-player';
 import type { AttachmentData } from '@/types/attachments';
 import { groupMediaAttachments } from '@/lib/attachmentGroups';
 import KinescopePlayer from '@/components/day/KinescopePlayer';
+import PdfLinks from '@/components/attachments/PdfLinks';
 import styles from './AttachmentPairCards.module.css';
 
 type AttachmentPairCardsProps = {
   attachments: AttachmentData[];
 };
-
-function PdfLinks({ pdfs }: { pdfs: AttachmentData[] }) {
-  if (pdfs.length === 0) return null;
-
-  return (
-    <div className={styles.pdfList}>
-      {pdfs.map((pdf, index) => (
-        <a
-          key={pdf.id || `${pdf.url}-${index}`}
-          className={styles.pdfLink}
-          href={pdf.url}
-          target="_blank"
-          rel="noreferrer"
-        >
-          {pdf.fileName || 'Открыть PDF'}
-        </a>
-      ))}
-    </div>
-  );
-}
 
 export default function AttachmentPairCards({ attachments }: AttachmentPairCardsProps) {
   const pairs = groupMediaAttachments(attachments);

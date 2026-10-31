@@ -109,6 +109,13 @@ export class DailyReport extends Model {
   })
   legCm!: number | null;
 
+  @Column({
+    type: DataType.TEXT,
+    allowNull: true,
+    defaultValue: null,
+  })
+  comment!: string | null;
+
   @CreatedAt
   filledAt!: Date;
 

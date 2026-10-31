@@ -84,8 +84,13 @@ async function putHandler(req: NextApiRequest, res: NextApiResponse) {
     waistCm,
     hipCm,
     legCm,
+    comment,
     pulseReadings,
   } = body;
+
+  const hasCommentPayload = Object.prototype.hasOwnProperty.call(body, 'comment');
+  const normalizedComment =
+    comment && comment.length > 0 ? comment : null;
 
   const productIds = lines.map((line) => line.productId);
   const products = productIds.length
@@ -111,6 +116,9 @@ async function putHandler(req: NextApiRequest, res: NextApiResponse) {
     report.waistCm = isMeasurementDay ? (waistCm ?? null) : null;
     report.hipCm = isMeasurementDay ? (hipCm ?? null) : null;
     report.legCm = isMeasurementDay ? (legCm ?? null) : null;
+    if (hasCommentPayload) {
+      report.comment = normalizedComment;
+    }
     await report.save({ transaction });
 
     await ReportLine.destroy({
@@ -191,6 +199,7 @@ async function putHandler(req: NextApiRequest, res: NextApiResponse) {
       waistCm: report.waistCm,
       hipCm: report.hipCm,
       legCm: report.legCm,
+      comment: report.comment,
       pulseReadings: createdPulse.map((p) => ({
         id: p.id,
         measuredAt: p.measuredAt,

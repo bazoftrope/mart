@@ -378,6 +378,11 @@ const reportCoreFields = {
   waistCm: z.number().min(30, 'ОТ должен быть не менее 30 см').max(300, 'ОТ должен быть не более 300 см').optional(),
   hipCm: z.number().min(30, 'ОБ должен быть не менее 30 см').max(300, 'ОБ должен быть не более 300 см').optional(),
   legCm: z.number().min(20, 'ОН должен быть не менее 20 см').max(200, 'ОН должен быть не более 200 см').optional(),
+  comment: z
+    .string()
+    .trim()
+    .max(1000, 'Комментарий не может быть длиннее 1000 символов')
+    .optional(),
 } as const;
 
 export const saveReportCoreSchema = z
@@ -396,10 +401,13 @@ export const saveReportCoreSchema = z
         data.waistCm !== undefined ||
         data.hipCm !== undefined ||
         data.legCm !== undefined;
-      return hasLines || hasMetrics;
+      const hasComment =
+        typeof data.comment === 'string' && data.comment.length > 0;
+      return hasLines || hasMetrics || hasComment;
     },
     {
-      message: 'Необходимо указать хотя бы одно из: строки еды или метрики',
+      message:
+        'Необходимо указать хотя бы одно из: строки еды, метрики или комментарий',
       path: ['root'],
     }
   );
@@ -424,10 +432,13 @@ export const saveReportSchema = z
         data.hipCm !== undefined ||
         data.legCm !== undefined;
       const hasPulse = Array.isArray(data.pulseReadings) && data.pulseReadings.length > 0;
-      return hasLines || hasMetrics || hasPulse;
+      const hasComment =
+        typeof data.comment === 'string' && data.comment.length > 0;
+      return hasLines || hasMetrics || hasPulse || hasComment;
     },
     {
-      message: 'Необходимо указать хотя бы одно из: строки еды, метрики или замеры пульса',
+      message:
+        'Необходимо указать хотя бы одно из: строки еды, метрики, замеры пульса или комментарий',
       path: ['root'],
     }
   );

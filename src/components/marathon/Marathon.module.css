@@ -47,6 +47,39 @@
   font-weight: var(--font-weight-semibold);
 }
 
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+/* Кнопка-иконка в шапке марафона: тот же вид, что у мессенджера */
+.iconButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--border-default);
+  border-radius: 50%;
+  background: var(--bg-surface);
+  color: var(--accent-strong);
+  text-decoration: none;
+  transition:
+    background var(--transition-fast),
+    box-shadow var(--transition-fast),
+    color var(--transition-fast),
+    border-color var(--transition-fast);
+}
+
+.iconButton:hover,
+.iconButton:focus-visible {
+  background: var(--bg-info);
+  box-shadow: var(--shadow-sm);
+}
+
 .infoBlock {
   margin-top: 1.5rem;
   line-height: 1.8;

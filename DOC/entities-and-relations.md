@@ -175,11 +175,13 @@ pending_review → approved (админ одобряет, POST /api/admin/:id/ap
 | waistCm | decimal(10,2) | nullable | ОТ, см |
 | hipCm | decimal(10,2) | nullable | ОБ, см |
 | legCm | decimal(10,2) | nullable | ОН, см |
+| comment | text | nullable | Свободный комментарий участника к дню, до 1000 символов |
 | filledAt | datetime | | `filled_at`, из createdAt |
 | updatedAt | datetime | | |
 
 **Замечания:**
 - Поля обхватов (ОГ/ОТ/ОБ/ОН) добавлены миграцией `20240815000001-add-body-measurements-to-daily-reports.js`.
+- Поле `comment` добавлено миграцией `20261031000001-add-comment-to-daily-reports.js`.
 - Уникальность `enrollment_id + day_number`.
 - `totalCalories` считается автоматически из `ReportLine.line_calories`.
 

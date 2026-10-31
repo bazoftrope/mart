@@ -5,6 +5,7 @@ import styles from '../../TemplateDays.module.css';
 import { apiFetch } from '@/lib/apiClient';
 import RichTextEditor from '@/components/editor/RichTextEditor';
 import AttachmentsEditor from '@/components/mentor/AttachmentsEditor';
+import DayNavbar from '@/components/marathon/DayNavbar';
 import Button from '@/components/ui/Button';
 import { ButtonLink } from '@/components/ui';
 import { canEditMarathonTemplate } from '@/lib/templateStatus';
@@ -51,6 +52,14 @@ function createEmptyDays(count: number): DayInput[] {
   }));
 }
 
+function hasDayContent(day: DayInput) {
+  const text = day.textContent
+    .replace(/<[^>]*>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .trim();
+  return text.length > 0 || day.attachments.length > 0;
+}
+
 function toPayloadAttachment(attachment: AttachmentData) {
   return {
     kind: attachment.kind,
@@ -71,6 +80,7 @@ export default function TemplateDaysPage() {
 
   const [template, setTemplate] = useState<Template | null>(null);
   const [days, setDays] = useState<DayInput[]>([]);
+  const [activeDay, setActiveDay] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -102,19 +112,26 @@ export default function TemplateDaysPage() {
         setTemplate(data);
 
         if (data.days && data.days.length > 0) {
-          setDays(
-            data.days.map((day) => ({
+          const daysByNumber = new Map(data.days.map((day) => [day.dayNumber, day]));
+          const filledDays = createEmptyDays(data.durationDays).map((emptyDay) => {
+            const day = daysByNumber.get(emptyDay.dayNumber);
+            if (!day) return emptyDay;
+            return {
               dayNumber: day.dayNumber,
               textContent: day.textContent || '',
               isMeasurementDay: day.isMeasurementDay || false,
-              isTrainingDay: (day as ApiDay).isTrainingDay || false,
-              isRestDay: (day as ApiDay).isRestDay || false,
-              isHealthyEatingDay: (day as ApiDay).isHealthyEatingDay || false,
+              isTrainingDay: day.isTrainingDay || false,
+              isRestDay: day.isRestDay || false,
+              isHealthyEatingDay: day.isHealthyEatingDay || false,
               attachments: day.attachments || [],
-            }))
-          );
+            };
+          });
+          setDays(filledDays);
+          setActiveDay(filledDays[0]?.dayNumber ?? null);
         } else {
-          setDays(createEmptyDays(data.durationDays));
+          const emptyDays = createEmptyDays(data.durationDays);
+          setDays(emptyDays);
+          setActiveDay(emptyDays[0]?.dayNumber ?? null);
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Что-то пошло не так');
@@ -229,14 +246,28 @@ export default function TemplateDaysPage() {
   }
 
   const isEditable = canEditMarathonTemplate(template.status);
+  const activeDayIndex = days.findIndex((day) => day.dayNumber === activeDay);
+  const activeDayData = activeDayIndex >= 0 ? days[activeDayIndex] : null;
+  const measurementDays = days
+    .filter((day) => day.isMeasurementDay)
+    .map((day) => day.dayNumber);
+  const trainingDays = days
+    .filter((day) => day.isTrainingDay)
+    .map((day) => day.dayNumber);
+  const restDays = days.filter((day) => day.isRestDay).map((day) => day.dayNumber);
+  const healthyEatingDays = days
+    .filter((day) => day.isHealthyEatingDay)
+    .map((day) => day.dayNumber);
+  const filledDays = days.filter(hasDayContent).map((day) => day.dayNumber);
 
   return (
     <main className={styles.main}>
       <h1>Шаг 3 из 3. Дни: {template.title}</h1>
       <p>
-        Длительность: {template.durationDays} дн. Для каждого дня можно написать текст в
-        редакторе, прикрепить независимые PDF, и добавить аудио/видео — каждое с
-        опциональным описанием и одним или несколькими PDF рядом. День можно оставить пустым.
+        Длительность: {template.durationDays} дн. Выберите день в ленте ниже — редактор
+        покажет только его. Для каждого дня можно написать текст, прикрепить независимые
+        PDF, и добавить аудио/видео — каждое с опциональным описанием и одним или
+        несколькими PDF рядом. День можно оставить пустым.
       </p>
 
       {template.status === 'approved' && (
@@ -251,19 +282,33 @@ export default function TemplateDaysPage() {
 
       {error && <p className={styles.error}>{error}</p>}
 
+      <DayNavbar
+        durationDays={template.durationDays}
+        activeDay={activeDay}
+        onDayChange={setActiveDay}
+        measurementDays={measurementDays}
+        trainingDays={trainingDays}
+        restDays={restDays}
+        healthyEatingDays={healthyEatingDays}
+        filledDays={filledDays}
+        ariaLabel="Дни шаблона"
+      />
+
       <form onSubmit={handleSave}>
-        {days.map((day, index) => (
-          <fieldset key={index} className={styles.fieldset}>
-            <legend>День {day.dayNumber}</legend>
+        {activeDayData ? (
+          <fieldset key={activeDayData.dayNumber} className={styles.fieldset}>
+            <legend>
+              День {activeDayData.dayNumber} из {template.durationDays}
+            </legend>
             <div className={styles.dayFlags}>
               {/* diet_food — всегда первым в ряду иконок */}
               <label className={styles.flagLabel}>
                 <input
                   type="checkbox"
-                  checked={day.isHealthyEatingDay}
+                  checked={activeDayData.isHealthyEatingDay}
                   disabled={!isEditable}
                   onChange={(e) =>
-                    updateDay(index, 'isHealthyEatingDay', e.target.checked)
+                    updateDay(activeDayIndex, 'isHealthyEatingDay', e.target.checked)
                   }
                 />
                 <Icon name="diet_food" width={32} height={32} />
@@ -272,10 +317,10 @@ export default function TemplateDaysPage() {
               <label className={styles.flagLabel}>
                 <input
                   type="checkbox"
-                  checked={day.isMeasurementDay}
+                  checked={activeDayData.isMeasurementDay}
                   disabled={!isEditable}
                   onChange={(e) =>
-                    updateDay(index, 'isMeasurementDay', e.target.checked)
+                    updateDay(activeDayIndex, 'isMeasurementDay', e.target.checked)
                   }
                 />
                 <Icon name="mesure" width={32} height={32} />
@@ -284,10 +329,10 @@ export default function TemplateDaysPage() {
               <label className={styles.flagLabel}>
                 <input
                   type="checkbox"
-                  checked={day.isTrainingDay}
+                  checked={activeDayData.isTrainingDay}
                   disabled={!isEditable}
                   onChange={(e) =>
-                    updateDay(index, 'isTrainingDay', e.target.checked)
+                    updateDay(activeDayIndex, 'isTrainingDay', e.target.checked)
                   }
                 />
                 <Icon name="training" width={32} height={32} />
@@ -296,10 +341,10 @@ export default function TemplateDaysPage() {
               <label className={styles.flagLabel}>
                 <input
                   type="checkbox"
-                  checked={day.isRestDay}
+                  checked={activeDayData.isRestDay}
                   disabled={!isEditable}
                   onChange={(e) =>
-                    updateDay(index, 'isRestDay', e.target.checked)
+                    updateDay(activeDayIndex, 'isRestDay', e.target.checked)
                   }
                 />
                 <Icon name="rest" width={32} height={32} />
@@ -308,10 +353,13 @@ export default function TemplateDaysPage() {
             </div>
 
             <div className={styles.formGroup}>
-              <label htmlFor={`text-${index}`}>Текстовое содержимое (визуальный редактор)</label>
+              <label htmlFor={`text-${activeDayData.dayNumber}`}>
+                Текстовое содержимое (визуальный редактор)
+              </label>
               <RichTextEditor
-                value={day.textContent}
-                onChange={(html) => updateDay(index, 'textContent', html)}
+                key={activeDayData.dayNumber}
+                value={activeDayData.textContent}
+                onChange={(html) => updateDay(activeDayIndex, 'textContent', html)}
                 disabled={!isEditable}
                 placeholder="Текст дня..."
               />
@@ -322,14 +370,18 @@ export default function TemplateDaysPage() {
                 <AttachmentsEditor
                   templateId={templateId}
                   kinds={['image', 'file', 'audio', 'video']}
-                  attachments={day.attachments}
-                  onChange={(attachments) => updateDayAttachments(index, attachments)}
+                  attachments={activeDayData.attachments}
+                  onChange={(attachments) =>
+                    updateDayAttachments(activeDayIndex, attachments)
+                  }
                   disabled={!isEditable}
                 />
               </div>
             )}
           </fieldset>
-        ))}
+        ) : (
+          <p>Дни не найдены.</p>
+        )}
 
         <div className={styles.buttonRow}>
           {isEditable && (

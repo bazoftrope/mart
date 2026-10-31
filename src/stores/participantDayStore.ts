@@ -21,6 +21,7 @@ interface ParticipantDayState {
   daysCache: Record<string, Record<number, ParticipantDayData>>;
   lines: ReportLineItem[];
   metrics: MetricsState;
+  comment: string;
   pulseReadings: PulseFormItem[];
   loading: boolean;
   saving: boolean;
@@ -40,6 +41,7 @@ interface ParticipantDayActions {
   removeLine: (index: number) => void;
   updateMetric: (field: keyof MetricsState, value: string) => void;
   setTrainingDone: (value: boolean | null) => void;
+  setComment: (value: string) => void;
   addPulseReading: () => void;
   updatePulseReading: (index: number, patch: Partial<PulseFormItem>) => void;
   removePulseReading: (index: number) => void;
@@ -118,8 +120,12 @@ export function hasPulseData(pulseReadings: PulseFormItem[]): boolean {
   });
 }
 
-export function hasReportData(lines: ReportLineItem[], metrics: MetricsState): boolean {
-  return hasAnyData(lines, metrics);
+export function hasReportData(
+  lines: ReportLineItem[],
+  metrics: MetricsState,
+  comment = ''
+): boolean {
+  return hasAnyData(lines, metrics) || comment.trim().length > 0;
 }
 
 function buildInitialPulseReadings(
@@ -154,6 +160,7 @@ const initialState: ParticipantDayState = {
   daysCache: {},
   lines: [],
   metrics: emptyMetrics(),
+  comment: '',
   pulseReadings: [{ time: getCurrentTime(), pulse: '', systolic: '', diastolic: '' }],
   loading: true,
   saving: false,
@@ -168,6 +175,7 @@ function applyDay(day: ParticipantDayData) {
     data: day,
     lines: day.report?.lines || [],
     metrics: buildInitialMetrics(day.report),
+    comment: day.report?.comment ?? '',
     pulseReadings: buildInitialPulseReadings(day.report),
     loading: false,
     error: null,
@@ -224,10 +232,10 @@ export const useParticipantDayStore = create<ParticipantDayStore>((set, get) => 
   },
 
   saveReport: async (streamId, dayNumber) => {
-    const { data, lines, metrics } = get();
+    const { data, lines, metrics, comment } = get();
     if (!data) return;
 
-    if (!hasReportData(lines, metrics)) {
+    if (!hasReportData(lines, metrics, comment)) {
       set({
         saveError: 'Необходимо заполнить хотя бы одно поле: еду или метрики',
       });
@@ -253,6 +261,7 @@ export const useParticipantDayStore = create<ParticipantDayStore>((set, get) => 
       waistCm: metrics.waistCm === '' ? undefined : Number(metrics.waistCm),
       hipCm: metrics.hipCm === '' ? undefined : Number(metrics.hipCm),
       legCm: metrics.legCm === '' ? undefined : Number(metrics.legCm),
+      comment: comment.trim(),
     };
 
     try {
@@ -291,6 +300,7 @@ export const useParticipantDayStore = create<ParticipantDayStore>((set, get) => 
         waistCm: json.data.waistCm ?? null,
         hipCm: json.data.hipCm ?? null,
         legCm: json.data.legCm ?? null,
+        comment: json.data.comment ?? null,
         pulseReadings: json.data.pulseReadings ?? data.report?.pulseReadings ?? [],
         lines: json.data.lines,
       };
@@ -321,6 +331,7 @@ export const useParticipantDayStore = create<ParticipantDayStore>((set, get) => 
           hipCm: json.data.hipCm ?? '',
           legCm: json.data.legCm ?? '',
         },
+        comment: json.data.comment ?? '',
         // keep pulse form as is; server pulse preserved
         pulseReadings: currentPulse,
         saving: false,
@@ -387,6 +398,7 @@ export const useParticipantDayStore = create<ParticipantDayStore>((set, get) => 
           waistCm: null,
           hipCm: null,
           legCm: null,
+          comment: null,
           pulseReadings: json.data.pulseReadings ?? [],
           lines: [],
         };
@@ -478,6 +490,10 @@ export const useParticipantDayStore = create<ParticipantDayStore>((set, get) => 
         trainingDone: value,
       },
     }));
+  },
+
+  setComment: (value) => {
+    set({ comment: value, saveError: null });
   },
 
   addPulseReading: () => {

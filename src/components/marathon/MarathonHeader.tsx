@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Home } from 'lucide-react';
 import MarathonChatPopup from '@/components/Chat/MarathonChatPopup';
 import type { MarathonRating, MarathonStream } from './MarathonWindow';
 import styles from './Marathon.module.css';
@@ -30,7 +31,17 @@ export default function MarathonHeader({
       <div className={styles.ratingLine}>
         <h2 className={styles.title}>{stream.template.title}</h2>
         <span>{ratingText}</span>
-        <MarathonChatPopup streamId={stream.id} streamStatus={stream.status} />
+        <div className={styles.headerActions}>
+          <Link
+            href={`/streams/${stream.id}`}
+            className={styles.iconButton}
+            aria-label="Стартовая страница марафона"
+            title="Стартовая страница марафона"
+          >
+            <Home size={22} aria-hidden="true" />
+          </Link>
+          <MarathonChatPopup streamId={stream.id} streamStatus={stream.status} />
+        </div>
       </div>
     </header>
   );

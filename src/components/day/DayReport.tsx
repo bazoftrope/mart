@@ -30,17 +30,20 @@ export default function DayReport({ streamId, dayNumber, isEditable, onSaved }: 
     saving,
     saveError,
     data,
+    comment,
     addProductLine,
     updateLine,
     removeLine,
     updateMetric,
     setTrainingDone,
+    setComment,
     saveReport,
   } = useParticipantDayStore();
 
   const [mealType, setMealType] = useState<MealType>(() => defaultMealForNow());
 
-  const canSave = hasReportData(lines, metrics);
+  const canSave = hasReportData(lines, metrics, comment);
+  const showComment = isEditable || comment.trim().length > 0;
 
   const actualCalories = lines.reduce((sum, line) => sum + line.lineCalories, 0);
   const macros = lines.reduce(
@@ -255,6 +258,36 @@ export default function DayReport({ streamId, dayNumber, isEditable, onSaved }: 
           />
         </div>
       </div>
+
+      {showComment && (
+        <div className={styles.commentBlock}>
+          <label htmlFor="day-comment" className={styles.commentLabel}>
+            Комментарий к дню
+          </label>
+          {isEditable ? (
+            <>
+              <p className={styles.commentHint}>
+                Как прошёл день? Что было сложно, а что получилось?
+              </p>
+              <textarea
+                id="day-comment"
+                className={`input ${styles.commentInput}`}
+                value={comment}
+                onChange={(event) => setComment(event.target.value)}
+                maxLength={1000}
+                rows={3}
+                disabled={saving}
+                placeholder="Необязательно. Ментор увидит этот комментарий."
+              />
+              <span className={styles.commentCounter} aria-live="polite">
+                {comment.length} / 1000
+              </span>
+            </>
+          ) : (
+            <p className={styles.commentText}>{comment}</p>
+          )}
+        </div>
+      )}
 
       {isEditable && (
         <div className={styles.saveBtnDiv}>

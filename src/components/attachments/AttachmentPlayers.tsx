@@ -2,6 +2,7 @@ import AudioPlayer from 'react-h5-audio-player';
 import type { AttachmentData } from '@/types/attachments';
 import KinescopePlayer from '@/components/day/KinescopePlayer';
 import AttachmentPairCards from '@/components/attachments/AttachmentPairCards';
+import PdfLinks from '@/components/attachments/PdfLinks';
 import styles from './AttachmentPlayers.module.css';
 
 type AttachmentPlayersProps = {
@@ -27,20 +28,8 @@ export default function AttachmentPlayers({
   return (
     <div className={styles.wrapper}>
       {files.length > 0 && (
-        <div className={styles.group}>
-          <div className={styles.groupList}>
-            {files.map((attachment) => (
-              <a
-                key={attachment.id || attachment.url}
-                href={attachment.url}
-                target="_blank"
-                rel="noreferrer"
-                className={styles.fileLink}
-              >
-                {attachment.fileName || 'Открыть PDF'}
-              </a>
-            ))}
-          </div>
+        <div className={styles.pdfBlock}>
+          <PdfLinks pdfs={files} />
         </div>
       )}
       {pairedAttachments.length > 0 && (

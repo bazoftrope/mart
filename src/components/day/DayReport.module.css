@@ -143,6 +143,46 @@
   outline: none;
 }
 
+.commentBlock {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-top: var(--space-6);
+}
+
+.commentLabel {
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+}
+
+.commentHint {
+  margin: 0;
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}
+
+.commentInput {
+  min-height: 6rem;
+  resize: vertical;
+  line-height: 1.5;
+  border-radius: var(--radius-md);
+}
+
+.commentCounter {
+  align-self: flex-end;
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}
+
+.commentText {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
 .saveBtnDiv {
   margin-top: var(--space-6);
   display: flex;

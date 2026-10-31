@@ -211,6 +211,7 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
             waistCm: report.waistCm,
             hipCm: report.hipCm,
             legCm: report.legCm,
+            comment: report.comment,
             pulseReadings,
             lines,
           }

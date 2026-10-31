@@ -248,6 +248,8 @@ export default apiHandler({ GET: withMentor(getHandler) });
 | `20260910000002-create-workouts.js` | книга тренировок (`workouts`, `workout_favorites`) |
 | `20260911000001-create-help-articles.js` | раздел «Правила и помощь» (`help_articles`) |
 | `20260917000001-create-user-consents.js` | согласия на обработку ПДн (`user_consents`, 152-ФЗ) |
+| `20261015000001-add-attachments-to-messages.js` | фото в чате (`messages.attachments`) |
+| `20261031000001-add-comment-to-daily-reports.js` | комментарий участника к дню (`daily_reports.comment`) |
 
 Команды: `npx sequelize-cli db:migrate` / `db:migrate:undo` / `db:seed:all` / `db:seed:undo:all` (`npm run db:reset` — drop+create+migrate+seed:all).
 
