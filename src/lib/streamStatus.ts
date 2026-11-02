@@ -3,6 +3,17 @@ import { Stream, MarathonTemplate } from '@db/models';
 import type { StreamStatus } from '@db/models/Stream';
 import { syncStreamStatus } from './streamCompleter';
 
+export async function ensureStreamStatusFor(
+  stream: Stream,
+  durationDays: number
+): Promise<StreamStatus> {
+  if (stream.status === 'open' || stream.status === 'running') {
+    await syncStreamStatus(stream, durationDays);
+  }
+
+  return stream.status;
+}
+
 export async function ensureStreamStatus(streamId: string): Promise<StreamStatus> {
   const stream = await Stream.findByPk(streamId);
   if (!stream) {
@@ -13,9 +24,5 @@ export async function ensureStreamStatus(streamId: string): Promise<StreamStatus
     attributes: ['durationDays'],
   });
 
-  if (stream.status === 'open' || stream.status === 'running') {
-    await syncStreamStatus(stream, template?.durationDays ?? 0);
-  }
-
-  return stream.status;
+  return ensureStreamStatusFor(stream, template?.durationDays ?? 0);
 }

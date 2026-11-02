@@ -2,10 +2,11 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import '@/lib/db';
 import { apiHandler, success } from '@/lib/apiHandler';
 import { withParticipant } from '@/lib/middleware';
-import { Stream, StreamEnrollment, User } from '@db/models';
+import { Stream, StreamEnrollment, User, MarathonTemplate } from '@db/models';
 import { Conflict, BadRequest, NotFound } from '@/lib/errors';
 import { enrollSchema } from '@/lib/validate';
 import { calculateTargetCalories, isProfileComplete } from '@/lib/calorieCalculator';
+import { ensureStreamStatusFor } from '@/lib/streamStatus';
 import type { AuthenticatedRequest } from '@/types/auth';
 
 async function postHandler(req: NextApiRequest, res: NextApiResponse) {
@@ -17,8 +18,17 @@ async function postHandler(req: NextApiRequest, res: NextApiResponse) {
     throw new NotFound('Stream not found');
   }
 
-  // Тестовый режим: запись разрешена в потоки с любым статусом, включая
-  // идущие и завершённые, чтобы можно было проверить логику работы.
+  const template = await MarathonTemplate.findByPk(stream.templateId, {
+    attributes: ['durationDays'],
+  });
+  const status = await ensureStreamStatusFor(
+    stream,
+    template?.durationDays ?? 0
+  );
+  if (status === 'finished') {
+    throw new BadRequest('Этот поток уже завершён, запись закрыта');
+  }
+
   const existing = await StreamEnrollment.findOne({
     where: { streamId: stream.id, participantId: user.userId },
   });

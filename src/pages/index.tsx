@@ -180,8 +180,8 @@ export default function Home() {
         <div className={styles.sectionHeader}>
           <h2 className="pageSubtitle">Все потоки</h2>
           <p className={styles.sectionLead}>
-            Тестовый режим: показаны все статусы — набор, идёт, завершён.
-            Записаться можно в любой поток.
+            Открытые и идущие марафоны. Завершённые потоки доступны в личном
+            кабинете.
           </p>
         </div>
 
@@ -189,7 +189,7 @@ export default function Home() {
         {error && <p className="error">{error}</p>}
         {!loading && !error && streams.length === 0 && (
           <div className={styles.emptyState}>
-            <p>Сейчас нет потоков с открытым набором.</p>
+            <p>Сейчас нет доступных потоков.</p>
             <p className={styles.emptyStateHint}>
               Новые марафоны появятся после модерации. Зарегистрируйтесь, чтобы не
               пропустить старт.
