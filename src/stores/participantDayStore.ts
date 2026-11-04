@@ -29,6 +29,7 @@ interface ParticipantDayState {
   error: string | null;
   saveError: string | null;
   pulseSaveError: string | null;
+  dirtySection: 'report' | 'pulse' | null;
 }
 
 interface ParticipantDayActions {
@@ -45,10 +46,88 @@ interface ParticipantDayActions {
   addPulseReading: () => void;
   updatePulseReading: (index: number, patch: Partial<PulseFormItem>) => void;
   removePulseReading: (index: number) => void;
+  discardChanges: () => void;
   resetState: () => void;
 }
 
 type ParticipantDayStore = ParticipantDayState & ParticipantDayActions;
+
+const DRAFT_VERSION = 1;
+
+type DayDraft = {
+  version: number;
+  dirtySection: 'report' | 'pulse';
+  lines: ReportLineItem[];
+  metrics: MetricsState;
+  comment: string;
+  pulseReadings: PulseFormItem[];
+};
+
+function draftKey(streamId: string, dayNumber: number): string {
+  return `mp:day-draft:${streamId}:${dayNumber}`;
+}
+
+function readDraft(streamId: string, dayNumber: number): DayDraft | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = window.sessionStorage.getItem(draftKey(streamId, dayNumber));
+    if (!raw) return null;
+
+    const parsed = JSON.parse(raw) as Partial<DayDraft>;
+    if (
+      parsed.version !== DRAFT_VERSION ||
+      (parsed.dirtySection !== 'report' && parsed.dirtySection !== 'pulse') ||
+      !Array.isArray(parsed.lines) ||
+      !parsed.metrics ||
+      typeof parsed.comment !== 'string' ||
+      !Array.isArray(parsed.pulseReadings)
+    ) {
+      return null;
+    }
+
+    return parsed as DayDraft;
+  } catch {
+    return null;
+  }
+}
+
+function writeDraft(
+  streamId: string,
+  dayNumber: number,
+  draft: DayDraft | null
+): void {
+  if (typeof window === 'undefined') return;
+  try {
+    const key = draftKey(streamId, dayNumber);
+    if (!draft) {
+      window.sessionStorage.removeItem(key);
+    } else {
+      window.sessionStorage.setItem(key, JSON.stringify(draft));
+    }
+  } catch {
+    // sessionStorage может быть недоступен (приватный режим, переполнение) —
+    // молча пропускаем, основная логика от этого не зависит.
+  }
+}
+
+function persistDraft(state: ParticipantDayState): void {
+  const { data, dirtySection } = state;
+  if (!data) return;
+
+  if (!dirtySection) {
+    writeDraft(data.streamId, data.dayNumber, null);
+    return;
+  }
+
+  writeDraft(data.streamId, data.dayNumber, {
+    version: DRAFT_VERSION,
+    dirtySection,
+    lines: state.lines,
+    metrics: state.metrics,
+    comment: state.comment,
+    pulseReadings: state.pulseReadings,
+  });
+}
 
 function getCurrentTime(): string {
   return new Date().toLocaleTimeString('en-GB', {
@@ -168,15 +247,21 @@ const initialState: ParticipantDayState = {
   error: null,
   saveError: null,
   pulseSaveError: null,
+  dirtySection: null,
 };
 
 function applyDay(day: ParticipantDayData) {
+  const draft = readDraft(day.streamId, day.dayNumber);
+
   return {
     data: day,
-    lines: day.report?.lines || [],
-    metrics: buildInitialMetrics(day.report),
-    comment: day.report?.comment ?? '',
-    pulseReadings: buildInitialPulseReadings(day.report),
+    lines: draft ? draft.lines : day.report?.lines || [],
+    metrics: draft ? draft.metrics : buildInitialMetrics(day.report),
+    comment: draft ? draft.comment : day.report?.comment ?? '',
+    pulseReadings: draft
+      ? draft.pulseReadings
+      : buildInitialPulseReadings(day.report),
+    dirtySection: draft ? draft.dirtySection : null,
     loading: false,
     error: null,
   };
@@ -336,6 +421,7 @@ export const useParticipantDayStore = create<ParticipantDayStore>((set, get) => 
         pulseReadings: currentPulse,
         saving: false,
         saveError: null,
+        dirtySection: null,
       }));
     } catch (err) {
       set({
@@ -421,6 +507,7 @@ export const useParticipantDayStore = create<ParticipantDayStore>((set, get) => 
         pulseReadings: newPulse,
         savingPulse: false,
         pulseSaveError: null,
+        dirtySection: null,
       }));
     } catch (err) {
       set({
@@ -450,6 +537,7 @@ export const useParticipantDayStore = create<ParticipantDayStore>((set, get) => 
     set({
       lines: [...lines, newLine],
       saveError: null,
+      dirtySection: 'report',
     });
   },
 
@@ -466,12 +554,15 @@ export const useParticipantDayStore = create<ParticipantDayStore>((set, get) => 
         lineCarbs: computeLineMacro(weightGrams, line.carbs),
       };
     });
-    set({ lines: next });
+    set({ lines: next, dirtySection: 'report' });
   },
 
   removeLine: (index) => {
     const { lines } = get();
-    set({ lines: lines.filter((_, i) => i !== index) });
+    set({
+      lines: lines.filter((_, i) => i !== index),
+      dirtySection: 'report',
+    });
   },
 
   updateMetric: (field, value) => {
@@ -480,6 +571,7 @@ export const useParticipantDayStore = create<ParticipantDayStore>((set, get) => 
         ...state.metrics,
         [field]: value === '' ? '' : Number(value),
       },
+      dirtySection: 'report',
     }));
   },
 
@@ -489,16 +581,18 @@ export const useParticipantDayStore = create<ParticipantDayStore>((set, get) => 
         ...state.metrics,
         trainingDone: value,
       },
+      dirtySection: 'report',
     }));
   },
 
   setComment: (value) => {
-    set({ comment: value, saveError: null });
+    set({ comment: value, saveError: null, dirtySection: 'report' });
   },
 
   addPulseReading: () => {
     set((state) => ({
       pulseReadings: [...state.pulseReadings, { time: getCurrentTime(), pulse: '', systolic: '', diastolic: '' }],
+      dirtySection: 'pulse',
     }));
   },
 
@@ -507,12 +601,45 @@ export const useParticipantDayStore = create<ParticipantDayStore>((set, get) => 
       pulseReadings: state.pulseReadings.map((item, i) =>
         i === index ? { ...item, ...patch } : item
       ),
+      dirtySection: 'pulse',
     }));
   },
 
   removePulseReading: (index) => {
     set((state) => ({
       pulseReadings: state.pulseReadings.filter((_, i) => i !== index),
+      dirtySection: 'pulse',
     }));
   },
+
+  discardChanges: () => {
+    const { data } = get();
+    if (!data) {
+      set({ dirtySection: null });
+      return;
+    }
+
+    set({
+      lines: data.report?.lines || [],
+      metrics: buildInitialMetrics(data.report),
+      comment: data.report?.comment ?? '',
+      pulseReadings: buildInitialPulseReadings(data.report),
+      dirtySection: null,
+      saveError: null,
+      pulseSaveError: null,
+    });
+  },
 }));
+
+useParticipantDayStore.subscribe((state, prev) => {
+  if (
+    state.data !== prev.data ||
+    state.dirtySection !== prev.dirtySection ||
+    state.lines !== prev.lines ||
+    state.metrics !== prev.metrics ||
+    state.comment !== prev.comment ||
+    state.pulseReadings !== prev.pulseReadings
+  ) {
+    persistDraft(state);
+  }
+});

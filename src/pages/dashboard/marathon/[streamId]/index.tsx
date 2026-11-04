@@ -9,6 +9,9 @@ import MarathonWindow, {
   type MarathonReport,
   type MarathonStream,
 } from '@/components/marathon/MarathonWindow';
+import UnsavedChangesDialog from '@/components/day/UnsavedChangesDialog';
+import { useParticipantDayStore } from '@/stores/participantDayStore';
+import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import styles from './MarathonCalendar.module.css';
 
 type StreamCalendar = {
@@ -76,6 +79,40 @@ export default function MarathonCalendarPage() {
     fetchCalendar();
   }, [fetchCalendar]);
 
+  const dirtySection = useParticipantDayStore((state) => state.dirtySection);
+  const storeSaving = useParticipantDayStore(
+    (state) => state.saving || state.savingPulse
+  );
+
+  const saveDirtySection = useCallback(async (): Promise<string | null> => {
+    const store = useParticipantDayStore.getState();
+    const { data, dirtySection: section } = store;
+    if (!data || !section) return null;
+
+    let error: string | null = null;
+    if (section === 'report') {
+      await store.saveReport(data.streamId, data.dayNumber);
+      error = useParticipantDayStore.getState().saveError;
+    } else {
+      await store.savePulse(data.streamId, data.dayNumber);
+      error = useParticipantDayStore.getState().pulseSaveError;
+    }
+
+    if (!error) void fetchCalendar();
+    return error;
+  }, [fetchCalendar]);
+
+  const discardChanges = useCallback(() => {
+    useParticipantDayStore.getState().discardChanges();
+  }, []);
+
+  const unsavedGuard = useUnsavedChangesGuard({
+    dirty: dirtySection !== null,
+    saving: storeSaving,
+    onSave: saveDirtySection,
+    onDiscard: discardChanges,
+  });
+
   if (loading) {
     return (
       <main className={styles.main}>
@@ -115,11 +152,13 @@ export default function MarathonCalendarPage() {
     const tab = router.query.tab;
     const tabQuery = typeof tab === 'string' ? `&tab=${tab}` : '';
     const viewQuery = isMaterialsView ? '&view=materials' : '';
-    router.replace(
-      `/dashboard/marathon/${stream.id}?day=${day}${tabQuery}${viewQuery}`,
-      undefined,
-      { shallow: true, scroll: false }
-    );
+    unsavedGuard.requestNavigation(() => {
+      router.replace(
+        `/dashboard/marathon/${stream.id}?day=${day}${tabQuery}${viewQuery}`,
+        undefined,
+        { shallow: true, scroll: false }
+      );
+    });
   };
 
   return (
@@ -151,6 +190,14 @@ export default function MarathonCalendarPage() {
         activeDay={activeDay}
         onDayChange={handleDayChange}
         onReportSaved={fetchCalendar}
+      />
+      <UnsavedChangesDialog
+        open={unsavedGuard.dialogOpen}
+        saving={unsavedGuard.saving}
+        error={unsavedGuard.saveError}
+        onStay={unsavedGuard.stay}
+        onLeave={unsavedGuard.leave}
+        onSaveAndLeave={unsavedGuard.saveAndLeave}
       />
     </main>
   );

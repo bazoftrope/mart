@@ -1,0 +1,65 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+  background: color-mix(in srgb, var(--bg-panel-deep) 55%, transparent);
+}
+
+.dialog {
+  width: 100%;
+  max-width: var(--container-sm);
+  padding: var(--space-6);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-float);
+}
+
+.title {
+  margin-bottom: var(--space-2);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+}
+
+.text {
+  margin-bottom: var(--space-4);
+  font-size: var(--font-size-body);
+  color: var(--text-secondary);
+  line-height: var(--line-height-normal);
+}
+
+.error {
+  margin-bottom: var(--space-4);
+  font-size: var(--font-size-body);
+  color: var(--text-danger);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.actions > button {
+  flex: 1 1 140px;
+}
+
+@media (max-width: 480px) {
+  .dialog {
+    padding: var(--space-5);
+  }
+
+  .actions {
+    flex-direction: column;
+  }
+
+  .actions > button {
+    flex-basis: auto;
+    width: 100%;
+  }
+}

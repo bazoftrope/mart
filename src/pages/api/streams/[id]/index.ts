@@ -9,9 +9,11 @@ import {
   TemplateAttachment,
 } from '@db/models';
 import { NotFound } from '@/lib/errors';
+import { withAdmin } from '@/lib/middleware';
 import { verifyAccessToken, parseCookies } from '@/lib/auth';
 import { ensureStreamStatus } from '@/lib/streamStatus';
 import { serializeAttachments } from '@/lib/attachmentUtils';
+import { uuidSchema } from '@/lib/validate';
 import type { TokenPayload } from '@/types/auth';
 
 function getCurrentUser(req: NextApiRequest): TokenPayload | null {
@@ -85,6 +87,20 @@ async function getHandler(req: NextApiRequest, res: NextApiResponse) {
   });
 }
 
+async function deleteHandler(req: NextApiRequest, res: NextApiResponse) {
+  const id = uuidSchema.parse(req.query.id);
+
+  const stream = await Stream.findByPk(id);
+  if (!stream) {
+    throw new NotFound('Stream not found');
+  }
+
+  await stream.destroy();
+
+  return success(res, { id });
+}
+
 export default apiHandler({
   GET: getHandler,
+  DELETE: withAdmin(deleteHandler),
 });

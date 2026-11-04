@@ -100,6 +100,7 @@ marathon-platform/
 - `POST /api/streams` — запустить поток из approved-шаблона (ментор)
 - `GET /api/streams/my` — мои потоки (ментор/участник)
 - `GET /api/streams/[id]` — публичная страница потока (+ isEnrolled)
+- `DELETE /api/streams/[id]` — удалить поток (админ; каскадно удаляет записи, отчёты, рейтинг, чаты)
 - `POST /api/streams/[id]/enroll` — записаться (участник; считает targetCalories)
 - `GET /api/streams/[id]/calendar` — календарь дней (участник)
 - `GET /api/streams/[id]/days` — bulk-данные всех дней (участник)
@@ -115,6 +116,9 @@ marathon-platform/
 **products/** — общий каталог продуктов и блюд
 - `GET /api/products?search=` — поиск продуктов (autocomplete, max 20; отдаёт ккал и Б/Ж/У на 100 г)
 - `POST /api/products` — добавить продукт (любая авторизованная роль): название, ккал, Б/Ж/У; при совпадении имени возвращается существующий
+
+**admin/streams/** — управление потоками (админ)
+- `GET /api/admin/streams` — все потоки (включая завершённые) со счётчиками участников, отчётов, оценок и сообщений
 
 **admin/products/** — управление каталогом (админ)
 - `GET /api/admin/products?search=&page=&limit=` — список с поиском и пагинацией

@@ -39,6 +39,7 @@ function getNavConfig(
         { href: "/admin", label: "На проверку" },
         { href: "/admin/users", label: "Пользователи" },
         { href: "/admin/help", label: "Статьи помощи" },
+        { href: "/admin/streams", label: "Потоки" },
         { href: "/admin/products", label: "Продукты" },
         { href: "/account", label: "Аккаунт" },
       ],
