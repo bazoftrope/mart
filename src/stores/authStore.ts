@@ -9,6 +9,8 @@ interface AuthState {
   userId: string | null;
   user: PublicUser | null;
   isLoading: boolean;
+  /** false до первого initAuth: позволяет отличать гостя от «ещё не прочитали куки» */
+  initialized: boolean;
   error: string | null;
   initAuth: () => void;
   login: (data: LoginInput) => Promise<PublicUser>;
@@ -58,6 +60,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   userId: null,
   user: null,
   isLoading: false,
+  initialized: false,
   error: null,
 
   initAuth: () => {
@@ -67,6 +70,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       userId: role ? readUserId() : null,
       user: null,
       error: null,
+      initialized: true,
     });
   },
 
@@ -79,6 +83,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         userId: user.id,
         user,
         error: null,
+        initialized: true,
       });
       return user;
     } catch (err) {
@@ -99,6 +104,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         userId: user.id,
         user,
         error: null,
+        initialized: true,
       });
       return user;
     } catch (err) {
@@ -125,6 +131,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     deleteCookie('mp_refresh_token');
     deleteCookie('mp_role');
     deleteCookie('mp_user_id');
-    set({ role: null, userId: null, user: null, error: null });
+    set({ role: null, userId: null, user: null, error: null, initialized: true });
   },
 }));

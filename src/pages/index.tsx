@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ChartLine, ClipboardList, Salad } from 'lucide-react';
+import { useRouter } from 'next/router';
+import { ChartLine, ClipboardList, Flame, Salad } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 import { apiFetch } from '@/lib/apiClient';
 import { ButtonLink } from '@/components/ui';
@@ -63,8 +64,104 @@ const FEATURES = [
   },
 ];
 
+const HERO_TAGS = [
+  { icon: Salad, label: 'Дневник питания' },
+  { icon: Flame, label: 'Калорийность' },
+  { icon: ChartLine, label: 'Рейтинг потока' },
+  { icon: ClipboardList, label: 'Программа от ментора' },
+];
+
+type StreamsSectionProps = {
+  streams: Stream[];
+  loading: boolean;
+  error: string | null;
+  isParticipant: boolean;
+};
+
+function StreamsSection({
+  streams,
+  loading,
+  error,
+  isParticipant,
+}: StreamsSectionProps) {
+  return (
+    <section
+      className={`${styles.section} ${isParticipant ? styles.sectionCatalog : ''}`}
+      id="streams"
+    >
+      <div className={styles.sectionHeader}>
+        {isParticipant ? (
+          <div className={styles.catalogHeader}>
+            <div>
+              <h1 className="pageTitle">Марафоны</h1>
+              <p className={styles.sectionLead}>
+                Открытые и идущие потоки. Выберите новый марафон или вернитесь к
+                своим.
+              </p>
+            </div>
+            <ButtonLink href="/dashboard" variant="secondary">
+              Мои марафоны
+            </ButtonLink>
+          </div>
+        ) : (
+          <>
+            <h2 className="pageSubtitle">Все потоки</h2>
+            <p className={styles.sectionLead}>
+              Открытые и идущие марафоны. Завершённые потоки доступны в личном
+              кабинете.
+            </p>
+          </>
+        )}
+      </div>
+
+      {loading && <div className="mutedBox">Загружаем открытые потоки...</div>}
+      {error && <p className="error">{error}</p>}
+      {!loading && !error && streams.length === 0 && (
+        <div className={styles.emptyState}>
+          <p>Сейчас нет доступных потоков.</p>
+          <p className={styles.emptyStateHint}>
+            {isParticipant
+              ? 'Новые марафоны появятся после модерации. Загляните позже.'
+              : 'Новые марафоны появятся после модерации. Зарегистрируйтесь, чтобы не пропустить старт.'}
+          </p>
+          {isParticipant ? (
+            <ButtonLink href="/dashboard" variant="primary">
+              Мои марафоны
+            </ButtonLink>
+          ) : (
+            <ButtonLink href="/register" variant="primary">
+              Зарегистрироваться
+            </ButtonLink>
+          )}
+        </div>
+      )}
+      {!loading && !error && streams.length > 0 && (
+        <ul className={cardStyles.grid}>
+          {streams.map((stream) => (
+            <StreamCard
+              key={stream.id}
+              title={stream.template?.title || 'Поток без названия'}
+              href={`/streams/${stream.id}`}
+              ctaHref={`/streams/${stream.id}`}
+              ctaLabel="Подробнее"
+              description={stream.template?.description || 'Нет описания'}
+              durationDays={stream.template?.durationDays}
+              startDate={stream.startDate}
+              mentorName={stream.mentor?.name || 'Неизвестно'}
+              participantsCount={stream.enrollmentsCount}
+              status={stream.status}
+            />
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
 export default function Home() {
+  const router = useRouter();
   const role = useAuthStore((s) => s.role);
+  const initialized = useAuthStore((s) => s.initialized);
   const [streams, setStreams] = useState<Stream[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -90,11 +187,40 @@ export default function Home() {
     loadStreams();
   }, []);
 
+  // Middleware закрывает жёсткий заход на `/`, но при клиентском переходе
+  // (например, по логотипу) он может не сработать — дублируем редирект здесь.
+  useEffect(() => {
+    if (initialized && role === 'mentor') {
+      router.replace('/mentor/templates');
+    }
+  }, [initialized, role, router]);
+
   function getCabinetHref(): string {
     if (role === 'admin') return '/admin';
     if (role === 'mentor') return '/mentor/templates';
     if (role === 'participant') return '/dashboard';
     return '/register';
+  }
+
+  if (initialized && role === 'mentor') {
+    return (
+      <main className="container">
+        <div className="mutedBox">Переходим в личный кабинет...</div>
+      </main>
+    );
+  }
+
+  if (initialized && role === 'participant') {
+    return (
+      <main className="container">
+        <StreamsSection
+          streams={streams}
+          loading={loading}
+          error={error}
+          isParticipant
+        />
+      </main>
+    );
   }
 
   return (
@@ -109,6 +235,17 @@ export default function Home() {
             Выбирайте марафон, ведите дневник питания и следите за прогрессом.
             Менторы составляют программу, а рейтинг помогает дойти до конца.
           </p>
+          <ul className={styles.tags}>
+            {HERO_TAGS.map((tag) => {
+              const Icon = tag.icon;
+              return (
+                <li key={tag.label} title={tag.label}>
+                  <Icon size={20} strokeWidth={1.5} aria-hidden="true" />
+                  <span className={styles.tagLabel}>{tag.label}</span>
+                </li>
+              );
+            })}
+          </ul>
 
           <div className={styles.actions}>
             <a href="#streams" className={styles.btnHeroPrimary}>
@@ -125,24 +262,8 @@ export default function Home() {
             )}
           </div>
 
-          <ul className={styles.tags}>
-            <li>Дневник питания</li>
-            <li>Калорийность</li>
-            <li>Рейтинг потока</li>
-            <li>Программа от ментора</li>
-          </ul>
-        </div>
 
-        {/* Органический переход от sage-панели к кремовому фону страницы */}
-        <svg
-          className={styles.heroWave}
-          viewBox="0 0 1200 90"
-          preserveAspectRatio="none"
-          aria-hidden="true"
-          focusable="false"
-        >
-          <path d="M0 58 C 150 8 330 0 480 20 C 640 42 780 76 930 70 C 1040 66 1130 46 1200 24 L1200 90 L0 90 Z" />
-        </svg>
+        </div>
       </section>
 
       <section className={styles.section} id="features">
@@ -176,49 +297,12 @@ export default function Home() {
         </div>
       </section>
 
-      <section className={styles.section} id="streams">
-        <div className={styles.sectionHeader}>
-          <h2 className="pageSubtitle">Все потоки</h2>
-          <p className={styles.sectionLead}>
-            Открытые и идущие марафоны. Завершённые потоки доступны в личном
-            кабинете.
-          </p>
-        </div>
-
-        {loading && <div className="mutedBox">Загружаем открытые потоки...</div>}
-        {error && <p className="error">{error}</p>}
-        {!loading && !error && streams.length === 0 && (
-          <div className={styles.emptyState}>
-            <p>Сейчас нет доступных потоков.</p>
-            <p className={styles.emptyStateHint}>
-              Новые марафоны появятся после модерации. Зарегистрируйтесь, чтобы не
-              пропустить старт.
-            </p>
-            <ButtonLink href="/register" variant="primary">
-              Зарегистрироваться
-            </ButtonLink>
-          </div>
-        )}
-        {!loading && !error && streams.length > 0 && (
-          <ul className={cardStyles.grid}>
-            {streams.map((stream) => (
-              <StreamCard
-                key={stream.id}
-                title={stream.template?.title || 'Поток без названия'}
-                href={`/streams/${stream.id}`}
-                ctaHref={`/streams/${stream.id}`}
-                ctaLabel="Подробнее"
-                description={stream.template?.description || 'Нет описания'}
-                durationDays={stream.template?.durationDays}
-                startDate={stream.startDate}
-                mentorName={stream.mentor?.name || 'Неизвестно'}
-                participantsCount={stream.enrollmentsCount}
-                status={stream.status}
-              />
-            ))}
-          </ul>
-        )}
-      </section>
+      <StreamsSection
+        streams={streams}
+        loading={loading}
+        error={error}
+        isParticipant={false}
+      />
 
       <section className={styles.ctaSection}>
         <h2 className={styles.ctaTitle}>Готовы начать?</h2>
