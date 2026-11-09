@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import type { Product } from '@/components/day/ProductSearch';
 import type { ReportLineItem } from '@/components/day/ReportTable';
+import { getCookie } from '@/lib/cookies';
+import { apiFetch } from '@/lib/apiClient';
 import {
   computeLineCalories,
   computeLineMacro,
@@ -37,6 +39,7 @@ interface ParticipantDayActions {
   selectDay: (day: ParticipantDayData) => void;
   saveReport: (streamId: string, dayNumber: number) => Promise<void>;
   savePulse: (streamId: string, dayNumber: number) => Promise<void>;
+  syncCurrentDraft: () => Promise<void>;
   addProductLine: (product: Product, mealType: MealType) => void;
   updateLine: (index: number, weightGrams: number) => void;
   removeLine: (index: number) => void;
@@ -52,10 +55,16 @@ interface ParticipantDayActions {
 
 type ParticipantDayStore = ParticipantDayState & ParticipantDayActions;
 
-const DRAFT_VERSION = 1;
+const DRAFT_VERSION = 2;
+const DRAFT_TTL_MS = 14 * 24 * 60 * 60 * 1000;
+const DRAFT_PREFIX = 'mp:day-draft:';
 
 type DayDraft = {
   version: number;
+  userId: string;
+  streamId: string;
+  dayNumber: number;
+  updatedAt: number;
   dirtySection: 'report' | 'pulse';
   lines: ReportLineItem[];
   metrics: MetricsState;
@@ -63,19 +72,29 @@ type DayDraft = {
   pulseReadings: PulseFormItem[];
 };
 
-function draftKey(streamId: string, dayNumber: number): string {
-  return `mp:day-draft:${streamId}:${dayNumber}`;
+type DayDraftPayload = Omit<
+  DayDraft,
+  'version' | 'userId' | 'streamId' | 'dayNumber' | 'updatedAt'
+>;
+
+function currentUserId(): string | null {
+  return getCookie('mp_user_id') ?? null;
 }
 
-function readDraft(streamId: string, dayNumber: number): DayDraft | null {
-  if (typeof window === 'undefined') return null;
-  try {
-    const raw = window.sessionStorage.getItem(draftKey(streamId, dayNumber));
-    if (!raw) return null;
+function draftKey(userId: string, streamId: string, dayNumber: number): string {
+  return `${DRAFT_PREFIX}${userId}:${streamId}:${dayNumber}`;
+}
 
+function parseDraft(raw: string | null, expectedUserId: string): DayDraft | null {
+  if (!raw) return null;
+  try {
     const parsed = JSON.parse(raw) as Partial<DayDraft>;
     if (
       parsed.version !== DRAFT_VERSION ||
+      parsed.userId !== expectedUserId ||
+      typeof parsed.streamId !== 'string' ||
+      typeof parsed.dayNumber !== 'number' ||
+      typeof parsed.updatedAt !== 'number' ||
       (parsed.dirtySection !== 'report' && parsed.dirtySection !== 'pulse') ||
       !Array.isArray(parsed.lines) ||
       !parsed.metrics ||
@@ -84,8 +103,25 @@ function readDraft(streamId: string, dayNumber: number): DayDraft | null {
     ) {
       return null;
     }
-
+    if (Date.now() - parsed.updatedAt > DRAFT_TTL_MS) {
+      return null;
+    }
     return parsed as DayDraft;
+  } catch {
+    return null;
+  }
+}
+
+function readDraft(streamId: string, dayNumber: number): DayDraft | null {
+  if (typeof window === 'undefined') return null;
+  const userId = currentUserId();
+  if (!userId) return null;
+
+  const key = draftKey(userId, streamId, dayNumber);
+  try {
+    const draft = parseDraft(window.localStorage.getItem(key), userId);
+    if (!draft) window.localStorage.removeItem(key);
+    return draft;
   } catch {
     return null;
   }
@@ -94,18 +130,30 @@ function readDraft(streamId: string, dayNumber: number): DayDraft | null {
 function writeDraft(
   streamId: string,
   dayNumber: number,
-  draft: DayDraft | null
+  payload: DayDraftPayload | null
 ): void {
   if (typeof window === 'undefined') return;
+  const userId = currentUserId();
+  if (!userId) return;
+
+  const key = draftKey(userId, streamId, dayNumber);
   try {
-    const key = draftKey(streamId, dayNumber);
-    if (!draft) {
-      window.sessionStorage.removeItem(key);
-    } else {
-      window.sessionStorage.setItem(key, JSON.stringify(draft));
+    if (!payload) {
+      window.localStorage.removeItem(key);
+      return;
     }
+
+    const draft: DayDraft = {
+      version: DRAFT_VERSION,
+      userId,
+      streamId,
+      dayNumber,
+      updatedAt: Date.now(),
+      ...payload,
+    };
+    window.localStorage.setItem(key, JSON.stringify(draft));
   } catch {
-    // sessionStorage может быть недоступен (приватный режим, переполнение) —
+    // localStorage может быть недоступен (приватный режим, переполнение) —
     // молча пропускаем, основная логика от этого не зависит.
   }
 }
@@ -120,7 +168,6 @@ function persistDraft(state: ParticipantDayState): void {
   }
 
   writeDraft(data.streamId, data.dayNumber, {
-    version: DRAFT_VERSION,
     dirtySection,
     lines: state.lines,
     metrics: state.metrics,
@@ -207,6 +254,61 @@ export function hasReportData(
   return hasAnyData(lines, metrics) || comment.trim().length > 0;
 }
 
+/**
+ * Более строгая проверка для автосинхронизации: не считаем пустым
+ * отчёт только из-за `trainingDone: false`, который стоит по умолчанию
+ * и неотличим от явно снятой галочки.
+ */
+function hasMeaningfulReportData(
+  lines: ReportLineItem[],
+  metrics: MetricsState,
+  comment: string
+): boolean {
+  if (lines.length > 0) return true;
+  if (comment.trim().length > 0) return true;
+  return (
+    metrics.waterLiters !== '' ||
+    metrics.steps !== '' ||
+    metrics.sleepHours !== '' ||
+    metrics.trainingDone === true ||
+    metrics.weightKg !== '' ||
+    metrics.chestCm !== '' ||
+    metrics.waistCm !== '' ||
+    metrics.hipCm !== '' ||
+    metrics.legCm !== ''
+  );
+}
+
+function buildReportPayload(
+  lines: ReportLineItem[],
+  metrics: MetricsState,
+  comment: string
+) {
+  return {
+    lines: lines.map((line) => ({
+      productId: line.productId,
+      mealType: line.mealType,
+      weightGrams: line.weightGrams,
+    })),
+    waterLiters:
+      metrics.waterLiters === '' ? undefined : Number(metrics.waterLiters),
+    steps: metrics.steps === '' ? undefined : Number(metrics.steps),
+    sleepHours:
+      metrics.sleepHours === '' ? undefined : Number(metrics.sleepHours),
+    trainingDone: metrics.trainingDone,
+    weightKg: metrics.weightKg === '' ? undefined : Number(metrics.weightKg),
+    chestCm: metrics.chestCm === '' ? undefined : Number(metrics.chestCm),
+    waistCm: metrics.waistCm === '' ? undefined : Number(metrics.waistCm),
+    hipCm: metrics.hipCm === '' ? undefined : Number(metrics.hipCm),
+    legCm: metrics.legCm === '' ? undefined : Number(metrics.legCm),
+    comment: comment.trim(),
+  };
+}
+
+function buildPulsePayload(pulseReadings: PulseFormItem[]) {
+  return { pulseReadings: pulseFormItemsToApi(pulseReadings) };
+}
+
 function buildInitialPulseReadings(
   report: ParticipantDayData['report']
 ): PulseFormItem[] {
@@ -267,6 +369,111 @@ function applyDay(day: ParticipantDayData) {
   };
 }
 
+async function flushDraft(key: string, draft: DayDraft): Promise<boolean> {
+  try {
+    if (draft.dirtySection === 'report') {
+      if (!hasMeaningfulReportData(draft.lines, draft.metrics, draft.comment)) {
+        window.localStorage.removeItem(key);
+        return true;
+      }
+
+      const res = await apiFetch(
+        `/api/streams/${draft.streamId}/day/${draft.dayNumber}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(
+            buildReportPayload(draft.lines, draft.metrics, draft.comment)
+          ),
+        }
+      );
+      if (!res.ok) return false;
+    } else {
+      if (!hasPulseData(draft.pulseReadings)) {
+        window.localStorage.removeItem(key);
+        return true;
+      }
+
+      const res = await apiFetch(
+        `/api/streams/${draft.streamId}/pulse/${draft.dayNumber}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(buildPulsePayload(draft.pulseReadings)),
+        }
+      );
+      if (!res.ok) return false;
+    }
+
+    window.localStorage.removeItem(key);
+    return true;
+  } catch {
+    // Сеть недоступна — оставляем черновик до следующей попытки.
+    return false;
+  }
+}
+
+let pendingFlush: Promise<void> | null = null;
+
+async function flushPendingDraftsInternal(): Promise<void> {
+  if (typeof window === 'undefined') return;
+
+  const userId = currentUserId();
+  if (!userId || getCookie('mp_role') !== 'participant') return;
+
+  const prefix = `${DRAFT_PREFIX}${userId}:`;
+  const keys: string[] = [];
+  try {
+    for (let i = 0; i < window.localStorage.length; i++) {
+      const key = window.localStorage.key(i);
+      if (key && key.startsWith(prefix)) keys.push(key);
+    }
+  } catch {
+    return;
+  }
+
+  // Текущий открытый день синхронизирует сам стор через saveReport/savePulse,
+  // чтобы обновить интерфейс. Здесь его пропускаем, чтобы не дублировать запрос.
+  const state = useParticipantDayStore.getState();
+  const currentKey =
+    state.data && state.dirtySection
+      ? draftKey(userId, state.data.streamId, state.data.dayNumber)
+      : null;
+
+  for (const key of keys) {
+    if (key === currentKey) continue;
+
+    const draft = parseDraft(
+      window.localStorage.getItem(key),
+      userId
+    );
+    if (!draft) {
+      try {
+        window.localStorage.removeItem(key);
+      } catch {
+        // ignore
+      }
+      continue;
+    }
+
+    await flushDraft(key, draft);
+  }
+}
+
+/**
+ * Досылает на сервер все черновики текущего пользователя, оставшиеся
+ * в localStorage после закрытия вкладки или приложения.
+ */
+export function flushPendingDrafts(): Promise<void> {
+  if (typeof window === 'undefined') return Promise.resolve();
+  if (pendingFlush) return pendingFlush;
+
+  pendingFlush = flushPendingDraftsInternal().finally(() => {
+    pendingFlush = null;
+  });
+  return pendingFlush;
+}
+
 export const useParticipantDayStore = create<ParticipantDayStore>((set, get) => ({
   ...initialState,
 
@@ -313,7 +520,15 @@ export const useParticipantDayStore = create<ParticipantDayStore>((set, get) => 
     if (!get().daysCache[day.streamId]?.[day.dayNumber]) {
       return;
     }
-    set(applyDay(day));
+    const next = applyDay(day);
+    set(next);
+
+    // Открыли день с несохранённым черновиком — сразу досылаем его на сервер.
+    if (next.dirtySection) {
+      void get().syncCurrentDraft();
+    }
+    // И параллельно досылаем черновики других дней, если они остались.
+    void flushPendingDrafts();
   },
 
   saveReport: async (streamId, dayNumber) => {
@@ -329,25 +544,7 @@ export const useParticipantDayStore = create<ParticipantDayStore>((set, get) => 
 
     set({ saving: true, saveError: null });
 
-    const payload = {
-      lines: lines.map((line) => ({
-        productId: line.productId,
-        mealType: line.mealType,
-        weightGrams: line.weightGrams,
-      })),
-      waterLiters:
-        metrics.waterLiters === '' ? undefined : Number(metrics.waterLiters),
-      steps: metrics.steps === '' ? undefined : Number(metrics.steps),
-      sleepHours:
-        metrics.sleepHours === '' ? undefined : Number(metrics.sleepHours),
-      trainingDone: metrics.trainingDone,
-      weightKg: metrics.weightKg === '' ? undefined : Number(metrics.weightKg),
-      chestCm: metrics.chestCm === '' ? undefined : Number(metrics.chestCm),
-      waistCm: metrics.waistCm === '' ? undefined : Number(metrics.waistCm),
-      hipCm: metrics.hipCm === '' ? undefined : Number(metrics.hipCm),
-      legCm: metrics.legCm === '' ? undefined : Number(metrics.legCm),
-      comment: comment.trim(),
-    };
+    const payload = buildReportPayload(lines, metrics, comment);
 
     try {
       const url = data.report
@@ -442,9 +639,7 @@ export const useParticipantDayStore = create<ParticipantDayStore>((set, get) => 
 
     set({ savingPulse: true, pulseSaveError: null });
 
-    const payload = {
-      pulseReadings: pulseFormItemsToApi(pulseReadings),
-    };
+    const payload = buildPulsePayload(pulseReadings);
 
     try {
       const res = await fetch(`/api/streams/${streamId}/pulse/${dayNumber}`, {
@@ -515,6 +710,32 @@ export const useParticipantDayStore = create<ParticipantDayStore>((set, get) => 
         savingPulse: false,
       });
     }
+  },
+
+  syncCurrentDraft: async () => {
+    const {
+      data,
+      dirtySection,
+      saving,
+      savingPulse,
+      lines,
+      metrics,
+      comment,
+      pulseReadings,
+    } = get();
+
+    if (!data || !dirtySection || saving || savingPulse || !data.isEditable) {
+      return;
+    }
+
+    if (dirtySection === 'report') {
+      if (!hasMeaningfulReportData(lines, metrics, comment)) return;
+      await get().saveReport(data.streamId, data.dayNumber);
+      return;
+    }
+
+    if (!hasPulseData(pulseReadings)) return;
+    await get().savePulse(data.streamId, data.dayNumber);
   },
 
   addProductLine: (product, mealType) => {

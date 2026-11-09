@@ -34,6 +34,28 @@
   margin-bottom: 1rem;
 }
 
+.searchRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.productSearchCell {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.searchRow > button {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.draftHint {
+  margin: 0.5rem 0 0;
+  font-size: 0.82rem;
+  color: var(--text-muted-extra);
+}
+
 
 /* Слева — сайдбар с итогами дня и метриками, справа — таблица отчёта.
    Сайдбар держим обычным блоком (flex-свойства карточек внутри него инертны),
@@ -203,6 +225,15 @@
 }
 
 @media (max-width: 640px) {
+  .searchRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .searchRow > button {
+    width: 100%;
+  }
+
   .saveBtnDiv > button {
     width: 100%;
   }

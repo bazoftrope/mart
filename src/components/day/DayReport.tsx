@@ -31,6 +31,7 @@ export default function DayReport({ streamId, dayNumber, isEditable, onSaved }: 
     saveError,
     data,
     comment,
+    dirtySection,
     addProductLine,
     updateLine,
     removeLine,
@@ -242,11 +243,31 @@ export default function DayReport({ streamId, dayNumber, isEditable, onSaved }: 
                   </button>
                 ))}
               </div>
-              <ProductSearch
-                onSelect={(product) => addProductLine(product, mealType)}
-                disabled={saving}
-              />
+              <div className={styles.searchRow}>
+                <div className={styles.productSearchCell}>
+                  <ProductSearch
+                    onSelect={(product) => addProductLine(product, mealType)}
+                    disabled={saving}
+                  />
+                </div>
+                <Button
+                  variant="primary"
+                  size="md"
+                  loading={saving}
+                  disabled={!canSave}
+                  onClick={handleSave}
+                  aria-label="Сохранить отчёт"
+                >
+                  {saving ? 'Сохранение...' : 'Сохранить отчет'}
+                </Button>
+              </div>
 
+              {dirtySection && (
+                <p className={styles.draftHint} aria-live="polite">
+                  Черновик сохранён на этом устройстве — при следующем входе
+                  отправим его автоматически.
+                </p>
+              )}
             </div>
           )}
 

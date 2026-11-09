@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { getCookie, deleteCookie } from '@/lib/cookies';
 import { authService } from '@/services/authService';
+import { flushPendingDrafts } from '@/stores/participantDayStore';
 import type { LoginInput, RegisterInput } from '@/lib/validate';
 import type { PublicUser, UserRole } from '@/types/auth';
 
@@ -85,6 +86,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         error: null,
         initialized: true,
       });
+      void flushPendingDrafts();
       return user;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Ошибка входа';
@@ -106,6 +108,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         error: null,
         initialized: true,
       });
+      void flushPendingDrafts();
       return user;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Ошибка регистрации';

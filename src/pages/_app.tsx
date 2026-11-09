@@ -2,16 +2,32 @@ import "reflect-metadata";
 import "quill/dist/quill.snow.css";
 import "react-h5-audio-player/lib/styles.css";
 import "@/styles/globals.css";
+import { useEffect } from "react";
 import type { AppProps } from "next/app";
 import Head from "next/head";
 import Layout from "@/components/layout/Layout";
 import { onest } from "@/styles/fonts";
+import { flushPendingDrafts, useParticipantDayStore } from "@/stores/participantDayStore";
 
 const DEFAULT_TITLE = "Marathon Platform";
 const DEFAULT_DESCRIPTION =
   "Марафоны по здоровому питанию: программа от ментора, дневник питания, рейтинг и поддержка участников.";
 
 export default function App({ Component, pageProps }: AppProps) {
+  useEffect(() => {
+    const syncDrafts = () => {
+      if (document.visibilityState !== 'visible') return;
+      // Текущий открытый день сохраняем только при возврате к вкладке/приложению.
+      void useParticipantDayStore.getState().syncCurrentDraft();
+      // Остальные черновики досылаем сразу при входе.
+      void flushPendingDrafts();
+    };
+
+    syncDrafts();
+    document.addEventListener('visibilitychange', syncDrafts);
+    return () => document.removeEventListener('visibilitychange', syncDrafts);
+  }, []);
+
   return (
     // Класс шрифта нужен здесь, чтобы next/font собрал CSS шрифта (см. src/styles/fonts.ts).
     // Сама переменная `--font-onest` применяется на <html> в _document.tsx.
